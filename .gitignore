@@ -1,0 +1,37 @@
+# Generated website files
+out/
+
+# sbt
+target/
+project/target/
+
+# node
+node_modules/
+
+# Metals
+.bsp/
+.bloop/
+.metals/
+.scala-build
+metals.sbt
+
+# Jetbrains products
+.idea
+.idea_modules
+/.worksheet/
+*.iml
+
+# vscode
+.vscode/*
+!.vscode/extensions.json
+!.vscode/fg-helpers.code-snippets
+
+# macOS
+.DS_Store
+
+# Other
+.local/
+.claude/*
+.claude.json
+.claude/
+CLAUDE.md
