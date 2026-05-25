@@ -29,9 +29,59 @@ metals.sbt
 # macOS
 .DS_Store
 
-# Other
-.local/
-.claude/*
-.claude.json
+# NO AI FILES ARE COMMITTED
+
+.agents/
+.cursor/
+.codex/
+.codex-plugins/
+.gemini/
+
+# --- Anthropic / Claude Code ---
 .claude/
-CLAUDE.md
+.claude/config.json
+.claudecode/
+*.claudelog
+.claudemdexcludes
+.claudeignore
+CLAUDE.MD
+AGENTS.MD
+SKILLS.MD
+
+# --- Cursor ---
+.cursor/
+.cursor/rules/  
+.cursor_history/
+.cursorrules.local       
+
+# --- Codeium Windsurf & Cascade ---
+.windsurf/
+.windsurf/rules/         
+.windsurf/memories/      
+.windsurf_history/
+
+# --- Cline & Roo Code ---
+.cline/
+.roocode/
+.clinerules.local       
+
+# --- GitHub Copilot & Chat ---
+.copilot-history/
+.github/copilot-instructions.local.md
+
+# --- Aider (Terminal AI Pair Programmer) ---
+.aider.chat.history.md
+.aider.input.history
+.aider.tags.cache.*
+
+# --- Open-Hands / All-Hands (SWE-Agent variants) ---
+.openhands/
+.openhands_cache/
+.swe-agent/
+swe-agent.log
+
+# --- General Multi-Agent Tools & Context Indexes ---
+.ai-context/
+.ai-index/
+.llm-cache/
+ai-instructions.local.md
