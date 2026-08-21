@@ -1,0 +1,374 @@
+/* <taxpert-tool-panel> — the chrome one workspace tool wears, docked or floating.
+
+   The host element is the layout box; .ttp-panel inside it is the look. That split is what lets the
+   same element be a flex child of a column one moment and an absolutely-positioned box in the float
+   layer the next, with only an attribute changing:
+
+     docked    flex: var(--ttp-flex) 1 0   — its share of the column's height
+     floating  position: absolute + --ttp-x/y/w/h
+     dragging  the same, plus lifted z-index, an accent outline, and no pointer events
+
+   Nothing here mirrors state in a class. `data-float` and `data-dragging` are set by the dock,
+   `[open]` by the browser on a <details> row. */
+
+taxpert-tool-panel {
+  display: flex;
+  flex: var(--ttp-flex, 1) 1 0;
+  box-sizing: border-box;
+  min-width: 0;
+  /* Docked panels stack, so the floor is applied to the column; a lone panel still can't go under
+     it because the dock's own width is clamped to the same number. */
+  min-height: 0;
+  font-family: var(--ttp-font);
+  color: var(--ttp-base-darkest);
+}
+
+/* ── Floating ────────────────────────────────────────────────────────────── */
+
+taxpert-tool-panel[data-float] {
+  position: absolute;
+  left: var(--ttp-x, 0);
+  top: var(--ttp-y, 0);
+  width: var(--ttp-w, 360px);
+  height: var(--ttp-h, 360px);
+  min-width: var(--ttp-min-width);
+  min-height: var(--ttp-min-height);
+  flex: none;
+  pointer-events: auto;
+  z-index: 1;
+}
+
+taxpert-tool-panel[data-float] .ttp-panel {
+  border: 1px solid var(--ttp-base-lighter);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+/* ── Being dragged ───────────────────────────────────────────────────────── */
+
+/* Click-through so the pointer keeps hitting the columns underneath — that is what lets the dock
+   measure a drop target from the element the cursor is actually over. */
+taxpert-tool-panel[data-dragging] {
+  pointer-events: none;
+  z-index: 20;
+}
+
+taxpert-tool-panel[data-dragging] .ttp-panel {
+  outline: 2px solid var(--ttp-accent);
+  outline-offset: -1px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.24);
+}
+
+/* ── The panel itself ────────────────────────────────────────────────────── */
+
+.ttp-panel {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 0;
+  /* The containing block for the resize handles, which are positioned against the panel's edges. */
+  position: relative;
+  overflow: hidden;
+  background: var(--ttp-surface);
+}
+
+/* ── Title bar ───────────────────────────────────────────────────────────── */
+
+/* The bar is the panel's one solid block of colour, and it is the same violet the selected rendered
+   unit is outlined in — so a panel reads as belonging to the question it is open on. Everything in
+   it therefore sets its own colour rather than inheriting the panel's: --ttp-on-bar. */
+.ttp-panel__bar {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--ttp-units-1);
+  padding: var(--ttp-units-05) var(--ttp-units-1);
+  background: var(--ttp-bar);
+  color: var(--ttp-on-bar);
+}
+
+.ttp-panel__title {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.5;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ttp-panel__grip,
+.ttp-panel__close {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  /* The audit panel gives every button inside its content area `display: block; margin: 1rem 0`;
+     these live in a bar and must not inherit that when the two stylesheets meet. */
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ttp-on-bar);
+}
+
+.ttp-panel__grip {
+  cursor: grab;
+  touch-action: none; /* the pointer drag owns the gesture, not the browser's scroll */
+}
+
+taxpert-tool-panel[data-dragging] .ttp-panel__grip {
+  cursor: grabbing;
+}
+
+.ttp-panel__close {
+  cursor: pointer;
+}
+
+/* Lightening rather than darkening: on the violet bar a black wash reads as a smudge, where a white
+   one reads as the button lifting. */
+.ttp-panel__grip:hover,
+.ttp-panel__close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--ttp-on-bar);
+}
+
+/* The blue focus ring the rest of the bundle uses has too little to say against this violet. */
+.ttp-panel__grip:focus-visible,
+.ttp-panel__close:focus-visible {
+  outline: 2px solid var(--ttp-on-bar);
+  outline-offset: 1px;
+}
+
+.ttp-panel__grip-icon,
+.ttp-panel__close-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* ── Body ────────────────────────────────────────────────────────────────── */
+
+.ttp-panel__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--ttp-units-2);
+}
+
+.ttp-body__title {
+  margin: 0 0 var(--ttp-units-05);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.ttp-body__hint {
+  margin: 0 0 var(--ttp-units-2);
+  color: var(--ttp-base-dark);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.ttp-body__action {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ttp-units-05);
+  margin: 0 0 var(--ttp-units-2);
+}
+
+.ttp-body__action-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* ── Rows ────────────────────────────────────────────────────────────────── */
+/* A row is a <details>, so expanding it is browser behaviour — there is no click handler and no
+   aria-expanded to keep in step. The chevron turn follows from [open]. */
+
+.ttp-row {
+  margin-bottom: var(--ttp-units-1);
+  border: 1px solid var(--ttp-base-lighter);
+  border-radius: 4px;
+  background: var(--ttp-surface);
+}
+
+.ttp-row__summary {
+  display: flex;
+  align-items: center;
+  gap: var(--ttp-units-1);
+  padding: var(--ttp-units-1);
+  cursor: pointer;
+  list-style: none; /* the default marker would sit beside our own chevron */
+}
+
+.ttp-row__summary::-webkit-details-marker {
+  display: none;
+}
+
+.ttp-row__summary:focus-visible {
+  outline: 2px solid var(--ttp-blue-40v);
+  outline-offset: -2px;
+}
+
+.ttp-row__text {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.ttp-row__label {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.ttp-row__path,
+.ttp-row__value {
+  color: var(--ttp-base-dark);
+  font-size: 0.8125rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.ttp-row__icon,
+.ttp-row__chevron,
+.ttp-row__kebab {
+  flex: 0 0 auto;
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--ttp-base-dark);
+}
+
+/* No --ok/--error/--pending modifiers here: a row's status is a `data-status` attribute its tool
+   already sets, and each tool's own stylesheet paints its icon off that. Those three classes were
+   the Outcome tracker stub's, and went with it. */
+
+.ttp-row__chevron {
+  transition: transform 0.15s ease;
+}
+
+/* Scoped to the row's own summary rather than every `.ttp-row__chevron` descendant: Inspect nests a
+   second `<details>` — the Advanced disclosure — inside a row's detail region, reusing this same
+   chevron class. An unscoped descendant selector would flip that inner chevron open the moment the
+   outer row opened, whatever the Advanced disclosure's own [open] state was. */
+.ttp-row[open] > summary > .ttp-row__chevron {
+  transform: rotate(180deg);
+}
+
+.ttp-row__detail {
+  margin: 0;
+  padding: 0 var(--ttp-units-1) var(--ttp-units-1) 2.25rem;
+  color: var(--ttp-base-dark);
+  font-size: 0.8125rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ttp-row__chevron {
+    transition: none;
+  }
+}
+
+/* ── Floating-only resize handles ────────────────────────────────────────── */
+/* A docked panel is resized by the dock's splitters, so its own handles would be a second,
+   conflicting way to do the same thing. */
+
+taxpert-tool-panel:not([data-float]) .ttp-panel__grow {
+  display: none;
+}
+
+/* Inset rather than straddling the border, because a floating panel clips to its 8px radius — a
+   handle hanging outside would be cut off exactly at the corner you most want to grab.
+
+   All eight are present so a panel can be sized from wherever it happens to be sitting; before, only
+   the right and bottom edges were grabbable, which meant dragging a panel to the top of the page
+   just to make it taller. */
+.ttp-panel__grow {
+  position: absolute;
+  touch-action: none;
+  z-index: 1;
+}
+
+/* ── Edges ───────────────────────────────────────────────────────────────── */
+
+.ttp-panel__grow--n {
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 8px;
+  cursor: ns-resize;
+}
+
+.ttp-panel__grow--s {
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 8px;
+  cursor: ns-resize;
+}
+
+.ttp-panel__grow--w {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 8px;
+  cursor: ew-resize;
+}
+
+.ttp-panel__grow--e {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: ew-resize;
+}
+
+/* ── Corners ─────────────────────────────────────────────────────────────── */
+/* Bigger than the edge strips and stacked above them, so the overlap where the two meet resizes
+   both axes — the corner is the harder target to hit and the more useful one. */
+
+.ttp-panel__grow--nw,
+.ttp-panel__grow--ne,
+.ttp-panel__grow--sw,
+.ttp-panel__grow--se {
+  width: 16px;
+  height: 16px;
+  z-index: 2;
+}
+
+.ttp-panel__grow--nw {
+  top: 0;
+  left: 0;
+  cursor: nwse-resize;
+}
+
+.ttp-panel__grow--ne {
+  top: 0;
+  right: 0;
+  cursor: nesw-resize;
+}
+
+.ttp-panel__grow--sw {
+  bottom: 0;
+  left: 0;
+  cursor: nesw-resize;
+}
+
+.ttp-panel__grow--se {
+  right: 0;
+  bottom: 0;
+  cursor: nwse-resize;
+}
+
+.ttp-panel__grow:focus-visible {
+  outline: 2px solid var(--ttp-blue-40v);
+  outline-offset: -2px;
+}

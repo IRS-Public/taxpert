@@ -1,0 +1,157 @@
+/* M4 slide-out detail panel. Docks along the right edge; `width` and `right`
+   (docking offset) are set inline from state/props — everything else lives here. */
+
+.detail-panel {
+  position: absolute;
+  top: 0;
+  /* z above canvas but below chat (z-chat: 7) — no token for this rung. */
+  z-index: 6;
+  /* Sized by what is in it, not by the viewport. A flow element with four rows of metadata used to
+     draw a full-height column of surface with the last three quarters of it empty. The cap is the
+     canvas it is positioned in (.fact-explorer-canvas is `position: relative; height: 100%`) rather
+     than 100vh, which also stopped the panel hanging past the bottom of that canvas by the height
+     of the banner above it; `overflow: auto` still scrolls a long derivation inside the panel. */
+  max-height: 100%;
+  overflow: auto;
+  padding: var(--space-2);
+  background: var(--color-surface);
+  border-left: 1px solid var(--color-border);
+  font-family: var(--font-ui);
+  /* Left-cast panel shadow; no shared token (--shadow-panel is symmetric). */
+  box-shadow: -4px 0 12px rgba(0, 0, 0, 0.06);
+}
+
+/* Hit strip straddling the panel's left boundary for pointer/keyboard resize. */
+.detail-panel__resizer {
+  position: absolute;
+  top: 0;
+  left: -3px;
+  width: 6px;
+  height: 100%;
+  z-index: 1;
+  cursor: col-resize;
+  background: transparent;
+
+  /* Highlight while actively dragging. */
+  &:active {
+    background: var(--color-border);
+  }
+}
+
+.detail-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1);
+  margin-bottom: var(--space-105);
+}
+
+.detail-panel__modes {
+  display: flex;
+  align-items: center;
+  gap: 6px; /* no token between --space-05 (4px) and --space-1 (8px) */
+  flex-wrap: wrap;
+}
+
+.detail-panel__close {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 16px; /* no token at 16px (type scale tops out at --font-md 13px) */
+  line-height: 1;
+}
+
+/* Drill-down / dependency-cone toggle, shared with the Explain button styling. */
+.detail-toggle,
+.detail-explain {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px; /* no token between 4px and 8px */
+  padding: var(--space-05) var(--space-105) var(--space-05) 10px; /* 4px 10px; no 10px token */
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-primary);
+  font-size: var(--font-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.detail-toggle--active {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-surface);
+}
+
+.detail-title {
+  margin-top: 0;
+  margin-right: 24px; /* clears the absolute close button; no 24px token */
+  word-break: break-word;
+}
+
+.detail-path {
+  margin: 0 0 var(--space-05);
+  color: var(--color-text-muted);
+  font-size: var(--font-sm);
+}
+
+.detail-meta {
+  margin: 0 0 var(--space-105);
+  color: var(--color-text-muted);
+  font-size: var(--font-sm);
+}
+
+.detail-description {
+  margin-bottom: var(--space-105);
+  font-size: var(--font-md);
+  line-height: 1.4;
+}
+
+.detail-section__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px; /* no token between 4px and 8px */
+}
+
+.detail-section__label {
+  color: var(--color-text-muted);
+  font-size: var(--font-sm);
+}
+
+.detail-xml-toggle {
+  font-size: var(--font-xs);
+  cursor: pointer;
+}
+
+.detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-sm);
+}
+
+.detail-table__key {
+  padding: 3px var(--space-1) 3px 0; /* no 3px token */
+  color: var(--color-text-muted);
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+.detail-table__value {
+  padding: 3px 0; /* no 3px token */
+  word-break: break-word;
+}
+
+.detail-spans {
+  margin-top: var(--space-105);
+}
+
+.detail-spans__list {
+  margin-top: var(--space-05);
+  padding-left: 18px; /* no 18px token */
+  font-size: var(--font-sm);
+}
+
+.detail-rawxml {
+  margin-top: var(--space-105);
+}

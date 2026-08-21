@@ -1,0 +1,216 @@
+/*
+ * The Browse All / Path Mode page, below the toolbar.
+ *
+ * all-screens-toolbar.css styles the toolbar element itself; this styles the page it drives — the
+ * section headers and screen cards the scaffold generates, the two layout modes the Display options
+ * switch between, the `.hidden` rules that make a listing show every question at once, and the
+ * `.off-path` rule path-cursor.js relies on. None of it names a single application: the markup is
+ * `form-builder/templates/all-screens.html`'s and the classes that toggle it are this package's.
+ *
+ * It was one application's `website-static/styles/all-screens.css` until the second application
+ * needed the same page. That app's copy had never been updated and still styled a template two
+ * rewrites old — no sections, no toolbar, no Path Mode — which is what "Browse All Screens renders
+ * blank" looked like from the outside.
+ *
+ * An app imports this from its own `styles/all-screens.css`, the file all-screens.html links, and
+ * adds whatever is genuinely its own after the import — the same shape as main.css over theme.css.
+ */
+
+/* ── A listing shows everything ───────────────────────────────────────── */
+/* Undo the flow runtime's conditional hiding: every question is on the page whether or not the
+   (empty) Fact Graph would reach it. */
+
+.hidden {
+  display: block;
+  opacity: 1;
+}
+span.hidden {
+  display: inline;
+}
+.fg-show.hidden {
+  display: inline;
+}
+
+/* Path Mode restores the normal flow's hide/show behavior: elements that the flow runtime's
+   showOrHideAllElements() marks `.hidden` against the loaded Fact Graph are actually hidden,
+   instead of forced visible by the rules above. */
+body.path-mode .hidden,
+body.path-mode span.hidden,
+body.path-mode .fg-show.hidden {
+  display: none;
+}
+
+/* Everything past the point of progress: the questions and content a user on this path hasn't
+   reached yet. Marked by path-cursor.js, which deliberately uses its own class rather than
+   `.hidden` — that one makes showOrHideAllElements() delete the facts behind it. */
+body.path-mode .off-path {
+  display: none;
+}
+
+/* ── Screen cards ─────────────────────────────────────────────────────── */
+
+@media screen {
+  .view--column {
+    main {
+      background-color: transparent;
+      box-shadow: none;
+      padding: 0;
+    }
+    .screen__content {
+      background-color: white;
+      border: 1px solid var(--base-lighter);
+      border-radius: 8px;
+      margin: 0 0 var(--units-8);
+      padding: var(--units-8);
+
+      h1 {
+        margin: 0;
+      }
+    }
+  }
+}
+
+/* The outlines drawn around conditional elements by the "show conditions" display option are not
+   repeated here: this page loads main.css too, so the app's utilities/display-conditions.css and
+   tool-panels' condition-detail.css already apply. */
+
+/* ── Horizontal layout mode ───────────────────────────────────────────── */
+/* The page template wraps a screen's flow nodes in <section class="flow"> —
+   that is the actual parent of fg-set/fg-alert/fg-collection/fg-detail, not
+   .screen__content directly. In horizontal mode we turn that inner section
+   into a flex-wrap row so the fg-* siblings tile across the card. Headings
+   and prose still take a full row so the reading flow is preserved. */
+
+body.layout--horizontal .screen__content section.flow {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
+  gap: var(--units-3);
+  align-items: start;
+}
+
+/* fg-detail renders as <details class="fg-detail">, not a custom element.
+   fg-collection renders as <fg-collection>. Both tile as grid items.
+   An inline modal copy tiles too: "Show modals inline" parks it in the flow as the sibling right
+   after the question it explains (display-options.js), so in wrap mode it belongs in the same run of
+   tiles as that question — at one column's width, wrapping its prose like everything around it.
+   Spanning the full row instead, which is what it did while it fell through to the rule below, drew
+   one very wide box across a card of narrow ones and cut the run in half wherever a question
+   happened to have a modal.
+   Everything else (headings, prose) spans the full row. */
+body.layout--horizontal .screen__content section.flow > :not(fg-collection):not(details.fg-detail):not(fg-set):not(fg-alert):not(dialog[data-taxpert-modal-inline]) {
+  grid-column: 1 / -1;
+}
+
+body.layout--horizontal .screen__content section.flow > fg-collection,
+body.layout--horizontal .screen__content section.flow > details.fg-detail,
+body.layout--horizontal .screen__content section.flow > fg-set,
+body.layout--horizontal .screen__content section.flow > fg-alert,
+body.layout--horizontal .screen__content section.flow > dialog[data-taxpert-modal-inline] {
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* ── Full-width layout ────────────────────────────────────────────────── */
+/* Override the USWDS in-page-nav grid so main spans the page; the in-page nav
+   itself is omitted from the template. */
+
+.all-screens .usa-in-page-nav-container {
+  display: block;
+}
+
+/* 80% of the column this page is laid out in, not 80% of the *viewport*. The two are the same
+   number until a tool panel is docked: the dock is a flex sibling of the page container
+   (tool-dock.css), so the container narrows to make room for it — and a `vw` width ignored that and
+   kept rendering at full viewport width, sliding the listing under the panels instead of reflowing
+   beside them. The Product Experience never had the bug because its content is sized by its own
+   grid container rather than by the viewport. */
+.all-screens .main-content {
+  max-width: 80%;
+  width: 80%;
+}
+
+/* ── Section headers ──────────────────────────────────────────────────── */
+/* The header, its metadata and the rule under it are ink rather than the grey
+   they were: this page's section bands are the reader's primary structure, and
+   the two destinations render the same markup, so they are styled once here
+   rather than under `body.path-mode`. */
+
+.all-screens__section {
+  margin-bottom: var(--units-6);
+}
+
+.all-screens__section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--units-2);
+  margin-top: var(--units-6);
+  padding-bottom: var(--units-1);
+  border-bottom: 3px solid var(--base-darkest, #1b1b1b);
+}
+.all-screens__section-header h2 {
+  margin: 0;
+  font-size: var(--font-size-xl, 2rem); /* 32px */
+  font-weight: 700;
+  color: var(--base-darkest, #1b1b1b);
+}
+.all-screens__section-meta {
+  color: var(--base-darkest, #1b1b1b);
+  font-size: var(--font-size-md, 1.0625rem); /* 17px */
+  font-weight: 400;
+  white-space: nowrap;
+}
+.all-screens__section-meta-sep,
+.screen__meta-sep {
+  margin: 0 var(--units-05);
+  color: var(--base-light);
+}
+
+/* ── Per-screen card metadata ────────────────────────────────────────── */
+
+.screen__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--units-2);
+  margin-top: var(--units-5);
+  padding-bottom: var(--units-1);
+  border-bottom: var(--units-05) solid var(--base-darkest, #1b1b1b);
+}
+.screen__title {
+  border-bottom: none;
+  margin: 0;
+}
+.screen__meta {
+  color: var(--base-dark);
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+.screen__route {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  background-color: var(--base-lightest);
+  padding: 0 var(--units-05);
+  border-radius: 3px;
+}
+
+/* Sections/screens with [hidden] are filtered out by the section tabs. */
+.all-screens__section[hidden],
+article.screen[hidden] {
+  display: none;
+}
+
+/* ── Print sheet ──────────────────────────────────────────────────────── */
+
+@media not screen {
+  .all-screens__section {
+    page-break-before: always;
+  }
+  .all-screens__section:first-of-type {
+    page-break-before: auto;
+  }
+  body {
+    background: white !important;
+  }
+}

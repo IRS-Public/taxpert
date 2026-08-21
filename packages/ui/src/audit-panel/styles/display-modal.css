@@ -1,0 +1,345 @@
+/* <taxpert-display-modal> — the "Display options" dialog opened from the global nav's Display
+   button. Loaded through audit-panel.css's @import chain, so it is gated by the same toggled
+   <link id="audit-panel-styles"> as the rest of the workspace UI.
+
+   Self-contained: the base <dialog> chrome is declared here rather than inherited from
+   credit-assistant's components/modals.css, so the modal looks the same in any host. The
+   --tap-* token layer comes from audit-panel.css.
+
+   The `body.display-modals-inline` rules at the bottom are the one host-page effect that is
+   purely visual — the rest live in display-options.js. */
+
+:where(taxpert-display-modal) {
+  --tdm-border: #d6d7d9;
+  --tdm-text: var(--tap-base-darkest, #1b1b1b);
+  --tdm-hint: var(--tap-base-dark, #565c65);
+  --tdm-selected-border: var(--color-primary, var(--tap-primary, #005ea2));
+  --tdm-selected-bg: var(--color-primary-tint, var(--tap-primary-lighter, #d9e8f6));
+  --tdm-font: var(--font-sans, 'Source Sans Pro Web', 'Source Sans Pro', 'Helvetica Neue', Helvetica, Roboto, Arial, sans-serif);
+
+  /* The dialog's own insets. Declared once because two things read them — the main block's padding
+     and the close button's position — and the X sitting on the heading depends on the two agreeing. */
+  --tdm-inset-x: 2rem;
+  --tdm-inset-top: 1.5rem;
+}
+
+taxpert-display-modal {
+  display: contents;
+}
+
+.tdm-dialog {
+  display: block;
+  box-sizing: border-box;
+  width: 90vw;
+  max-width: 32.375rem; /* 518px — the design's modal width */
+  max-height: 90vh;
+  margin: auto;
+  padding: 0;
+  overflow-y: auto;
+  border: 1px solid var(--tdm-border);
+  border-radius: 0.25rem;
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  color: var(--tdm-text);
+  font-family: var(--tdm-font);
+  font-size: 1rem;
+  line-height: 1.5;
+  text-align: left; /* every row in this modal is left-aligned */
+  z-index: 1050;
+}
+
+.tdm-dialog:not([open]) {
+  display: none;
+}
+
+.tdm-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+/* USWDS gives .usa-modal__content a 2rem padding-top to clear its own close button, which sits
+   above the main block in its markup. This shell puts the close button inside .tdm-main instead, so
+   that band is dead space over the heading — every inset in this dialog is .tdm-main's. */
+.tdm-dialog .usa-modal__content {
+  padding-top: 0;
+}
+
+/* Every rule below is scoped through .tdm-dialog rather than written as a bare class. `.tdm-main`
+   and `.tdm-close` collide head-on with credit-assistant's own components/modals.css, which sets
+   `.usa-modal__main { padding-bottom: .5rem }` and `.usa-modal__close { top: 0; right: 0 }` on the
+   same elements at the same specificity — so which one wins is decided by stylesheet order, and the
+   order differs per host. The audit-panel modals happen to load after it (their own <link>); the
+   tool-panels bundle loads from inside main.css *before* it, which is why the Tools dialog was
+   drawing its close button in the corner and losing its bottom inset. Two classes beat one
+   everywhere, so the dialogs now look the same wherever they are loaded from. This is the same
+   defence the `.usa-modal__heading.tdm-heading` rule below already documents. */
+.tdm-dialog .tdm-main {
+  position: relative;
+  box-sizing: border-box;
+  /* Full width, explicitly — see the same rule in workspace-settings-modal.css. USWDS's
+     .usa-modal__content is a flex column and .usa-modal__main carries `margin: 0 auto`, whose auto
+     cross-axis margins suppress the stretch and size this block to its widest child instead. */
+  width: 100%;
+  margin-inline: 0;
+  padding: var(--tdm-inset-top) var(--tdm-inset-x) 2rem;
+}
+
+/* On the heading's line, not floating in the corner above it. It starts at the same top inset the
+   heading does and takes the heading's line box as its height, so USWDS's own `align-items: center`
+   centres the icon on the words rather than on a taller box. The right inset is pulled back by the
+   button's padding so the icon — not the hit area — lands flush with the section rules below. */
+.tdm-dialog .tdm-close {
+  position: absolute;
+  top: var(--tdm-inset-top);
+  right: calc(var(--tdm-inset-x) - 0.25rem);
+  box-sizing: border-box;
+  height: 1.7875rem; /* .tdm-heading's line box: 1.375rem × 1.3 */
+  min-width: 0;
+  margin: 0;
+  padding: 0 0.25rem;
+  background: transparent;
+  color: var(--tdm-text);
+}
+
+.tdm-dialog .tdm-close:hover,
+.tdm-dialog .tdm-close:active {
+  background: transparent;
+  color: var(--tdm-text);
+}
+
+/* No rule declared here: the first section's border-top supplies the line under the heading — the
+   scenario modal's arrangement.
+   Selector is doubled up with .usa-modal__heading (the element carries both classes — see
+   display-modal.js) so this wins on specificity over real USWDS's own .usa-modal__heading
+   rule, which sets font-family to its "heading" role (serif by default) — a single-class
+   rule here would only win by accident of stylesheet load order, and does in some hosts but
+   not others. */
+.usa-modal__heading.tdm-heading {
+  margin: 0 0 1rem;
+  font-family: var(--tdm-font);
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+/* ── Sections ──────────────────────────────────────────────────────────────
+   One rule, under the heading, and then nothing: the sections carry their own titles and are
+   separated by whitespace alone.
+
+   They each drew a border-top once, which gave the dialog a rule between Visibility and Layout and
+   another between Layout and Language — two lines cutting a short list of preferences into three
+   boxed-off regions, when the titles already say where each one starts. The remaining line belongs
+   to the heading rather than to Visibility, so it stays put when a destination hides the sections
+   under it. */
+
+.tdm-section {
+  padding: 1.25rem 0;
+}
+
+.tdm-section:first-of-type {
+  border-top: 1px solid var(--tdm-border);
+}
+
+/* Layout and Language are hidden rather than absent (see display-modal.html), so `hidden` has to
+   beat anything a host's own `section { display: … }` might set. */
+.tdm-section[hidden] {
+  display: none;
+}
+
+.tdm-section__title {
+  margin: 0;
+  font-family: var(--tdm-font);
+  font-size: 1.0625rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.tdm-section__hint {
+  margin: 0.25rem 0 0;
+  font-size: 0.9375rem;
+  color: var(--tdm-text);
+}
+
+/* ── Option rows ─────────────────────────────────────────────────────────── */
+/* Each choice is its own bordered box — the workspace settings modal's option rows, the same
+   treatment. `.tdm-option` stays on each row as the "one choice" hook for the JS and its spec.
+
+   The box is USWDS's own tile variant (`usa-checkbox__input--tile` / `usa-radio__input--tile` on
+   the input — see display-modal.html), not a bespoke one on the wrapper. USWDS draws the tile on
+   the *label*, which is what makes the whole box a click target rather than just the control and
+   its words, and gives it the padding, radius, and control-art offset every other USWDS tile has.
+   Only the colors are ours: the design's 1px border instead of USWDS's 2px gray, and the host's
+   brand token for the selected fill instead of the primary USWDS compiled in. Both rules sit on the
+   input, not the label, so they outweigh USWDS's own `--tile` pair in any load order.
+
+   Checkbox and radio stay separate selectors rather than a shared one, because `.usa-checkbox__label`
+   and `.usa-radio__label` are different USWDS components and grouping them would mean one rule
+   silently depending on both staying identical — the workspace settings modal's rule too. */
+
+.tdm-option .usa-checkbox__input--tile + .usa-checkbox__label {
+  border: 1px solid var(--tdm-border);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.tdm-option .usa-checkbox__input--tile:checked + .usa-checkbox__label {
+  border-color: var(--tdm-selected-border);
+  background-color: var(--tdm-selected-bg);
+}
+
+.tdm-option .usa-radio__input--tile + .usa-radio__label {
+  border: 1px solid var(--tdm-border);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.tdm-option .usa-radio__input--tile:checked + .usa-radio__label {
+  border-color: var(--tdm-selected-border);
+  background-color: var(--tdm-selected-bg);
+}
+
+/* USWDS gives .usa-checkbox/.usa-radio a white background of their own; with the tile drawing the
+   box, that would show as white corners around a selected tile's rounded ones. */
+.tdm-option.usa-checkbox,
+.tdm-option.usa-radio {
+  background: transparent;
+}
+
+/* ── Language ────────────────────────────────────────────────────────────── */
+/* Form controls inside the modal are full-width and left-aligned — the scenario modal's rules. */
+
+.tdm-section .usa-form-group {
+  margin-top: 0.75rem;
+}
+
+/* `border-box` because USWDS adds its own padding and 1px border on top of this `width: 100%` —
+   .usa-select's padding-right is 2rem, for the chevron it paints — so under the UA's default
+   content-box the control renders wider than the section holding it. See the same rule in
+   workspace-settings-modal.css. */
+.tdm-section .usa-select,
+.tdm-section .usa-input {
+  box-sizing: border-box;
+  max-width: none;
+  width: 100%;
+}
+
+/* ── Footer command ──────────────────────────────────────────────────────── */
+/* One optional host action (Fact Explorer's "Reset layout"), separated from the last section by the
+   same rule the sections draw between themselves, and full width so it reads as the dialog's action
+   rather than as one more choice in a list. The workspace settings modal's footer, same shape. */
+
+.tdm-footer {
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--tdm-border);
+}
+
+.tdm-footer[hidden] {
+  display: none;
+}
+
+/* Two classes, not one: USWDS's own `.usa-button` sets `width: auto` from its `mobile-lg` breakpoint
+   up, tying `.tdm-footer__button`'s specificity — so which wins depends on load order, and in a host
+   that loads USWDS after this file the button shrinks to its label instead of filling the footer.
+   The extra `.tdm-dialog` ancestor is the same defence `.tdm-close` and `.tdm-main` already use. */
+.tdm-dialog .tdm-footer__button {
+  width: 100%;
+  margin: 0;
+  text-align: center;
+}
+
+/* ── Host-page effect: "Show modals inline" ──────────────────────────────── */
+/* A flow modal is a <dialog> that only exists once something opens it, which makes its copy
+   invisible to anyone reviewing a screen. Inline mode renders a copy of it in the page flow, boxed
+   so it still reads as a modal rather than as part of the question.
+
+   *Where* in the flow is display-options.js's half: a modal is authored at the foot of its page, so
+   a copy of it is placed under each question whose link opens it and marked
+   `data-taxpert-modal-inline`. The authored element itself never moves and never gains the marker —
+   it stays the overlay the link opens, dressed by the host's own modal CSS, centred over its
+   backdrop with its [X]. These rules therefore only ever dress page content.
+
+   That marker, and not `dialog.usa-modal--dialog`, is what these rules select — the difference
+   matters twice. A modal no question links to (credit-assistant's tax-year change confirmation, which
+   its own JS opens) gets no copy, so nothing ever gains the marker, so nothing appears as a stray box
+   at the foot of the page. And a copy parked under a question follows that question: it goes when the
+   question is conditioned out (`.hidden`, the flow runtime's own class, or the `hidden` attribute) or
+   truncated away by Path Mode (`.off-path`). Those three are sibling selectors because a placed copy
+   is always the element immediately after its anchor, which is cheaper and more robust than mirroring
+   three classes onto it in JS every time a condition flips.
+
+   `:not([open])` on every rule below is belt and braces for the bug that made this a copy in the
+   first place. These declarations are the exact opposite of what a shown dialog needs — `position:
+   static` and `inset: auto` put a top-layer element wherever it happened to sit in the flow instead
+   of centred in the viewport, and the close-button rule takes its [X] away. Marking nothing that can
+   be opened is the fix; refusing to dress anything that *is* open is the guard rail. */
+
+body.display-modals-inline dialog[data-taxpert-modal-inline]:not([open]) {
+  display: block;
+  position: static;
+  width: auto;
+  max-width: none;
+  height: auto;
+  max-height: none;
+  margin: var(--tap-units-2, 1rem) 0;
+  border: 1px dashed var(--tdm-border, #d6d7d9);
+  border-radius: 0.25rem;
+  background: #fff;
+  /* A host that hides its shut overlays with `opacity: 0` as well as `display: none` — the theme's
+     `.usa-modal--dialog:not([open])` does exactly that — leaves an inline copy transparent, since
+     overriding `display` alone says nothing about opacity. It looks fine anyway wherever the theme's
+     fade-in animation runs, because a `forwards` fill wins over any declaration; under
+     `prefers-reduced-motion: reduce` that animation is switched off and the copy vanishes. Declaring
+     it here means the copy is visible on its own terms rather than by animation side effect. */
+  opacity: 1;
+  inset: auto;
+  /* `position: static` is not on its own enough to take the overlay's stacking with it. In wrap
+     layout the copy's parent is a grid (`body.layout--horizontal … section.flow`,
+     all-screens-page.css), and a grid item honours `z-index` while still `position: static` — so
+     every copy stayed a stacking context at the host modal's 1050, which outranks the pinned global
+     nav's 1000. Scrolling Browse All in wrap layout drew the modal cards straight over the header
+     and the sub-nav. Reset here rather than by lowering the host's modal z-index: 1050 is right for
+     the overlay this was cloned from, and page content should not be competing for a layer at all. */
+  z-index: auto;
+}
+
+/* Nothing to close: this is page content, not an overlay. Hiding rather than disabling also takes
+   the button out of the tab order, so a reviewer tabbing down the page does not stop at an [X] that
+   closes nothing. */
+body.display-modals-inline dialog[data-taxpert-modal-inline]:not([open]) .usa-modal__close {
+  display: none;
+}
+
+/* An inline copy belongs to the question above it, so it is only shown when that question is.
+   Three classes-worth of specificity beats the `display: block` above, whose two are the same two
+   these start from. */
+body.display-modals-inline .hidden + dialog[data-taxpert-modal-inline]:not([open]),
+body.display-modals-inline [hidden] + dialog[data-taxpert-modal-inline]:not([open]),
+body.display-modals-inline .off-path + dialog[data-taxpert-modal-inline]:not([open]) {
+  display: none;
+}
+
+/* …except that a listing shows everything: Browse All forces every `.hidden` question visible
+   (all-screens-page.css), so the modal parked under one has to come back with it. Path Mode is the
+   same page with that hiding restored, hence the :not(). The toolbar's *mode* is what tells the two
+   listings apart from the Product Experience — the same question display-options.js asks to pick the
+   "expand accordions" default, and for the same reason: the bar is on all three destinations now, so
+   its mere presence stopped meaning "this is a listing". An un-upgraded toolbar has no `mode` yet and
+   counts as a listing, which is the side the listing page needs before its JS lands; the Product
+   Experience's is server-rendered with the attribute, so it never passes through that state.
+   `.off-path` and `[hidden]` are not exempted: both mean hidden in every destination. */
+body.display-modals-inline:has(taxpert-screens-toolbar:not([mode="product"])):not(.path-mode) .hidden + dialog[data-taxpert-modal-inline]:not([open]) {
+  display: block;
+}
+
+/* ── Narrow viewports ────────────────────────────────────────────────────── */
+
+@media (max-width: 30em) {
+  /* Narrowing the inset takes the close button with it — that is what the property is for. An
+     element selector beats the zero-specificity :where() the defaults are declared in. */
+  taxpert-display-modal {
+    --tdm-inset-x: 1.25rem;
+  }
+
+  .tdm-dialog .tdm-main {
+    padding-bottom: 1.5rem;
+  }
+}

@@ -1,0 +1,102 @@
+# The Taxpert stack: the companion services this repository builds.
+#
+#   cp .env.example .env                                # then make sure `ollama serve` is running
+#   docker compose --profile explorer --profile ai up --build      # or: make up
+#
+# THIS REPOSITORY CONTAINS NO APPLICATION. The two example apps that used to be built here —
+# credit-assistant and tax-withholding-estimator — live in their own repository now, and every
+# Form Builder app is expected to. So there is no default service and a bare `docker compose up`
+# starts nothing on purpose: pick the capabilities you want with profiles.
+#
+#   docker compose --profile explorer up        # Fact Explorer          (app built with --formBuilderGraph)
+#   docker compose --profile ai up              # assistant + ChromaDB   (app built with --aiFactExplanation)
+#   docker compose --profile explorer --profile ai up   # everything
+#
+# Run your app itself from its own repository (`make dev` there, or its own compose file). These
+# services reach it over the network, never through a build context:
+#
+#   TAXPERT_APPS_DIR   directory holding one or more app repos, each with a fact-explorer.app.json
+#                      at its root. Defaults to ./apps — see apps/README.md. Mounted read-only at
+#                      /apps, where fact-explorer's entrypoint rescans it at start.
+#   TAXPERT_APP_HOST   how a container reaches your running app, base path included, e.g.
+#                      http://host.docker.internal:3003/app/eitc (the default). The assistant reads
+#                      the fact dictionary from there.
+#
+# `packages/ui/compose/taxpert.yml` is the same set of services for someone who has no checkout of
+# this repository: identical profiles and variables, published images instead of local builds. Keep
+# the two in step — this file is where they are developed.
+#
+# Author Mode is deliberately absent: its backend is form-builder's own AuthoringServer, running
+# in-process inside the app's JVM on :3004 under --authorMode. There is no taxpert service for it.
+#
+# Open:
+#   fact-explorer              http://localhost:5180          (profile: explorer)
+#   assistant health           http://localhost:8000/health   (profile: ai)
+#
+# Ollama is NOT containerized — it runs natively on the host (GPU) and the assistant
+# container reaches it via host.docker.internal:11434. See README.md.
+
+services:
+  # ── profile: explorer ────────────────────────────────────────────────────────────────────
+  fact-explorer:
+    profiles: ["explorer"]
+    build:
+      # The repo root, because this is one package of an npm workspace: `taxpert` resolves to
+      # packages/ui through the root lockfile.
+      context: .
+      dockerfile: packages/fact-explorer/Dockerfile
+    # Descriptors are mounted rather than baked, so the entrypoint rebuilds the registry at start.
+    # This is the same path a published image takes when someone points it at their own app —
+    # exercising it here is what keeps that path from rotting. One directory per app underneath.
+    volumes:
+      - ${TAXPERT_APPS_DIR:-./apps}:/apps:ro
+    ports:
+      - "5180:80"
+    restart: unless-stopped
+
+  # ── profile: ai ──────────────────────────────────────────────────────────────────────────
+  chromadb:
+    profiles: ["ai"]
+    # Pinned to match the chromadb Python client in services/assistant/uv.lock (1.5.x). The 1.x
+    # server persists to /data and is wire-incompatible with 0.5.x clients.
+    image: chromadb/chroma:1.5.9
+    volumes:
+      - chroma-data:/data
+    ports:
+      - "8001:8000"   # host 8001 (matches `make chroma`) -> container 8000
+    restart: unless-stopped
+
+  assistant:
+    profiles: ["ai"]
+    build:
+      context: ./services/assistant
+      dockerfile: Dockerfile
+    env_file:
+      # Optional: the stack runs on the defaults below without one. Copy .env.example to .env to
+      # set LLM_MODEL and any provider API key.
+      - path: .env
+        required: false
+    environment:
+      # Container-network wiring (overrides anything in .env).
+      CHROMA_HOST: chromadb
+      CHROMA_PORT: "8000"
+      CHROMA_COLLECTION: irs_publications
+      # Your app serves its own fact dictionary; the assistant reads it at startup. The default
+      # reaches an app running natively on the host — this stack does not build one.
+      FACT_DICTIONARY_URL: ${TAXPERT_APP_HOST:-http://host.docker.internal:3003/app/eitc}/resources/fact-dictionary.xml
+      # Comma-separated CORS allow-list: the origins that call this backend from a browser — your
+      # app's audit panel and Fact Explorer (:5180).
+      FRONTEND_ORIGIN: ${TAXPERT_FRONTEND_ORIGIN:-http://localhost:3003,http://localhost:5180}
+      # The `ollama` Python client (indexer/retriever) reads OLLAMA_HOST, not the
+      # LiteLLM-style OLLAMA_API_BASE. Point both at the host's native Ollama.
+      OLLAMA_HOST: ${OLLAMA_HOST:-http://host.docker.internal:11434}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # reach the host's native Ollama (and app) on Linux too
+    ports:
+      - "8000:8000"
+    depends_on:
+      - chromadb
+    restart: unless-stopped
+
+volumes:
+  chroma-data:

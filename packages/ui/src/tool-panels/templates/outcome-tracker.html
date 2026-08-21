@@ -1,0 +1,94 @@
+<!--
+  Markup for the Outcome tracker tool: the panel body (<taxpert-outcome-tracker>), one determination
+  accordion, and the two pieces its expanded detail is built from — a section heading with its fact
+  count, and one fact row.
+
+  Split out of tool-panel.html for the same reason watchlist.html is: it is fetched only once that
+  tool is actually switched on.
+
+  As everywhere in this package, ids here are a contract: getTemplate(id) checks
+  document.getElementById(id) first, so credit-assistant can server-render a translated
+  <template id="ttp-outcome"> and it wins over this copy with no change to the JS.
+-->
+
+<!--
+  The panel body: the standing explanation and the determination accordions, which
+  taxpert-outcome-tracker.js builds into the list and then refreshes in place.
+-->
+<template id="ttp-outcome">
+  <p class="ttp-body__hint">Track the outcomes this application determines.</p>
+  <div class="ttp-outcome__list"></div>
+</template>
+
+<!--
+  What the panel shows when the host has configured no determinations — every consumer of this
+  package except one, since a determination is a statement about a particular application's rules.
+
+  It is a real empty state rather than the accordion list with nothing in it, because an empty list
+  reads as "nothing has settled yet" — a status — when the truth is that nothing is being tracked.
+-->
+<template id="ttp-outcome-empty">
+  <p class="ttp-body__hint">No outcomes are being tracked.</p>
+  <p class="ttp-body__hint">
+    This application has not told the workspace which outcomes it determines.
+  </p>
+</template>
+
+<!--
+  One determination. A <details>, so expanding it is browser behaviour rather than a click handler
+  with an aria-expanded to keep in step — the chevron turn is `details[open]` in CSS.
+
+  `data-status` on the host is the row's whole visual state: 'settled' paints the status icon green,
+  'pending' leaves it the part-drawn ring. The JS sets the attribute and swaps the one <use href>
+  rather than rebuilding the row, which is what lets a row the user has expanded stay open across
+  the `fg-update` that fires on every keystroke in the flow.
+-->
+<template id="ttp-outcome-row">
+  <details class="ttp-row ttp-outcome__row">
+    <summary class="ttp-row__summary">
+      <svg class="ttp-row__icon ttp-outcome__status" aria-hidden="true" focusable="false">
+        <use href="#ttp-icon-pending"></use>
+      </svg>
+      <span class="ttp-row__text">
+        <span class="ttp-row__label" data-field="label"></span>
+        <span class="ttp-row__value" data-field="value"></span>
+        <span class="usa-sr-only" data-field="status-label"></span>
+      </span>
+      <svg class="ttp-row__chevron" aria-hidden="true" focusable="false"><use href="#ttp-icon-expand_more"></use></svg>
+    </summary>
+    <div class="ttp-row__detail ttp-outcome__detail"></div>
+  </details>
+</template>
+
+<!--
+  A group of facts inside an expanded determination. The heading carries the count in its own
+  element so the JS writes two short strings rather than composing "Marital status (6)" by hand.
+-->
+<template id="ttp-outcome-section">
+  <div class="ttp-outcome__section">
+    <h4 class="ttp-outcome__heading">
+      <span data-field="heading"></span>
+      <span class="ttp-outcome__count" data-field="count"></span>
+    </h4>
+    <ul class="ttp-outcome__facts"></ul>
+  </div>
+</template>
+
+<!--
+  One fact under a heading: its path, and what it is currently worth.
+
+  The icon ships `hidden` and the JS reveals it once it has a glyph to point at, which is every
+  status today — an unanswered fact wears the part-drawn ring, the same one the Watchlist gives it.
+  Its colour comes off the row's `data-status`, the same arrangement as the determination above.
+-->
+<template id="ttp-outcome-fact">
+  <li class="ttp-outcome__fact">
+    <span class="ttp-outcome__path" data-field="path"></span>
+    <span class="ttp-outcome__state">
+      <svg class="ttp-outcome__fact-icon" aria-hidden="true" focusable="false" hidden>
+        <use href="#ttp-icon-check_circle_outline"></use>
+      </svg>
+      <span data-field="value"></span>
+    </span>
+  </li>
+</template>

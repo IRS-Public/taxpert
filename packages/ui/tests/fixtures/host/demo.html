@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fixture host — taxpert worked example</title>
+
+<!--
+  The whole Taxpert workspace, running on an application that does not exist.
+
+  This is the page to read (and open) before adopting taxpert in a new app. Everything the
+  library needs from a host is in the one <script type="module"> at the bottom: a config object and
+  a graph adapter. Nothing below is a tax concept, and no markup here is fg-*.
+
+  TO OPEN IT you need a server, because the bundles fetch their <template> markup and browsers
+  refuse fetch() on file:// URLs. From the package root:
+
+      npx http-server -p 8080 .      # or: python3 -m http.server 8080
+      open http://localhost:8080/tests/fixtures/host/demo.html
+-->
+
+<link rel="stylesheet" href="../../../src/global-nav/styles/global-nav.css">
+<link rel="stylesheet" href="../../../src/tool-panels/styles/tool-panels.css">
+<link rel="stylesheet" href="../../../src/audit-panel/styles/audit-panel.css">
+
+<style>
+  /* The host's own look. The library brings its own tokens with hard fallbacks, so a host that
+     supplies no USWDS variables still gets something reasonable — which is what this proves. */
+  body { margin: 0; font: 16px/1.5 system-ui, sans-serif; color: #1b1b1b; background: #fff; }
+  main { max-width: 42rem; padding: 2rem; }
+  article.step { border-left: 3px solid #dfe1e2; padding-left: 1rem; margin-bottom: 2rem; }
+  x-question, x-display { display: block; margin: 0.75rem 0; }
+  .x-prompt { display: block; font-weight: 600; margin-bottom: 0.25rem; }
+  .x-hint { color: #71767a; font-size: 0.875rem; }
+  [data-off] { display: none; }
+  input, select { font: inherit; padding: 0.35rem 0.5rem; border: 1px solid #565c65; border-radius: 2px; }
+  .note { background: #f0f0f0; padding: 1rem; border-radius: 4px; font-size: 0.9375rem; }
+  code { background: #f0f0f0; padding: 0.1em 0.3em; border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<taxpert-global-nav active="planner"></taxpert-global-nav>
+
+<main>
+  <h1>Pet Planner</h1>
+
+  <p class="note">
+    A fictional application, here only to give <code>taxpert</code> something to attach to.
+    Its markup is <code>&lt;x-question&gt;</code> / <code>&lt;x-display&gt;</code> with
+    <code>fact</code> / <code>when</code> / <code>test</code> attributes — nothing the library
+    knows by default. Open <strong>Tools</strong> in the nav to dock Inspect, the Outcome tracker
+    and the Watchlist over it.
+  </p>
+
+  <!-- One "screen", in the host's own vocabulary: article.step, not article.screen. -->
+  <article class="step">
+    <h2>Household</h2>
+
+    <x-question fact="/hasPet">
+      <label class="x-prompt" for="has-pet">Do you have a pet?</label>
+      <select id="has-pet" data-fact="/hasPet">
+        <option value="">—</option>
+        <option value="true">Yes</option>
+        <option value="false">No</option>
+      </select>
+      <span class="x-hint">Chrome, stripped before the cue reads this question's title.</span>
+    </x-question>
+
+    <x-question fact="/petCount" skippable="true">
+      <label class="x-prompt" for="pet-count">How many?</label>
+      <input id="pet-count" type="number" min="0" data-fact="/petCount">
+    </x-question>
+
+    <!-- Conditional on the host's own attribute names. -->
+    <x-display fact="/petKind" when="/hasPet" test="isTrue"></x-display>
+  </article>
+
+  <article class="step">
+    <h2>Means</h2>
+
+    <x-question fact="/monthlyBudget">
+      <label class="x-prompt" for="budget">Monthly budget</label>
+      <input id="budget" type="text" inputmode="decimal" data-fact="/monthlyBudget">
+    </x-question>
+
+    <p>Budget on record: <x-display fact="/monthlyBudget"></x-display></p>
+    <p>Decision: <x-display fact="/petDecision"></x-display></p>
+
+    <x-notice when="/isReadyForPet" test="isFalse" stop="true">
+      <strong>Not ready yet.</strong> The Outcome tracker shows what is still outstanding.
+    </x-notice>
+  </article>
+</main>
+
+<taxpert-tool-dock></taxpert-tool-dock>
+<taxpert-tools-modal></taxpert-tools-modal>
+
+<script type="module">
+  // ── Everything a new host has to do. Two things: register, and adapt the graph. ──────────────
+
+  import { configure } from '../../../src/shared/js/config.js'
+  import { registerFixtureHost } from './config.mjs'
+
+  // The graph adapter and the config object, in one call. See config.mjs — that file is the
+  // worked example proper; this page just mounts it.
+  const { adapter, set } = registerFixtureHost(configure, {
+    values: {
+      '/hasPet': true,
+      '/monthlyBudget': '40.00',
+      '/hasBudget': true,
+      '/isReadyForPet': true,
+      '/petDecision': 'approved',
+      '/pets/#pet-1/name': 'Biscuit',
+    },
+  })
+
+  // The elements. A host imports only the bundles it wants; this page takes all of them.
+  await import('../../../src/global-nav/js/taxpert-global-nav.js')
+  await import('../../../src/tool-panels/js/taxpert-tool-dock.js')
+  await import('../../../src/tool-panels/js/taxpert-tools-modal.js')
+  await import('../../../src/tool-panels/js/taxpert-inspect.js')
+  await import('../../../src/tool-panels/js/taxpert-outcome-tracker.js')
+  await import('../../../src/tool-panels/js/taxpert-watchlist.js')
+
+  // ── Host-side wiring: the app writing its own facts. Not the library's business. ─────────────
+
+  // Rendering a display unit is the host's job — the library reads facts, it does not print them.
+  function paint () {
+    for (const unit of document.querySelectorAll('x-display[fact]')) {
+      const state = read(unit.getAttribute('fact'))
+      unit.textContent = state ?? '—'
+    }
+    // Conditional visibility, using the host's own attributes and its own hidden convention.
+    for (const el of document.querySelectorAll('[when][test]')) {
+      const on = adapter.get(el.getAttribute('when'))?.get === (el.getAttribute('test') === 'isTrue')
+      el.toggleAttribute('data-off', !on)
+    }
+  }
+
+  function read (path) {
+    try {
+      const fact = adapter.get(path)
+      return fact?.complete ? String(fact.get) : null
+    } catch {
+      return null
+    }
+  }
+
+  for (const input of document.querySelectorAll('[data-fact]')) {
+    input.addEventListener('change', () => {
+      const raw = input.value
+      const value = raw === 'true' ? true : raw === 'false' ? false : raw
+      set(input.dataset.fact, value) // fires the host's own change event; the panels follow
+      paint()
+    })
+  }
+
+  paint()
+</script>
+
+</body>
+</html>

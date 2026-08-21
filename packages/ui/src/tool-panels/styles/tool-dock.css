@@ -1,0 +1,196 @@
+/* <taxpert-tool-dock> — the right-side panel area and the floating layer above it.
+
+   The dock is an ordinary flex child of the host's page layout, the way `.audit-panel` already is
+   in credit-assistant (`.audit-mode` makes <body> a flex row). That means the host's content
+   reflows beside it with no fixed positioning, no inset custom property, and no second opinion
+   about how wide the dock is. Only the float layer escapes, because an undocked panel must not be
+   clipped by a column.
+
+   Sizes are ratios, not lengths. A column is `flex: var(--ttd-column-flex) 1 0` and a panel is
+   `flex: var(--ttp-flex) 1 0`, both defaulting to 1 — so one panel fills the column, two split it
+   in half, and three take a third each. The 100% / 50% / 33% in the designs is what equal flex
+   already does; nothing computes it.
+
+   Visual state is attributes the JS already sets: `data-open` (a tool is on), `data-docked` (at
+   least one panel is docked), `hidden` on the dock and the drop indicator. */
+
+taxpert-tool-dock {
+  display: none;
+}
+
+/* Open but with everything floating: the element still has to render (it owns the float layer), it
+   just claims no width in the host's row. */
+taxpert-tool-dock[data-open] {
+  display: block;
+  position: relative;
+  flex: 0 0 0;
+  box-sizing: border-box;
+  height: 100vh;
+  font-family: var(--ttp-font);
+}
+
+taxpert-tool-dock[data-docked] {
+  flex-basis: var(--ttd-width, 480px);
+  /* The floor is one panel; the ceiling is enforced in tool-layout.js against the host's own
+     minimum, which CSS here can't know. */
+  min-width: var(--ttp-min-width);
+}
+
+/* A host with a workspace-off state marks the dock `hidden` — credit-assistant does it from the
+   nav's workspace-toggle, since the Tools button that opens these panels is itself only there while
+   the workspace is on. The two rules above set an explicit `display`, which outranks the UA
+   stylesheet's `[hidden] { display: none }`, so the attribute needs saying here to mean anything —
+   and, at equal specificity, it has to come after them. Same gotcha, same fix, as
+   `.tgn-tool[hidden]` in global-nav.css. */
+taxpert-tool-dock[hidden] {
+  display: none;
+}
+
+/* ── The docked area ─────────────────────────────────────────────────────── */
+
+.ttd-dock {
+  display: flex;
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  border-left: 1px solid var(--ttp-base-lighter);
+  background: var(--ttp-base-lightest);
+}
+
+.ttd-dock[hidden] {
+  display: none;
+}
+
+.ttd-dock__columns {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ttd-column {
+  display: flex;
+  flex: var(--ttd-column-flex, 1) 1 0;
+  flex-direction: column;
+  box-sizing: border-box;
+  min-width: var(--ttp-min-width);
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ── Resize handles ──────────────────────────────────────────────────────── */
+/* The dock's own left edge, plus one splitter per seam. All three are `role="separator"` with
+   arrow-key parity, the same contract as the audit panel's #audit-panel-resizer. */
+
+.ttd-dock__resizer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 0.75rem;
+  border-left: 2px solid transparent;
+  cursor: col-resize;
+  touch-action: none;
+  z-index: 2;
+}
+
+.ttd-dock__resizer:hover {
+  border-left-color: var(--ttp-blue-40v);
+}
+
+.ttd-splitter {
+  flex: 0 0 auto;
+  background: var(--ttp-base-lighter);
+  touch-action: none;
+}
+
+.ttd-splitter--v {
+  width: 4px;
+  cursor: col-resize;
+}
+
+.ttd-splitter--h {
+  height: 4px;
+  cursor: row-resize;
+}
+
+.ttd-splitter:hover {
+  background: var(--ttp-accent);
+}
+
+.ttd-dock__resizer:focus-visible,
+.ttd-splitter:focus-visible {
+  outline: 0.25rem solid var(--ttp-blue-40v);
+  outline-offset: -0.125rem;
+}
+
+/* ── Float layer ─────────────────────────────────────────────────────────── */
+/* Full-viewport and click-through, so the pointer keeps reaching the page and the columns beneath
+   it; only the panels inside take events back. */
+
+.ttd-float-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  /* Above the pinned workspace chrome — the global nav (1000) and the sub-nav under it (990) — and
+     below every modal (1050). It used to sit at 900, under both, which was fine while the chrome
+     scrolled away with the page: a panel dragged to the top of the viewport simply covered whatever
+     was there. Now that the two bars stay put, that same panel slid underneath them and lost its own
+     title bar and close button to a nav it was floating over. The nav's dropdown is a child of a
+     stacking context at 1000, so it cannot be excepted from this by z-index alone; it opens under a
+     floating panel, which is the smaller of the two prices and lasts one click. */
+  z-index: 1010;
+}
+
+/* ── Drop indicator ──────────────────────────────────────────────────────── */
+/* A bar on the seam the panel would land on: horizontal between two stacked panels, vertical where
+   a new side-by-side column would open. `hidden` is the whole of its state. */
+
+.ttd-dropzone {
+  position: absolute;
+  left: var(--ttp-x, 0);
+  top: var(--ttp-y, 0);
+  width: var(--ttp-w, 0);
+  height: var(--ttp-h, 0);
+  border-radius: 2px;
+  background: var(--ttp-accent);
+  pointer-events: none;
+}
+
+.ttd-dropzone[hidden] {
+  display: none;
+}
+
+/* ── Gesture cursors ─────────────────────────────────────────────────────── */
+/* Set on <body> for the duration of a drag so the cursor doesn't flicker as the pointer leaves the
+   handle, and so a drag never selects text. Mirrors `.audit-panel-resizing`. */
+
+body.ttd-resizing--x,
+body.ttd-resizing--y,
+body.ttd-resizing--nwse,
+body.ttd-resizing--nesw,
+body.ttd-dragging {
+  user-select: none;
+}
+
+body.ttd-resizing--x {
+  cursor: col-resize;
+}
+
+body.ttd-resizing--y {
+  cursor: row-resize;
+}
+
+/* The two diagonals, for a floating panel's corner handles. Named for the direction the cursor
+   points rather than for a corner, because each one serves the two opposite corners. */
+body.ttd-resizing--nwse {
+  cursor: nwse-resize;
+}
+
+body.ttd-resizing--nesw {
+  cursor: nesw-resize;
+}
+
+body.ttd-dragging {
+  cursor: grabbing;
+}

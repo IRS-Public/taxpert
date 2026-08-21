@@ -1,0 +1,81 @@
+{
+  "name": "taxpert",
+  "version": "0.1.0",
+  "description": "The Taxpert workspace: the framework-agnostic UI harness laid over a Form Builder app to make it understandable \u2014 global nav, audit panel, tool panels. Ships as raw ESM + CSS so it can be consumed with or without a bundler.",
+  "type": "module",
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/IRS-Public/taxpert.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    ".": "./src/global-nav/js/taxpert-global-nav.js",
+    "./css": "./src/global-nav/styles/global-nav.css",
+    "./menu-data": "./src/global-nav/js/nav-menu-data.js",
+    "./react": "./react/GlobalNav.jsx",
+    "./config": "./src/shared/js/config.js",
+    "./apps": "./src/shared/js/apps.js",
+    "./feature-flags": "./src/audit-panel/js/feature-flags.js",
+    "./graph-adapter": "./src/shared/js/graph-adapter.js",
+    "./outcome-kinds": "./src/shared/js/outcome-kinds.js",
+    "./flow-dom": "./src/shared/js/flow-dom.js",
+    "./storage-keys": "./src/shared/js/storage-keys.js",
+    "./collection-utils": "./src/shared/js/collection-utils.js",
+    "./templates": "./src/shared/js/templates.js",
+    "./dom": "./src/shared/js/dom.js",
+    "./modal-shell": "./src/shared/js/modal-shell.js",
+    "./embedded": "./src/shared/js/embedded.js",
+    "./favicon": "./src/shared/js/favicon.js",
+    "./audit-panel": "./src/audit-panel/js/taxpert-audit-panel.js",
+    "./audit-panel/css": "./src/audit-panel/styles/audit-panel.css",
+    "./scenario-modal": "./src/audit-panel/js/scenario-modal.js",
+    "./scenario-modal/css": "./src/audit-panel/styles/scenario-modal.css",
+    "./display-modal": "./src/audit-panel/js/display-modal.js",
+    "./display-modal/css": "./src/audit-panel/styles/display-modal.css",
+    "./display-options": "./src/audit-panel/js/display-options.js",
+    "./workspace-settings-modal": "./src/audit-panel/js/workspace-settings-modal.js",
+    "./workspace-settings-modal/css": "./src/audit-panel/styles/workspace-settings-modal.css",
+    "./react/workspace-settings-modal": "./react/WorkspaceSettingsModal.jsx",
+    "./react/scenario-modal": "./react/ScenarioModal.jsx",
+    "./react/display-modal": "./react/DisplayModal.jsx",
+    "./screens-toolbar": "./src/audit-panel/js/all-screens-toolbar.js",
+    "./screens-toolbar/css": "./src/audit-panel/styles/all-screens-toolbar.css",
+    "./tool-panels": "./src/tool-panels/js/taxpert-tool-dock.js",
+    "./tool-panels/css": "./src/tool-panels/styles/tool-panels.css",
+    "./tools-modal": "./src/tool-panels/js/taxpert-tools-modal.js",
+    "./tool-layout": "./src/tool-panels/js/tool-layout.js",
+    "./tool-registry": "./src/tool-panels/js/tool-registry.js",
+    "./inspect": "./src/tool-panels/js/taxpert-inspect.js",
+    "./inspect-selection": "./src/tool-panels/js/inspect-selection.js",
+    "./inspect-cues": "./src/tool-panels/js/inspect-cues.js",
+    "./fact-definitions": "./src/tool-panels/js/fact-definitions.js",
+    "./outcome-tracker": "./src/tool-panels/js/taxpert-outcome-tracker.js",
+    "./watchlist": "./src/tool-panels/js/taxpert-watchlist.js",
+    "./overrides": "./src/tool-panels/js/taxpert-overrides.js",
+    "./watchlist-store": "./src/tool-panels/js/watchlist-store.js",
+    "./fact-values": "./src/tool-panels/js/fact-values.js",
+    "./react/tool-dock": "./react/ToolDock.jsx",
+    "./react/tools-modal": "./react/ToolsModal.jsx"
+  },
+  "files": [
+    "src",
+    "react",
+    "compose"
+  ],
+  "scripts": {
+    "test": "node --test",
+    "lint": "eslint",
+    "format": "eslint --fix"
+  },
+  "devDependencies": {
+    "eslint": "^9.39.1",
+    "eslint-plugin-react": "^7.35.0",
+    "eslint-plugin-security": "^3.0.1",
+    "globals": "^15.9.0",
+    "jsdom": "^29.1.1",
+    "neostandard": "^0.12.2"
+  }
+}

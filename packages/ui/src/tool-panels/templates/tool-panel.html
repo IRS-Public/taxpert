@@ -1,0 +1,168 @@
+<!--
+  Markup for <taxpert-tool-panel> — the generic chrome every workspace tool wears — plus the three
+  stub bodies.
+
+  The chrome is built once, on connect, and never rebuilt. Docking, floating, dragging and resizing
+  all move attributes on the host element (`data-float`, `data-dragging`) or set custom properties;
+  tool-panel.css decides what that means visually. Nothing here is torn down.
+
+  None of the three bodies is markup any more: each is a custom element — <taxpert-inspect>,
+  <taxpert-outcome-tracker>, <taxpert-watchlist> — whose own markup lives in inspect.html,
+  outcome-tracker.html and watchlist.html, so a tool's templates are only fetched once that tool is
+  actually switched on. Because getTemplate(id) checks document.getElementById(id) first, a host can
+  still server-render any <template id="ttp-body-…"> and it wins over the copy here.
+-->
+
+<!--
+  The icon sprite. Inlined <symbol>s rather than a <use href> against the host's own sprite file so
+  the bundle stays self-contained, matching global-nav.html's tgn-sprite. Appended to the document
+  once, by the dock.
+-->
+<template id="ttp-sprite">
+  <svg class="ttp-sprite" aria-hidden="true" focusable="false" width="0" height="0">
+    <!-- Six-dot drag grip. -->
+    <symbol id="ttp-icon-grip" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M9 5h2v2H9zM13 5h2v2h-2zM9 11h2v2H9zM13 11h2v2h-2zM9 17h2v2H9zM13 17h2v2h-2z" />
+    </symbol>
+    <symbol id="ttp-icon-close" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+    </symbol>
+    <symbol id="ttp-icon-expand_more" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z" />
+    </symbol>
+    <symbol id="ttp-icon-more_vert" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+    </symbol>
+    <symbol id="ttp-icon-add" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z" />
+    </symbol>
+    <!-- The combo boxes' toggle. `unfold_more` rather than the `expand_more` USWDS's own combo box
+         ships, so the field reads as the same control as the workspace's other dropdowns. -->
+    <symbol id="ttp-icon-unfold_more" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M12 5.83 15.17 9l1.41-1.41L12 3 7.41 7.59 8.83 9zm0 12.34L8.83 15l-1.42 1.41L12 21l4.59-4.59L15.17 15z" />
+    </symbol>
+    <symbol id="ttp-icon-delete" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6zM19 4h-3.5l-1-1h-5l-1 1H5v2h14z" />
+    </symbol>
+    <!-- Row-kind icons: a fact, a conditional flow, conditional text. -->
+    <symbol id="ttp-icon-info" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-6h2zm0-8h-2V7h2z" />
+    </symbol>
+    <symbol id="ttp-icon-flow" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M3 3h6v4H3zm12 0h6v4h-6zM3 17h6v4H3zm12 0h6v4h-6zM6 7h2v4h8V7h2v6H6z" />
+    </symbol>
+    <symbol id="ttp-icon-text" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M3 5h10v2H9v12H7V7H3zm10 5h8v2h-3v7h-2v-7h-3z" />
+    </symbol>
+    <!-- Outcome/watchlist status: settled true, settled false, still incomplete. -->
+    <symbol id="ttp-icon-check_circle" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-2 15-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8z" />
+    </symbol>
+    <symbol id="ttp-icon-error_circle" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12z" />
+    </symbol>
+    <!-- Outlined variants of the two above. The Outcome tracker draws a determination with the
+         filled mark and the facts underneath it with these, so the two levels stay apart. -->
+    <symbol id="ttp-icon-check_circle_outline" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M16.59 7.58 10 14.17l-3.59-3.58L5 12l5 5 8-8zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z" />
+    </symbol>
+    <symbol id="ttp-icon-error_circle_outline" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M14.59 8 12 10.59 9.41 8 8 9.41 10.59 12 8 14.59 9.41 16 12 13.41 14.59 16 16 14.59 13.41 12 16 9.41zM12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" />
+    </symbol>
+    <symbol id="ttp-icon-pending" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M12 4a8 8 0 0 1 8 8h2A10 10 0 0 0 12 2zm0 16a8 8 0 0 1-8-8H2a10 10 0 0 0 10 10z" />
+    </symbol>
+  </svg>
+</template>
+
+<!--
+  The panel itself. The grip is a real <button> so it is reachable and operable from the keyboard.
+
+  A floating panel resizes from all eight edges and corners, so it never has to be dragged to the
+  top of the page just to get at a handle. The four *edges* are `role="separator" tabindex="0"`, so
+  each axis is reachable from the keyboard; the four *corners* are `aria-hidden` mouse affordances,
+  because a corner is only ever the two edges it joins and eight tab stops per panel would bury the
+  panel's own controls in a screen reader's list. Corners take a higher z-index so they win the
+  overlap where they meet an edge strip.
+
+  All eight matter only while floating — a docked panel is resized by the dock's own splitters —
+  which `.ttp-panel:not([data-float]) .ttp-panel__grow { display: none }` takes care of.
+-->
+<template id="ttp-panel">
+  <section class="ttp-panel">
+    <header class="ttp-panel__bar">
+      <button class="ttp-panel__grip" type="button">
+        <svg class="ttp-panel__grip-icon" aria-hidden="true" focusable="false">
+          <use href="#ttp-icon-grip"></use>
+        </svg>
+        <span class="usa-sr-only ttp-panel__grip-label"></span>
+      </button>
+      <h2 class="ttp-panel__title"></h2>
+      <button class="ttp-panel__close" type="button">
+        <svg class="ttp-panel__close-icon" aria-hidden="true" focusable="false">
+          <use href="#ttp-icon-close"></use>
+        </svg>
+        <span class="usa-sr-only ttp-panel__close-label"></span>
+      </button>
+    </header>
+    <div class="ttp-panel__body"></div>
+    <div class="ttp-panel__grow ttp-panel__grow--n" data-edge="n" role="separator"
+         aria-orientation="horizontal" aria-label="Resize panel from the top edge" tabindex="0"></div>
+    <div class="ttp-panel__grow ttp-panel__grow--s" data-edge="s" role="separator"
+         aria-orientation="horizontal" aria-label="Resize panel from the bottom edge" tabindex="0"></div>
+    <div class="ttp-panel__grow ttp-panel__grow--w" data-edge="w" role="separator"
+         aria-orientation="vertical" aria-label="Resize panel from the left edge" tabindex="0"></div>
+    <div class="ttp-panel__grow ttp-panel__grow--e" data-edge="e" role="separator"
+         aria-orientation="vertical" aria-label="Resize panel from the right edge" tabindex="0"></div>
+    <div class="ttp-panel__grow ttp-panel__grow--nw" data-edge="nw" aria-hidden="true"></div>
+    <div class="ttp-panel__grow ttp-panel__grow--ne" data-edge="ne" aria-hidden="true"></div>
+    <div class="ttp-panel__grow ttp-panel__grow--sw" data-edge="sw" aria-hidden="true"></div>
+    <div class="ttp-panel__grow ttp-panel__grow--se" data-edge="se" aria-hidden="true"></div>
+  </section>
+</template>
+
+<!-- ── Tool bodies ──────────────────────────────────────────────────────────── -->
+
+<!--
+  Inspect: the objects behind the rendered unit you have selected. Its body is <taxpert-inspect>,
+  whose markup lives in inspect.html so it is only fetched once the tool is switched on. Mounting
+  <taxpert-inspect> is also what turns the host page's hover/click cues on (inspect-cues.js, called
+  from the element's connectedCallback) — they fetch nothing themselves: what they put on the flow
+  is a mark and a stylesheet rule, not markup.
+-->
+<template id="ttp-body-inspect">
+  <taxpert-inspect></taxpert-inspect>
+</template>
+
+<!--
+  Outcome tracker: the host's determinations and how close each is to settling. Like the Watchlist
+  below, its body is a custom element rather than static markup — <taxpert-outcome-tracker> builds
+  its accordions from config.determinations and keeps them in step with the fact graph, cloning its
+  own markup out of outcome-tracker.html. With nothing configured it draws its empty state.
+-->
+<template id="ttp-body-outcome-tracker">
+  <taxpert-outcome-tracker></taxpert-outcome-tracker>
+</template>
+
+<!--
+  Watchlist: facts pinned by the user, with their current values. The first tool with real
+  behaviour, so unlike the two stubs above its body is a custom element rather than static markup —
+  <taxpert-watchlist> clones its own rows out of watchlist.html and keeps them in step with the
+  fact graph. Registered as a side effect of importing taxpert-tool-panel.js.
+-->
+<template id="ttp-body-watchlist">
+  <taxpert-watchlist></taxpert-watchlist>
+</template>
+
+<!--
+  Overrides: set a fact directly, without walking the flow to the screen that asks for it. Its body
+  is <taxpert-overrides>, which builds a row per path in the tool's own `facts` list — the host's,
+  not ours — and clones its markup out of overrides.html. It is the one tool that *writes*, which is
+  why the fact-graph port has a set().
+
+  Not one of the three the library offers by default: a host has to name the facts before there is
+  anything to show, so it opts in through config.tools.
+-->
+<template id="ttp-body-overrides">
+  <taxpert-overrides></taxpert-overrides>
+</template>

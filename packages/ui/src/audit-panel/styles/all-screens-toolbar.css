@@ -1,0 +1,201 @@
+/* Toolbar chrome for the Browse All / Path Mode screen listings, extracted from
+   credit-assistant's all-screens.css into <taxpert-screens-toolbar>. Only the toolbar +
+   section-tab rules live here; the flow-content layout rules (.screen*,
+   body.layout--horizontal, body.path-mode, .all-screens__section, full-width/main-content,
+   section headers) stay in CA's all-screens.css.
+
+   Token-fallback layer (mirrors global-nav.css's --tgn-* pattern): every --tap-* token
+   chains through the host's real USWDS token with a hard fallback. :where() keeps
+   specificity at zero so a host can override. */
+:where(taxpert-screens-toolbar) {
+  --tap-base-lightest: var(--base-lightest, #f0f0f0);
+  --tap-base-lighter: var(--base-lighter, #dfe1e2);
+  --tap-base-light: var(--base-light, #a9aeb1);
+  --tap-base-dark: var(--base-dark, #565c65);
+  --tap-base-darkest: var(--base-darkest, #1b1b1b);
+  --tap-primary: var(--primary, #005ea2);
+  --tap-units-1: var(--units-1, 0.5rem);
+  --tap-units-2: var(--units-2, 1rem);
+  --tap-units-3: var(--units-3, 1.5rem);
+}
+
+/* Custom elements default to display:inline; make the host a block so the sticky
+   toolbar child lays out full-width (mirrors global-nav.css's host rule). */
+taxpert-screens-toolbar {
+  display: block;
+}
+
+/* ── Toolbar ──────────────────────────────────────────────────────────── */
+
+/* White, on every destination. The sub-nav used to be the same pale grey as the page behind it,
+   which read as part of the page; the lavender now belongs to the global nav above it (--tgn-bar in
+   global-nav.css), and the bar under it is the white band that separates the two. Hard-coded rather
+   than chained through a host's surface token for the same reason the nav's own colors are: this
+   pairing is the workspace's chrome, not the host's.
+
+   Pinned directly under the global nav, which is itself pinned at the top — hence `top` at the nav's
+   own height rather than 0. The offset is the nav's published token (global-nav.css declares
+   --tgn-bar-height on :root for exactly this), with a 0 fallback for a host that mounts this bar
+   with no nav above it.
+
+   The whole bar sticks, identity block included, rather than only the tab strip. A sticky box cannot
+   leave its parent's, and the strip is the bar's last child — pinning it alone would give it a few
+   pixels of travel and then let it scroll away with the bar, which is worse than either. If the
+   identity block should scroll off on its own, it has to leave this element, not gain a rule here.
+
+   The rule under the bar was --accent-warm (a 2px orange). It is the neutral --base-light now: the
+   orange read as an alert on chrome that is only ever announcing which destination you are on. */
+.all-screens__toolbar {
+  position: sticky;
+  top: var(--tgn-bar-height, 0px);
+  /* Under the nav (--tgn-z, 1000) so its dropdown opens over this bar, and under the tool dock's
+     float layer, which has to clear both — see tool-dock.css. */
+  z-index: 990;
+  width: 100%;
+  background-color: #ffffff;
+  border-bottom: 2px solid var(--tap-base-light);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.all-screens__toolbar-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tap-units-2) var(--tap-units-3);
+  padding: var(--tap-units-1) var(--tap-units-3);
+  max-width: 100%;
+}
+
+/* ── Destination identity ─────────────────────────────────────────────── */
+
+.all-screens__mode {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0 var(--tap-units-2);
+  min-width: 0;
+}
+
+/* Both destinations' title blocks ship in the template and _syncModeBlocks() hides the one you are
+   not on with the `hidden` attribute. The rule above sets an explicit `display`, which outranks the
+   UA stylesheet's `[hidden] { display: none }` — without this, Browse All and Path Mode both
+   announced themselves in the same toolbar. */
+.all-screens__mode[hidden] {
+  display: none;
+}
+.all-screens__mode-title {
+  margin: 0;
+  font-size: 1.13rem;
+  line-height: 1.3;
+  color: var(--tap-base-darkest);
+}
+.all-screens__mode-description {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--tap-base-dark);
+}
+
+.all-screens__toolbar .usa-checkbox {
+  background: transparent;
+  display: flex;
+  align-items: center;
+  margin: 0;
+}
+.all-screens__toolbar .usa-checkbox__label {
+  margin: 0 0 0 var(--tap-units-1);
+  padding-left: 0;
+  cursor: pointer;
+}
+.all-screens__toolbar .usa-checkbox__input {
+  position: static;
+  opacity: 1;
+  height: 1rem;
+  width: 1rem;
+  margin: 0;
+}
+.all-screens__toolbar .usa-checkbox__input + .usa-checkbox__label::before {
+  display: none;
+}
+
+/* ── Form controls ────────────────────────────────────────────────────── */
+
+.all-screens__toolbar .usa-form-group {
+  margin: 0;
+}
+.all-screens__toolbar .usa-select {
+  margin: 0;
+  height: 2rem;
+  min-width: 12rem;
+  max-width: none;
+}
+.all-screens__toolbar .usa-button--unstyled {
+  white-space: nowrap;
+}
+
+/* ── Section tabs ─────────────────────────────────────────────────────── */
+
+.all-screens__section-tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  border-top: 1px solid var(--tap-base-lighter);
+  padding: 0 var(--tap-units-3);
+  gap: 0;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.all-screens__section-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.all-screens__section-tab {
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font-size: 0.875rem;
+  padding: var(--tap-units-1) var(--tap-units-2);
+  /* Full ink, not the dimmed --base-dark these used to carry. Every tab here is a real destination
+     in the listing; dimming the unselected ones made the strip read as mostly-disabled, when the
+     only thing that separates them is which one you are on — and that is already said twice, by the
+     underline and the weight. */
+  color: var(--tap-base-darkest);
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: color 0.1s, border-color 0.1s;
+}
+/* Hover draws the ink underline, so the affordance is the same mark the selected state uses, one
+   colour weaker — rather than the near-invisible --base-light hairline it was. */
+.all-screens__section-tab:hover {
+  border-bottom-color: var(--tap-base-darkest);
+}
+/* Selected follows from the tab's own ARIA state — one representation of "this section is the
+   selected one", instead of an `--active` class that two separate bits of JS both toggled. */
+.all-screens__section-tab[aria-selected="true"] {
+  color: var(--tap-primary);
+  border-bottom-color: var(--tap-primary);
+  font-weight: 600;
+}
+
+/* A path is one continuous scroll through a single journey, so filtering it by section is
+   off-message; the Product Experience has no listing under the bar at all. The strip is rendered
+   either way and hidden here — the mode is already a body class on one and a reflected attribute on
+   the other, so its absence needn't be a branch in the render. */
+body.path-mode .all-screens__section-tabs,
+taxpert-screens-toolbar[mode="product"] .all-screens__section-tabs {
+  display: none;
+}
+
+@media not screen {
+  .all-screens__section-tabs {
+    display: none;
+  }
+}
+
+/* ── Print sheet ──────────────────────────────────────────────────────── */
+
+@media not screen {
+  .all-screens__toolbar {
+    display: none !important;
+  }
+}

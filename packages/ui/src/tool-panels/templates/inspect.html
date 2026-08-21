@@ -1,0 +1,192 @@
+<!--
+  Markup for the Inspect tool: the panel body (<taxpert-inspect>), the accordion rows it builds for
+  the selected rendered unit, and the two detail shapes those rows expand into.
+
+  Split out of tool-panel.html for the same reason watchlist.html and outcome-tracker.html are: it is
+  fetched only once the tool is actually switched on.
+
+  As everywhere in this package, ids here are a contract: getTemplate(id) checks
+  document.getElementById(id) first, so credit-assistant can server-render a translated
+  <template id="ttp-inspect"> and it wins over this copy with no change to the JS.
+-->
+
+<!--
+  The panel body. Both states are always present and one of them is `hidden`, rather than the body
+  being torn down and rebuilt on every selection: the empty state is what the panel opens on and
+  what it returns to, and swapping an attribute is cheaper than re-cloning the illustration.
+-->
+<template id="ttp-inspect">
+  <div class="ttp-inspect">
+    <!-- Nothing selected yet. The heading is the panel's whole instruction; the illustration below
+         it is decorative but labelled, because it is the only thing in the panel a reader could
+         mistake for content. -->
+    <div class="ttp-inspect__empty" data-region="empty">
+      <h3 class="ttp-inspect__empty-title">Select an item to get started</h3>
+      <p class="ttp-inspect__empty-hint">
+        Click/hover on/over a screen, question, UI element or fact to view details here
+      </p>
+      <svg class="ttp-inspect__empty-art" viewBox="0 0 176 240" role="img"
+           aria-label="A screen with one of its options being pointed at">
+        <rect x="10" y="10" width="156" height="220" rx="10"
+              fill="none" stroke="currentColor" stroke-width="5" />
+        <rect x="34" y="52" width="108" height="11" rx="4" class="ttp-inspect__empty-bar" />
+        <rect x="34" y="80" width="108" height="11" rx="4" class="ttp-inspect__empty-bar" />
+        <rect x="34" y="108" width="108" height="11" rx="4" class="ttp-inspect__empty-bar" />
+        <circle cx="41" cy="152" r="8" class="ttp-inspect__empty-dot" />
+        <rect x="58" y="145" width="84" height="14" rx="4" class="ttp-inspect__empty-bar" />
+        <circle cx="41" cy="184" r="8" class="ttp-inspect__empty-dot ttp-inspect__empty-dot--dim" />
+        <rect x="58" y="177" width="60" height="14" rx="4" class="ttp-inspect__empty-bar" />
+        <path d="M108 138 L108 176 L118 166 L126 182 L134 178 L126 162 L140 160 Z"
+              class="ttp-inspect__empty-cursor" stroke-width="4" stroke-linejoin="round" />
+      </svg>
+    </div>
+
+    <!-- One rendered unit's objects. The title is the question as the page renders it, so it
+         carries whatever <fg-show> substitutions the copy contains. -->
+    <div class="ttp-inspect__selected" data-region="selected" hidden>
+      <h3 class="ttp-body__title" data-field="title"></h3>
+      <p class="ttp-body__hint">
+        These objects define the data, visibility, and presentation of this item.
+      </p>
+      <div class="ttp-inspect__rows"></div>
+    </div>
+  </div>
+</template>
+
+<!--
+  One object behind the selected unit — its fact, its flow condition, or a condition inside its copy.
+  A <details>, so expanding it is browser behaviour rather than a click handler with an aria-expanded
+  to keep in step; the chevron turn is `details[open]` in tool-panel.css.
+
+  The icon, label and path are written by the JS, and the expanded body is mounted into
+  `[data-region="detail"]` from one of the two detail templates below.
+-->
+<template id="ttp-inspect-row">
+  <details class="ttp-row ttp-inspect__row">
+    <summary class="ttp-row__summary">
+      <svg class="ttp-row__icon" aria-hidden="true" focusable="false"><use href="#ttp-icon-info"></use></svg>
+      <span class="ttp-row__text">
+        <span class="ttp-row__label" data-field="label"></span>
+        <span class="ttp-row__path" data-field="path"></span>
+      </span>
+      <svg class="ttp-row__chevron" aria-hidden="true" focusable="false"><use href="#ttp-icon-expand_more"></use></svg>
+    </summary>
+    <div class="ttp-row__detail ttp-inspect__detail" data-region="detail"></div>
+  </details>
+</template>
+
+<!--
+  A fact row's body: what the fact is worth right now, what it is for, and — behind the Advanced
+  disclosure — the dictionary definition itself.
+
+  The Purpose section is hidden when the dictionary has no <Description> for the fact; a heading over
+  nothing reads as a missing value rather than an absent one.
+-->
+<template id="ttp-inspect-fact-detail">
+  <div class="ttp-inspect__section">
+    <h4 class="ttp-inspect__heading">Current state</h4>
+    <dl class="ttp-inspect__data">
+      <!-- <div> is valid inside a <dl> and keeps each term with its own definition, which is what
+           makes the two-column grid possible. -->
+      <div class="ttp-inspect__data-row">
+        <dt>Current value</dt>
+        <dd data-field="value"></dd>
+      </div>
+      <div class="ttp-inspect__data-row">
+        <dt>Data type</dt>
+        <dd data-field="type"></dd>
+      </div>
+    </dl>
+  </div>
+
+  <div class="ttp-inspect__section" data-region="purpose">
+    <h4 class="ttp-inspect__heading">Purpose</h4>
+    <p class="ttp-inspect__prose" data-field="purpose"></p>
+  </div>
+
+  <div data-mount="advanced"></div>
+</template>
+
+<!--
+  A condition row's body — used for both the flow condition and a condition inside the copy, because
+  the two answer the same two questions and differ only in wording, which the JS supplies.
+
+  The Dependencies table is hidden when the condition's fact has none (a <Writable> gate depends on
+  nothing but itself), as is the clause list when there is no <Derived> tree to unfold.
+-->
+<template id="ttp-inspect-condition-detail">
+  <div class="ttp-inspect__section">
+    <h4 class="ttp-inspect__heading">How it&rsquo;s evaluated</h4>
+    <p class="ttp-inspect__prose" data-field="lead"></p>
+    <ul class="ttp-inspect__clauses" data-region="clauses" hidden></ul>
+  </div>
+
+  <div class="ttp-inspect__section" data-region="dependencies">
+    <h4 class="ttp-inspect__heading">Dependencies</h4>
+    <p class="ttp-inspect__prose" data-field="depends"></p>
+    <table class="ttp-inspect__deps">
+      <thead>
+        <tr>
+          <th scope="col">Fact</th>
+          <th scope="col">Current value</th>
+        </tr>
+      </thead>
+      <tbody data-region="dep-rows"></tbody>
+    </table>
+  </div>
+
+  <div data-mount="advanced"></div>
+</template>
+
+<!-- One plain-language clause under "How it's evaluated". Its words are appended as text and
+     <strong> nodes by the JS, so a negation is emphasis in the markup rather than a class. -->
+<template id="ttp-inspect-clause">
+  <li class="ttp-inspect__clause"></li>
+</template>
+
+<template id="ttp-inspect-clause-text">
+  <span></span>
+</template>
+
+<template id="ttp-inspect-clause-strong">
+  <strong></strong>
+</template>
+
+<!-- One dependency and what it is currently worth. -->
+<template id="ttp-inspect-dep">
+  <tr class="ttp-inspect__dep">
+    <th scope="row" class="ttp-inspect__dep-path" data-field="path"></th>
+    <td class="ttp-inspect__dep-value" data-field="value"></td>
+  </tr>
+</template>
+
+<!--
+  The Advanced disclosure both detail shapes end in: the fact's raw dictionary XML with each
+  <Dependency> annotated with its current value — the readable form of factGraph.debugFact().
+
+  Closed until it is asked for. The sections above it are the answer; this is the working behind the
+  answer, and unfolding a screenful of XML under every row the reader opens buries the part they
+  came for. The "Fact type" line is hidden on a condition row, where the row's own wording has
+  already said what kind of fact it is.
+-->
+<template id="ttp-inspect-advanced">
+  <details class="ttp-inspect__advanced">
+    <summary class="ttp-inspect__advanced-summary">
+      <span class="ttp-inspect__advanced-title">Advanced</span>
+      <span class="ttp-inspect__advanced-note">(technical details)</span>
+      <svg class="ttp-row__chevron" aria-hidden="true" focusable="false"><use href="#ttp-icon-expand_more"></use></svg>
+    </summary>
+    <p class="ttp-inspect__fact-type" data-region="fact-type">
+      <span class="ttp-inspect__fact-type-label">Fact type:</span>
+      <span data-field="fact-type"></span>
+    </p>
+    <pre class="ttp-inspect__xml"><code data-field="xml"></code></pre>
+  </details>
+</template>
+
+<!--
+  There is no template for what mounting this panel puts on the host page. It used to pin a cue
+  button to every <fg-set> and <fg-show>; the affordance is now the unit itself — hover it, click
+  it — which is a mark inspect-cues.js sets (on/off with this panel's own mount/unmount) and two
+  rules in inspect.css, with no markup of taxpert's own out in the flow at all.
+-->

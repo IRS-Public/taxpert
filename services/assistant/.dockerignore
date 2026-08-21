@@ -1,0 +1,9 @@
+.venv/
+**/__pycache__/
+.pytest_cache/
+.git/
+.env
+.env.local
+# Local dev Chroma store — the container uses the chromadb service's own volume.
+data/chroma/
+# Keep data/irs_publications and data/html (indexer inputs) in the image.

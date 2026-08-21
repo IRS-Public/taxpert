@@ -1,0 +1,51 @@
+<!--
+  Markup for <taxpert-tool-dock> — the right-side panel area and the floating layer above it.
+
+  The dock is a flex child of whatever the host lays its page out with, exactly as the audit panel
+  already is in credit-assistant (`.audit-mode` turns <body> into a flex row of .app-container plus
+  the panel). That is why nothing here is `position: fixed` except the float layer: a docked column
+  is ordinary flex layout, so the host's own content reflows next to it for free, with no inset
+  bookkeeping and no second source of truth about how wide the dock is.
+
+  Columns and stacks are all `flex: <ratio> 1 0`, so three panels with no stored ratio split the
+  height three ways on their own — the 100% / 50% / 33% in the designs is what equal flex already
+  does, not a number anyone computes.
+
+  Splitters and the dock's own edge are `role="separator" tabindex="0"`, so every resize has arrow-key
+  parity — the same contract as the audit panel's #audit-panel-resizer.
+-->
+
+<template id="ttd-dock">
+  <div class="ttd-dock" hidden>
+    <div class="ttd-dock__resizer" role="separator" aria-orientation="vertical"
+         aria-label="Resize tool area" tabindex="0"></div>
+    <div class="ttd-dock__columns"></div>
+  </div>
+</template>
+
+<!-- Floating panels and the drop indicator live here: one fixed, full-viewport, click-through layer
+     so an undocked panel is never clipped by a column's bounds. -->
+<template id="ttd-float-layer">
+  <div class="ttd-float-layer"></div>
+</template>
+
+<template id="ttd-column">
+  <div class="ttd-column"></div>
+</template>
+
+<!-- Between two columns. -->
+<template id="ttd-splitter-v">
+  <div class="ttd-splitter ttd-splitter--v" role="separator" aria-orientation="vertical"
+       aria-label="Resize column width" tabindex="0"></div>
+</template>
+
+<!-- Between two stacked panels. -->
+<template id="ttd-splitter-h">
+  <div class="ttd-splitter ttd-splitter--h" role="separator" aria-orientation="horizontal"
+       aria-label="Resize panel height" tabindex="0"></div>
+</template>
+
+<!-- Shown while dragging to mark where the panel would land. `hidden` is the whole of its state. -->
+<template id="ttd-dropzone">
+  <div class="ttd-dropzone" hidden aria-hidden="true"></div>
+</template>

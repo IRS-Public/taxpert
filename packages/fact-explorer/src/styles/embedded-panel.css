@@ -1,0 +1,96 @@
+/* Embedded credit-assistant panel (N6): the dockable, same-origin iframe panel.
+   Static geometry lives here; the resize width is an inline style (it changes
+   continuously during a drag). */
+
+/* The header's Reload/Close buttons. #3d3d8f is the banner indigo (no palette token).
+   A bare <button> doesn't inherit the page's --font-ui the way text elements do, and without an
+   explicit font-size it falls back to the browser's ~16px default — both would read as a mismatched,
+   oversized face next to the panel's own labels, so both are set here rather than assumed. Sized to
+   --font-sm, the same as the free text (the header's url) beside these buttons, so neither reads as
+   larger than the other. */
+.embedded-tab {
+  text-decoration: none;
+  color: #3d3d8f;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  padding: 1.5px var(--space-1);
+  border-radius: var(--radius-sm);
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: var(--font-sm);
+}
+
+/* Docked side panel along the right edge. */
+.embedded-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: var(--panel-width);
+  z-index: var(--z-chat);
+  background: var(--color-surface);
+  border-left: 2px solid #3d3d8f;
+  /* Left-cast panel shadow; offset differs from --shadow-panel, kept verbatim. */
+  box-shadow: -6px 0 18px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Resizer on the panel's left boundary (mirrors the audit-panel resizer). */
+.embedded-panel__resizer {
+  position: absolute;
+  top: 0;
+  left: -3px;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  background: transparent;
+  z-index: 1;
+
+  &.embedded-panel__resizer--active {
+    background: #3d3d8f;
+  }
+}
+
+.embedded-panel__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-105);
+  padding: var(--space-05) var(--space-105);
+  background: var(--color-banner);
+  font-family: var(--font-ui);
+  font-size: var(--font-sm);
+  color: #3d3d8f;
+}
+
+/* The docked view's name — the one header in this panel, so it stays visibly bigger than the url
+   and the tab/button text sharing its row rather than blending into them at the header's own
+   --font-sm. Past --font-md (13px) on purpose: one step up reads as barely different at this scale,
+   so this uses the same 0.875rem the tabs used before they moved to --font-sm above — a size already
+   proven legible in this panel, not a new one invented for the header alone. */
+.embedded-panel__title {
+  font-size: 0.875rem;
+}
+
+.embedded-panel__url {
+  color: var(--color-text-muted);
+}
+
+.embedded-panel__reload {
+  margin-left: auto;
+}
+
+.embedded-panel__frame {
+  flex: 1;
+  width: 100%;
+  border: none;
+  pointer-events: auto;
+
+  /* While dragging the resizer, let pointer events pass to the resizer instead
+     of being swallowed by the iframe. */
+  &.embedded-panel__frame--resizing {
+    pointer-events: none;
+  }
+}

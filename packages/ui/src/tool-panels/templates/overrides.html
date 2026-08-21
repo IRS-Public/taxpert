@@ -1,0 +1,53 @@
+<!--
+  The Overrides tool's body (<taxpert-overrides>): a form over a handful of writable facts, so a
+  developer can put a value into the graph without walking the flow to the screen that asks for it.
+
+  The fact paths are the *host's*, through `config.tools`:
+
+      { id: 'overrides', label: 'Overrides', templateId: 'ttp-body-overrides',
+        facts: ['/overrideDate'] }
+
+  which is what makes this the generic answer to a host-specific control. The Tax Withholding
+  Estimator's legacy audit panel had a hand-built "Override Date" field wired to `/overrideDate`;
+  every host has one or two facts like it, and none of them is a reason for this package to grow a
+  bespoke panel.
+
+  Each row's input type comes from the dictionary's own type for that fact, so a Day is a date
+  picker and a Dollar is a number field, with no per-host mapping to keep.
+-->
+<template id="ttp-overrides">
+  <div class="ttp-overrides">
+    <p class="ttp-body__hint">
+      Set a fact directly. Values are written to the fact graph as though the flow had asked for
+      them.
+    </p>
+    <div class="ttp-overrides__list"></div>
+  </div>
+</template>
+
+<!-- Shown when the host configured the tool but named no facts — honest, like every other empty
+     state here, rather than a form with nothing in it. -->
+<template id="ttp-overrides-empty">
+  <div class="ttp-overrides ttp-overrides--empty">
+    <p class="ttp-body__hint">This application declares no overridable facts.</p>
+    <p class="ttp-body__hint">
+      Add fact paths to the tool’s <code>facts</code> list in Workspace settings, or in the host’s
+      configuration.
+    </p>
+  </div>
+</template>
+
+<!-- One fact. The `data-status` attribute carries what the graph currently says, and the stylesheet
+     draws it — there is no parallel class. -->
+<template id="ttp-overrides-row">
+  <div class="ttp-overrides__row">
+    <label class="usa-label ttp-overrides__label"></label>
+    <div class="ttp-overrides__controls">
+      <input class="usa-input ttp-overrides__input">
+      <button class="usa-button usa-button--unstyled ttp-overrides__clear" type="button">
+        Clear
+      </button>
+    </div>
+    <p class="ttp-overrides__status" data-field="status"></p>
+  </div>
+</template>

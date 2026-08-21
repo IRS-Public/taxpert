@@ -1,0 +1,229 @@
+/* Chat dock — Fact Explorer analogue of the credit-assistant audit panel's
+   "Explain & Analyze" tab. A floating launcher (bottom-left, above the React
+   Flow controls) toggles a bottom-anchored, resizable dock. The dock's dynamic
+   geometry (bottom/width/height) is driven inline from component state; only
+   static styling lives here. */
+
+/* Floating launcher button — fixed position above the bottom-left controls.
+   The 40px circle radius is derived from the button size, not a token. */
+.chat-launcher {
+  position: absolute;
+  left: 15px;
+  bottom: 150px;
+  z-index: var(--z-chat);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-primary);
+  cursor: pointer;
+  box-shadow: var(--shadow-launcher);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &.chat-launcher--open {
+    background: var(--color-primary);
+    color: var(--color-surface);
+  }
+}
+
+/* The dock. bottom / width / height are set inline from state. */
+.chat-dock {
+  position: absolute;
+  left: var(--space-105);
+  z-index: var(--z-chat);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-panel);
+  font-family: var(--font-ui);
+}
+
+/* Full-width top/bottom drag bars and a full-height right drag bar. Transparent
+   until grabbed; they sit just outside the border so the whole edge grabs. */
+.chat-handle {
+  position: absolute;
+  z-index: 2;
+  touch-action: none;
+}
+
+.chat-handle--top,
+.chat-handle--bottom {
+  left: 0;
+  right: 0;
+  height: 7px;
+  cursor: ns-resize;
+}
+
+.chat-handle--top {
+  top: -3px;
+}
+
+.chat-handle--bottom {
+  bottom: -3px;
+}
+
+.chat-handle--right {
+  top: 0;
+  bottom: 0;
+  right: -3px;
+  width: 7px;
+  cursor: ew-resize;
+}
+
+.chat-dock__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-1) 10px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.chat-dock__title {
+  font-size: var(--font-md);
+}
+
+.chat-dock__header-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.chat-dock__messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  font-size: var(--font-md);
+  line-height: 1.4;
+}
+
+.chat-empty {
+  color: var(--color-text-faint);
+  font-size: var(--font-sm);
+}
+
+.chat-message {
+  margin: 0 0 10px;
+  padding: 6px 9px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-divider);
+}
+
+.chat-message--user {
+  background: var(--color-primary-tint);
+}
+
+/* Assistant bubble grey: #f5f6f8 has no exact token (closest --color-surface-alt
+   is #f6f8fa); kept as a literal to stay pixel-identical. */
+.chat-message--assistant {
+  background: #f5f6f8;
+}
+
+.chat-status {
+  padding: 2px 10px;
+  font-size: var(--font-sm);
+  color: var(--color-text-muted);
+}
+
+.chat-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-05);
+  padding: var(--space-05) 10px;
+}
+
+.chat-fact-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-05);
+  max-width: 100%;
+  font-size: var(--font-xs);
+  padding: 2px 6px;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-tint);
+  border: 1px solid var(--color-primary-border);
+  color: var(--color-primary);
+}
+
+.chat-fact-chip__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-fact-chip__remove {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: var(--font-sm);
+  color: var(--color-primary);
+  padding: 0;
+  line-height: 1;
+}
+
+.chat-picker {
+  display: flex;
+  gap: 6px;
+  padding: var(--space-05) 10px;
+}
+
+.chat-picker__input {
+  flex: 1;
+  font-size: var(--font-sm);
+  padding: var(--space-05) 6px;
+  min-width: 0;
+}
+
+.chat-composer {
+  display: flex;
+  gap: 6px;
+  padding: var(--space-05) 10px 10px;
+}
+
+.chat-composer__input {
+  flex: 1;
+  font-size: var(--font-sm);
+  padding: var(--space-05) 6px;
+  resize: none;
+  min-width: 0;
+}
+
+/* Plain text-link button (header Clear/Close). */
+.chat-link-btn {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: var(--font-sm);
+  color: var(--color-text-muted);
+  padding: 0;
+}
+
+/* Outlined small button (Add). */
+.chat-small-btn {
+  font-size: var(--font-sm);
+  padding: var(--space-05) 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-primary);
+  cursor: pointer;
+}
+
+/* Send button — solid primary fill, stretches the composer height. Its disabled
+   state swaps to a flat grey: #cbd2d9 has no exact token (closest
+   --color-disabled is #b8c0c8); kept as a literal to stay pixel-identical. */
+.chat-send-btn {
+  align-self: stretch;
+  background: var(--color-primary);
+  color: var(--color-surface);
+  cursor: pointer;
+
+  &:disabled {
+    background: #cbd2d9;
+    cursor: default;
+  }
+}

@@ -1,0 +1,293 @@
+/* <taxpert-scenario-modal> — the "Manage scenario" dialog opened from the global nav's
+   Scenario button. Loaded through audit-panel.css's @import chain, so it is gated by the
+   same toggled <link id="audit-panel-styles"> as the rest of the workspace UI.
+
+   Self-contained: the base <dialog> chrome is declared here rather than inherited from
+   credit-assistant's components/modals.css, so the modal looks the same in any host. The
+   --tap-* token layer comes from audit-panel.css. */
+
+/* The AI generation section is gated by data-ff="ai-scenario-generation"; fact-explorer
+   imports this file on its own (react/ScenarioModal.jsx), so the rules come with it rather than
+   only via audit-panel.css. */
+@import "../../shared/styles/feature-flags.css";
+
+:where(taxpert-scenario-modal) {
+  --tsm-border: #d6d7d9;
+  --tsm-text: var(--tap-base-darkest, #1b1b1b);
+  --tsm-hint: var(--tap-base-dark, #565c65);
+  --tsm-font: var(--font-sans, 'Source Sans Pro Web', 'Source Sans Pro', 'Helvetica Neue', Helvetica, Roboto, Arial, sans-serif);
+
+  /* The dialog's own insets. Declared once because two things read them — the main block's padding
+     and the close button's position — and the X sitting on the heading depends on the two agreeing. */
+  --tsm-inset-x: 2rem;
+  --tsm-inset-top: 1.5rem;
+}
+
+taxpert-scenario-modal {
+  display: contents;
+}
+
+.tsm-dialog {
+  display: block;
+  box-sizing: border-box;
+  width: 90vw;
+  max-width: 32.375rem; /* 518px — the design's modal width */
+  max-height: 90vh;
+  margin: auto;
+  padding: 0;
+  overflow-y: auto;
+  border: 1px solid var(--tsm-border);
+  border-radius: 0.25rem;
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  color: var(--tsm-text);
+  font-family: var(--tsm-font);
+  font-size: 1rem;
+  line-height: 1.5;
+  text-align: left; /* every row in this modal is left-aligned */
+  z-index: 1050;
+}
+
+.tsm-dialog:not([open]) {
+  display: none;
+}
+
+.tsm-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+/* USWDS gives .usa-modal__content a 2rem padding-top to clear its own close button, which sits
+   above the main block in its markup. This shell puts the close button inside .tsm-main instead, so
+   that band is dead space over the heading — every inset in this dialog is .tsm-main's. */
+.tsm-dialog .usa-modal__content {
+  padding-top: 0;
+}
+
+/* Every rule below is scoped through .tsm-dialog rather than written as a bare class. `.tsm-main`
+   and `.tsm-close` collide head-on with credit-assistant's own components/modals.css, which sets
+   `.usa-modal__main { padding-bottom: .5rem }` and `.usa-modal__close { top: 0; right: 0 }` on the
+   same elements at the same specificity — so which one wins is decided by stylesheet order, and the
+   order differs per host. The audit-panel modals happen to load after it (their own <link>); the
+   tool-panels bundle loads from inside main.css *before* it, which is why the Tools dialog was
+   drawing its close button in the corner and losing its bottom inset. Two classes beat one
+   everywhere, so the dialogs now look the same wherever they are loaded from. This is the same
+   defence the `.usa-modal__heading.tsm-heading` rule below already documents. */
+.tsm-dialog .tsm-main {
+  position: relative;
+  box-sizing: border-box;
+  /* Full width, explicitly — see the same rule in workspace-settings-modal.css. USWDS's
+     .usa-modal__content is a flex column and .usa-modal__main carries `margin: 0 auto`, whose auto
+     cross-axis margins suppress the stretch and size this block to its widest child instead. */
+  width: 100%;
+  margin-inline: 0;
+  padding: var(--tsm-inset-top) var(--tsm-inset-x) 2rem;
+}
+
+/* On the heading's line, not floating in the corner above it. It starts at the same top inset the
+   heading does and takes the heading's line box as its height, so USWDS's own `align-items: center`
+   centres the icon on the words rather than on a taller box. The right inset is pulled back by the
+   button's padding so the icon — not the hit area — lands flush with the section rules below. */
+.tsm-dialog .tsm-close {
+  position: absolute;
+  top: var(--tsm-inset-top);
+  right: calc(var(--tsm-inset-x) - 0.25rem);
+  box-sizing: border-box;
+  height: 1.7875rem; /* .tsm-heading's line box: 1.375rem × 1.3 */
+  min-width: 0;
+  margin: 0;
+  padding: 0 0.25rem;
+  background: transparent;
+  color: var(--tsm-text);
+}
+
+.tsm-dialog .tsm-close:hover,
+.tsm-dialog .tsm-close:active {
+  background: transparent;
+  color: var(--tsm-text);
+}
+
+/* Doubled up with .usa-modal__heading (the element carries both classes — see
+   scenario-modal.js) so this wins on specificity over real USWDS's own .usa-modal__heading
+   rule, which sets font-family to its "heading" role (serif by default) — a single-class
+   rule here would only win by accident of stylesheet load order, and does in some hosts but
+   not others. */
+.usa-modal__heading.tsm-heading {
+  margin: 0 0 1rem;
+  font-family: var(--tsm-font);
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+/* ── Sections ──────────────────────────────────────────────────────────────
+   Every task is its own section, separated by a rule. */
+
+.tsm-section {
+  padding: 1.25rem 0;
+  border-top: 1px solid var(--tsm-border);
+}
+
+.tsm-section[hidden] {
+  display: none;
+}
+
+.tsm-section--inline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.tsm-section__text {
+  min-width: 0;
+}
+
+.tsm-section__title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-family: var(--tsm-font);
+  font-size: 1.0625rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.tsm-section__hint {
+  margin: 0.25rem 0 0;
+  font-size: 0.9375rem;
+  color: var(--tsm-text);
+}
+
+/* The action button holds its width; the input beside it takes the slack. */
+.tsm-section__action {
+  flex: 0 0 auto;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.tsm-section--inline .tsm-section__action {
+  align-self: center;
+}
+
+/* Textarea + button on one line (Paste fact graph, Generate a scenario). */
+.tsm-section__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  column-gap: 1rem;
+  row-gap: 0.5rem; /* only in play once the error message below wraps the row */
+  margin-top: 0.75rem;
+}
+
+/* The row is the .usa-form-group, so the validation message fact-graph-io.js inserts after the
+   label becomes a flex item of it and would otherwise take a column beside the textarea. A
+   full-width basis puts it on its own line above the control it describes, where USWDS puts it. */
+.tsm-section__row .usa-error-message {
+  flex: 0 0 100%;
+  margin: 0;
+}
+
+.tsm-textarea {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: none;
+  height: auto;
+  margin: 0;
+  /* Requested: let the user grow the box vertically, but never sideways out of the row. */
+  resize: vertical;
+}
+
+.tsm-tag {
+  flex: 0 0 auto;
+}
+
+/* Full-width primary action for the scenario library. */
+.tsm-button--full {
+  display: block;
+  width: 100%;
+  margin: 1rem 0 0;
+  text-align: center;
+}
+
+/* "Clear scenario" sits under the full-width Load button as the section's quiet second action, so it
+   takes the same width and centers under it. Doubled up with .usa-button--unstyled (the element
+   carries both classes) because that class sets width, margin, text-align and font-weight itself,
+   all as a single class — a lone .tsm-clear would only win by stylesheet order, as the heading rule
+   above notes. */
+.usa-button--unstyled.tsm-clear {
+  display: block;
+  width: 100%;
+  margin-top: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Form controls inside the modal are full-width and left-aligned. */
+.tsm-section .usa-form-group {
+  margin-top: 0.75rem;
+}
+
+/* Every label in the scenario library — the host's filter dropdowns and the scenario <select> —
+   reads as the name of the thing you are choosing, so they all take the same weight rather than
+   USWDS's lighter default. The wording itself (sentence case) is the host's: see
+   credit-assistant's website-static/js/scenario-filters.js and fact-explorer's
+   src/model/scenarioFilters.js. */
+#scenario-library-block .usa-label {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+/* `border-box` because USWDS adds its own padding and 1px border on top of this `width: 100%` —
+   .usa-select's padding-right is 2rem, for the chevron it paints — so under the UA's default
+   content-box the control renders wider than the section holding it. See the same rule in
+   workspace-settings-modal.css. */
+.tsm-section .usa-select,
+.tsm-section .usa-input {
+  box-sizing: border-box;
+  max-width: none;
+  width: 100%;
+}
+
+/* "Copied to clipboard!" — invisible until copyFactGraphToClipboard() flashes it. */
+#copy-fg-status {
+  display: block;
+  opacity: 0;
+  visibility: hidden;
+  font-size: 0.875rem;
+  color: var(--tsm-hint);
+}
+
+#copy-fg-status.animate-success {
+  animation: fadeInOut 2s ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #copy-fg-status.animate-success {
+    animation: none;
+  }
+}
+
+/* Narrow viewports: stack each row rather than squeezing the control. */
+@media (max-width: 30em) {
+  /* Narrowing the inset takes the close button with it — that is what the property is for. An
+     element selector beats the zero-specificity :where() the defaults are declared in. */
+  taxpert-scenario-modal {
+    --tsm-inset-x: 1.25rem;
+  }
+
+  .tsm-dialog .tsm-main {
+    padding-bottom: 1.5rem;
+  }
+
+  .tsm-section--inline,
+  .tsm-section__row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem; /* every gap is a row gap once stacked, including the row's tighter one */
+  }
+
+  .tsm-section--inline .tsm-section__action {
+    align-self: flex-start;
+  }
+}

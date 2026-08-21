@@ -1,0 +1,67 @@
+<!--
+  Body of the "Display options" modal (<taxpert-display-modal>). The <dialog> chrome around it is
+  the shared shell in ../../shared/templates/shared.html.
+
+  All three sections are present at all times; Layout is hidden where the destination does not offer
+  it rather than absent, so opening the modal never tears the dialog down and rebuilds it. The option
+  rows are per-entry clones of tdm-option-checkbox / tdm-option-radio — the only markup here that
+  varies, and it varies over a fixed list in display-modal.js.
+-->
+<template id="tdm-sections">
+  <section class="tdm-section">
+    <h2 class="tdm-section__title">Visibility</h2>
+    <p class="tdm-section__hint">Choose metadata and UI elements to make visible.</p>
+    <div class="tdm-section__options" data-options="visibility"></div>
+  </section>
+
+  <!-- The Product Experience shows one screen's worth of questions in a fixed reading order and
+       Path Mode reads one route through the flow, so neither has an arrangement to choose — Layout
+       belongs to Browse All. The element sets `hidden` on this section from its `mode`. -->
+  <section class="tdm-section" data-section="layout">
+    <h2 class="tdm-section__title">Layout</h2>
+    <p class="tdm-section__hint">Choose how items will be arranged in the workspace.</p>
+    <div class="tdm-section__options" data-options="layout"></div>
+  </section>
+
+  <!-- The language selector stays in the page viewport as well (it is part of the product, not the
+       workspace) — this is a second view of the same control, not a relocation of it. Hidden when
+       the host page has no selector to mirror. -->
+  <section class="tdm-section" data-section="language">
+    <h2 class="tdm-section__title">Language</h2>
+    <p class="tdm-section__hint">Choose language mode.</p>
+    <div class="usa-form-group tdm-form-group">
+      <label class="usa-label usa-sr-only" for="display-language-selector">Select Language</label>
+      <select class="usa-select" id="display-language-selector" name="display-language-selector"></select>
+    </div>
+  </section>
+
+  <!-- An optional host-supplied action, full width at the foot of the dialog — the workspace
+       settings modal's footer, same shape. It is a *command* rather than a preference, so it is
+       outside the sections: Fact Explorer puts "Reset layout" here. Hidden when no host sets one,
+       which is every host that only uses the built-in options. -->
+  <div class="tdm-footer" data-footer hidden></div>
+</template>
+
+<!-- The footer's button. Cloned rather than constructed, so the classes live in markup. -->
+<template id="tdm-footer-button">
+  <button class="usa-button usa-button--outline tdm-footer__button" type="button"></button>
+</template>
+
+<!-- One Visibility checkbox row: USWDS's own tile variant (`--tile` on the input), which draws the
+     box on the label itself — control art, checked and focus states, and the click target are all
+     USWDS's; display-modal.css only recolors the border and the selected fill. `.tdm-option` is
+     just the row hook. -->
+<template id="tdm-option-checkbox">
+  <div class="tdm-option usa-checkbox">
+    <input class="usa-checkbox__input usa-checkbox__input--tile" type="checkbox" name="display-visibility">
+    <label class="usa-checkbox__label"></label>
+  </div>
+</template>
+
+<!-- One Layout radio row, same tile treatment. -->
+<template id="tdm-option-radio">
+  <div class="tdm-option usa-radio">
+    <input class="usa-radio__input usa-radio__input--tile" type="radio" name="display-layout">
+    <label class="usa-radio__label"></label>
+  </div>
+</template>

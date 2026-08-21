@@ -1,0 +1,45 @@
+<!--
+  Body of the "Tools" modal (<taxpert-tools-modal>), opened from the global nav's Tools button. The
+  <dialog> chrome around it is the shared shell in ../../shared/templates/shared.html.
+
+  Unlike workspace-settings-modal.html — where each row is a hand-written flag with its own wording —
+  the rows here are per-entry clones of ttm-option over the configured tool list (tools() in
+  ../js/tool-registry.js), the display-modal.html pattern. A tool is data: it has a panel, a place in
+  the dock, and a checkbox, all keyed off the same id.
+
+  Real USWDS component markup (.usa-checkbox, .usa-button, .usa-modal__*), same as the other four
+  modals.
+-->
+<template id="ttm-sections">
+  <section class="ttm-section">
+    <div class="ttm-section__options" data-options="tools"></div>
+
+    <!-- Placement only: this puts every open panel back on the right side in canonical order and
+         clears stored sizes. It does not switch tools off, so the checkboxes above are untouched
+         by it. -->
+    <button class="usa-button usa-button--outline ttm-reset" type="button" data-action="reset">
+      Reset tool layout
+    </button>
+  </section>
+</template>
+
+<!--
+  One tool row: a USWDS *tile* checkbox — the whole bordered box is the control, matching the option
+  rows in workspace-settings-modal.html. USWDS draws the box, its checked and focus states, and the
+  control art, so nothing in tools-modal.css or the JS mirrors `:checked`.
+
+  The description now sits *inside* the label, as USWDS's own `.usa-checkbox__label-description`.
+  It used to be a sibling <p>, so that clicking the description text would not toggle the box — but
+  a tile's whole point is that the entire box is one target, and a sibling would have rendered
+  outside the border with its own guessed indent instead of inside it. `.ttm-option__hint` stays on
+  the element as the JS's hook and the spec's.
+-->
+<template id="ttm-option">
+  <div class="ttm-option usa-checkbox">
+    <input class="usa-checkbox__input usa-checkbox__input--tile" type="checkbox" name="taxpert-tools[]">
+    <label class="usa-checkbox__label">
+      <span class="ttm-option__name"></span>
+      <span class="usa-checkbox__label-description ttm-option__hint"></span>
+    </label>
+  </div>
+</template>

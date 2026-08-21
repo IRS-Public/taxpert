@@ -1,0 +1,32 @@
+<!--
+  Cross-bundle markup. Loaded by src/shared/js/modal-shell.js; see src/shared/js/templates.js for
+  how a bundle's templates/ file is fetched and how a host can override any template by putting a
+  <template> with the same id on the page.
+-->
+
+<!--
+  The <dialog> chrome shared by the three workspace modals (Manage scenario, Display options,
+  Workspace settings). Each supplied its own byte-identical copy of this before; buildModalShell()
+  stamps the per-modal id, heading, and `tsm-`/`tdm-`/`twsm-` class prefix onto the clone.
+
+  Deliberately not `usa-modal--dialog`: that class is credit-assistant's flow-modal skin (30rem,
+  flex, its own close-button wiring in modals.js) and these dialogs are their own design. The USWDS
+  modal component classes inside still apply.
+
+  `closedby="any"` gives light-dismiss (backdrop click / Escape) where the browser supports it.
+-->
+<template id="tms-shell">
+  <dialog closedby="any">
+    <div class="usa-modal__content">
+      <div class="usa-modal__main">
+        <button class="usa-button usa-modal__close" type="button" aria-label="Close this window">
+          <svg viewBox="0 0 24 24" class="usa-icon" aria-hidden="true" focusable="false">
+            <path fill="currentColor"
+                  d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+          </svg>
+        </button>
+        <h1 class="usa-modal__heading"></h1>
+      </div>
+    </div>
+  </dialog>
+</template>

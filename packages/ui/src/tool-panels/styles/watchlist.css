@@ -1,0 +1,431 @@
+/* The Watchlist tool: its rows, the Add fact dialog, and the combo box that dialog's two fields are
+   built from.
+
+   Split out of tool-panel.css because it is the first tool with a look of its own — the panel chrome
+   and the generic .ttp-row treatment stay there, and everything a *pinned fact* needs is here.
+
+   No state is mirrored in a class. A row's colour comes off `[data-status]`, which the JS sets from
+   the fact graph; an open row is `[open]`, which the browser sets; a combo box's active option is
+   `[aria-selected="true"]`, which is the accessibility contract already. */
+
+/* ── Panel body ──────────────────────────────────────────────────────────── */
+
+taxpert-watchlist {
+  display: block;
+}
+
+/* The button sits under the list, per the designs: adding a fact is what you do after reading the
+   ones you have. .ttp-body__action's own bottom margin is what separates it from the panel edge. */
+.ttp-watch__add {
+  margin: var(--ttp-units-1) 0 0;
+}
+
+.ttp-watch__list:empty {
+  display: none;
+}
+
+/* ── A pinned fact ───────────────────────────────────────────────────────── */
+
+/* The status ring is the row's one piece of colour, and it is the only thing keyed off the status —
+   the label and value stay body text, so a red row doesn't read as an error. */
+.ttp-watch__row[data-status="complete"] .ttp-watch__status {
+  color: var(--ttp-green);
+}
+
+.ttp-watch__row[data-status="false"] .ttp-watch__status {
+  color: var(--ttp-red);
+}
+
+.ttp-watch__row[data-status="incomplete"] .ttp-watch__status,
+.ttp-watch__row[data-status="unknown"] .ttp-watch__status {
+  color: var(--ttp-primary);
+}
+
+/* The part-drawn ring reads as "still working" the way a spinner does, without spinning: an
+   animation here would run for as long as a fact stays unanswered, which can be the whole session. */
+.ttp-watch__row[data-status="incomplete"] .ttp-watch__status,
+.ttp-watch__row[data-status="unknown"] .ttp-watch__status {
+  opacity: 0.9;
+}
+
+/* A fact path is the row's identity, so it gets the label treatment and wraps rather than
+   truncating — the middle of `/familyAndHousehold/#…/firstName` is the part you need. */
+.ttp-watch__row .ttp-row__label {
+  overflow-wrap: anywhere;
+}
+
+/* ── The kebab menu ──────────────────────────────────────────────────────── */
+
+.ttp-watch__menu {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+.ttp-watch__kebab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  /* The audit panel gives every button in its content area `display: block; margin: 1rem 0`; this
+     one lives in a row and must not inherit that where the two stylesheets meet. */
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ttp-base-dark);
+  cursor: pointer;
+}
+
+.ttp-watch__kebab:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--ttp-base-darkest);
+}
+
+.ttp-watch__kebab:focus-visible {
+  outline: 2px solid var(--ttp-blue-40v);
+  outline-offset: 1px;
+}
+
+/* Right-aligned to the kebab and pulled clear of it, so it opens into the panel rather than off the
+   panel's edge — a docked panel is only 300px wide at its narrowest. */
+.ttp-watch__menu-list {
+  position: absolute;
+  top: calc(100% + var(--ttp-units-05));
+  right: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  min-width: 11rem;
+  padding: var(--ttp-units-05) 0;
+  border: 1px solid var(--ttp-base-lighter);
+  border-radius: 4px;
+  background: var(--ttp-surface);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+}
+
+.ttp-watch__menu-list[hidden] {
+  display: none;
+}
+
+.ttp-watch__menu-item {
+  margin: 0;
+  padding: var(--ttp-units-05) var(--ttp-units-1);
+  border: 0;
+  background: transparent;
+  color: var(--ttp-base-darkest);
+  font-family: inherit;
+  font-size: 0.875rem;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.ttp-watch__menu-item:hover {
+  background: var(--ttp-base-lightest);
+}
+
+.ttp-watch__menu-item:focus-visible {
+  outline: 2px solid var(--ttp-blue-40v);
+  outline-offset: -2px;
+}
+
+/* ── The expanded detail ─────────────────────────────────────────────────── */
+
+/* Overrides .ttp-row__detail's indent: this content is a table, and indenting it under the status
+   icon would cost a quarter of the width a 300px panel has to give. */
+.ttp-watch__detail {
+  padding: 0 var(--ttp-units-1) var(--ttp-units-1);
+}
+
+.ttp-watch__data {
+  margin: 0 0 var(--ttp-units-1);
+  border-top: 1px solid var(--ttp-base-lighter);
+  font-size: 0.8125rem;
+}
+
+/* Term and definition on one line, definition right-aligned — the designs' two-column read. The
+   1fr/auto split lets a long value take the room a short term doesn't need. */
+.ttp-watch__data-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--ttp-units-1);
+  padding: var(--ttp-units-05) 0;
+  border-bottom: 1px solid var(--ttp-base-lighter);
+}
+
+.ttp-watch__data-row[hidden] {
+  display: none;
+}
+
+.ttp-watch__data dt {
+  color: var(--ttp-base-darkest);
+  font-weight: 700;
+}
+
+.ttp-watch__data dd {
+  margin: 0;
+  color: var(--ttp-base-dark);
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.ttp-watch__mono {
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.75rem;
+}
+
+/* ── Row actions ─────────────────────────────────────────────────────────── */
+
+.ttp-watch__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ttp-units-2);
+  align-items: center;
+}
+
+/* .usa-button--unstyled draws these as links; all this adds is room for the trash icon and the same
+   `margin: 0` correction the kebab needs. */
+.ttp-watch__action {
+  display: inline-flex;
+  gap: var(--ttp-units-05);
+  align-items: center;
+  margin: 0;
+  font-size: 0.8125rem;
+}
+
+.ttp-watch__action-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* ── Add fact dialog ─────────────────────────────────────────────────────── */
+
+taxpert-add-fact-modal {
+  display: contents;
+}
+
+.taf-dialog {
+  display: block;
+  box-sizing: border-box;
+  width: 90vw;
+  max-width: 32.375rem; /* the same 518px the Tools modal uses */
+  max-height: 90vh;
+  margin: auto;
+  padding: 0;
+  /* `visible` so an open combo box's list can hang past the dialog's edge; the dialog is short
+     enough that nothing else needs to scroll. */
+  overflow: visible;
+  border: 1px solid var(--ttp-base-lighter);
+  border-radius: 0.25rem;
+  background: var(--ttp-surface);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  color: var(--ttp-base-darkest);
+  font-family: var(--ttp-font);
+  font-size: 1rem;
+  line-height: 1.5;
+  text-align: left;
+  z-index: 1050;
+}
+
+.taf-dialog:not([open]) {
+  display: none;
+}
+
+.taf-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+/* USWDS gives .usa-modal__content a 2rem padding-top to clear its own close button, which sits above
+   the main block in its markup. This shell puts the close button inside .taf-main instead, so that
+   band is dead space over the heading — every inset in this dialog is .taf-main's. The other four
+   modals have always zeroed it; this one did not, which is where its extra top padding came from. */
+.taf-dialog .usa-modal__content {
+  padding-top: 0;
+}
+
+.taf-main {
+  position: relative;
+  box-sizing: border-box;
+  /* Full width, explicitly — see the same rule in workspace-settings-modal.css. USWDS's
+     .usa-modal__content is a flex column and .usa-modal__main carries `margin: 0 auto`, whose auto
+     cross-axis margins suppress the stretch and size this block to its widest child instead. */
+  width: 100%;
+  margin-inline: 0;
+  padding: 1.5rem 2rem 2rem;
+}
+
+.taf-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0.25rem;
+  background: transparent;
+  color: var(--ttp-base-darkest);
+}
+
+.taf-close:hover,
+.taf-close:active {
+  background: transparent;
+  color: var(--ttp-base-darkest);
+}
+
+.taf-close:focus-visible {
+  outline: 2px solid var(--ttp-primary);
+  outline-offset: 2px;
+}
+
+/* Doubled up with .usa-modal__heading (the element carries both) so this beats real USWDS's own
+   rule, which puts the heading in its serif "heading" font. Same arrangement as .ttm-heading. */
+.usa-modal__heading.taf-heading {
+  margin: 0 0 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--ttp-base-lighter);
+  font-family: var(--ttp-font);
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.ttp-add-fact__group {
+  margin: 0 0 1.5rem;
+}
+
+.ttp-add-fact__label {
+  margin: 0 0 0.5rem;
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.ttp-add-fact__error {
+  margin: -1rem 0 1rem;
+}
+
+.ttp-add-fact__error[hidden] {
+  display: none;
+}
+
+/* Full width, matching the designs — the dialog has one action and it is the point of the dialog. */
+.ttp-add-fact__submit {
+  display: block;
+  width: 100%;
+  margin: 0;
+}
+
+@media (max-width: 30em) {
+  .taf-main {
+    padding: 1.5rem 1.25rem;
+  }
+}
+
+/* ── Combo box ───────────────────────────────────────────────────────────── */
+/* USWDS's combo box look, without USWDS's combo box JS — see combo-box.js for why. The input keeps
+   .usa-input so it inherits the host's real field typography and height where USWDS is loaded. */
+
+.ttp-combo {
+  position: relative;
+  display: block;
+}
+
+.ttp-combo__input {
+  box-sizing: border-box;
+  width: 100%;
+  /* Room for the separator and the toggle, which sit on top of the field. */
+  padding-right: 3rem;
+  border: 1px solid var(--ttp-base-darkest);
+  border-radius: 0;
+  background: var(--ttp-surface);
+  color: var(--ttp-base-darkest);
+  font-family: var(--ttp-font);
+  font-size: 1.06rem;
+  line-height: 1.3;
+}
+
+.ttp-combo__input:focus-visible {
+  outline: 2px solid var(--ttp-blue-40v);
+  outline-offset: 0;
+}
+
+.ttp-combo__separator {
+  position: absolute;
+  top: 0.5rem;
+  right: 2.5rem;
+  bottom: 0.5rem;
+  width: 1px;
+  background: var(--ttp-base-light);
+}
+
+.ttp-combo__toggle {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  bottom: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ttp-base-darkest);
+  cursor: pointer;
+}
+
+.ttp-combo__toggle-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* Overlays what follows rather than pushing it down, so choosing a fact path doesn't shift the
+   Collection ID field out from under the pointer. */
+.ttp-combo__list {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  left: 0;
+  z-index: 3;
+  max-height: 12.5rem;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  border: 1px solid var(--ttp-base-darkest);
+  border-top: 0;
+  background: var(--ttp-surface);
+  list-style: none;
+}
+
+.ttp-combo__list[hidden] {
+  display: none;
+}
+
+.ttp-combo__option {
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--ttp-base-lighter);
+  color: var(--ttp-base-darkest);
+  font-size: 1rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.ttp-combo__option:last-child {
+  border-bottom: 0;
+}
+
+/* The active option in an aria-activedescendant listbox *is* the selected one, so there is no
+   separate `--focused` class to keep in step with it. */
+.ttp-combo__option[aria-selected="true"] {
+  background: var(--ttp-primary);
+  color: #fff;
+}
+
+.ttp-combo__option:hover {
+  background: var(--ttp-primary-lighter);
+  color: var(--ttp-base-darkest);
+}

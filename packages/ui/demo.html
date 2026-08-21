@@ -1,0 +1,57 @@
+<!doctype html>
+<!--
+  Serve this over HTTP — `npx serve .` from the package root, then open /demo.html. Opening the
+  file directly no longer works: the nav fetches its markup from src/global-nav/templates/, and a
+  file:// page can't fetch.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>taxpert-global-nav demo</title>
+    <link rel="stylesheet" href="./src/global-nav/styles/global-nav.css" />
+    <style>
+      body {
+        margin: 0;
+        font-family: system-ui, sans-serif;
+      }
+      main {
+        padding: 2rem;
+      }
+      #log {
+        margin-top: 1rem;
+        font-family: ui-monospace, monospace;
+        font-size: 12px;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <taxpert-global-nav
+      app="credit-assistant"
+      active="product-experience"
+      workspace-label="TAXPERT WORKSPACE"
+      workspace-on="true"
+    ></taxpert-global-nav>
+
+    <main>
+      <h1>Demo page</h1>
+      <p>Click the waffle icon to open the menu. Events are logged below.</p>
+      <div id="log"></div>
+    </main>
+
+    <script type="module" src="./src/global-nav/js/taxpert-global-nav.js"></script>
+    <script type="module">
+      const log = document.getElementById('log')
+      const nav = document.querySelector('taxpert-global-nav')
+      const line = (msg) => (log.textContent += msg + '\n')
+      nav.addEventListener('nav-select', (e) => {
+        e.preventDefault() // don't actually navigate in the demo
+        line('nav-select: ' + JSON.stringify(e.detail))
+      })
+      nav.addEventListener('workspace-toggle', (e) =>
+        line('workspace-toggle: ' + JSON.stringify(e.detail)),
+      )
+    </script>
+  </body>
+</html>

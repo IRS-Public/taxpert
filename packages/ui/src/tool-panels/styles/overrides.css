@@ -1,0 +1,70 @@
+/* The Overrides tool — a form over the writable facts a host named in config.tools.
+   The only tool that writes, so it is the only one with inputs; everything else here follows the
+   same --ttp-* token layer the other three panels use. */
+
+.ttp-overrides {
+  padding: 0.75rem 1rem 1rem;
+}
+
+.ttp-overrides__list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+.ttp-overrides__row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/* A fact path, read as a path — the same mono face the Inspect panel's XML uses, for the same
+   reason: two similar paths are hard to tell apart in a proportional font. */
+.ttp-overrides .ttp-overrides__label {
+  margin: 0;
+  font-family: var(--ttp-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+  font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+}
+
+.ttp-overrides__controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* USWDS caps .usa-input at 30rem, which is wider than a docked panel and narrower than a floating
+   one — neither is what this row wants. */
+.ttp-overrides .ttp-overrides__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: none;
+  margin: 0;
+}
+
+.ttp-overrides .ttp-overrides__input[type='checkbox'] {
+  flex: 0 0 auto;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.ttp-overrides__status {
+  margin: 0;
+  color: var(--ttp-text-muted, var(--tap-base-dark, #565c65));
+  font-size: 0.8125rem;
+}
+
+/* What the graph currently says about the fact, drawn off the attribute the JS already sets rather
+   than a class mirroring it. */
+.ttp-overrides__row[data-status='incomplete'] .ttp-overrides__status {
+  font-style: italic;
+}
+
+.ttp-overrides__row[data-status='error'] .ttp-overrides__status {
+  color: var(--ttp-error, #b50909);
+}
+
+.ttp-overrides--empty {
+  padding-top: 1rem;
+}

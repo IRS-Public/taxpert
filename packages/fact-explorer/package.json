@@ -1,0 +1,43 @@
+{
+  "name": "fact-explorer",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Standalone graphical fact explorer for viewing, annotating, and (later) testing a Form Builder app's Flow XML and Fact Dictionaries.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "make-fgm": "node scripts/make-static-fgm.mjs",
+    "make-mock": "node scripts/make-static-fgm.mjs",
+    "build-registry": "node scripts/build-registry.mjs",
+    "copy-uswds-assets": "node scripts/copy-uswds-assets.mjs",
+    "postinstall": "npm run copy-uswds-assets",
+    "test": "vitest run",
+    "lint": "eslint . --ext .js,.jsx,.mjs",
+    "lint:fix": "eslint . --ext .js,.jsx,.mjs --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "dependencies": {
+    "@dagrejs/dagre": "^1.1.4",
+    "@uswds/uswds": "^3.13.0",
+    "@xyflow/react": "^12.3.5",
+    "prop-types": "^15.8.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "sass-embedded": "^1.100.0",
+    "taxpert": "*"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "eslint": "^8.57.0",
+    "eslint-plugin-react": "^7.35.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "fast-xml-parser": "^5.8.0",
+    "jsdom": "^25.0.1",
+    "prettier": "^3.3.3",
+    "vite": "^6.0.5",
+    "vitest": "^2.1.8"
+  }
+}

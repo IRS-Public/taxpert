@@ -1,0 +1,19 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  color: var(--color-text);
+}
+
+body {
+  font-family: var(--font-ui);
+}
+
+.react-flow__node-default {
+  text-align: left;
+}

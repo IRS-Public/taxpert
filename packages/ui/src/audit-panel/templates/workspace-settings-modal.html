@@ -1,0 +1,322 @@
+<!--
+  Body of the "Workspace settings" modal (<taxpert-workspace-settings-modal>), opened from the
+  global nav's settings gear. The <dialog> chrome around it is the shared shell in
+  ../../shared/templates/shared.html.
+
+  WHAT IS IN HERE IS THE HOST'S, NOT OURS. Every row below is cloned per entry in the host's
+  configuration — one per `config.featureFlags`, one per tool in `config.tools` — rather than
+  hand-written here. The rows used to be two fixed checkboxes naming credit-assistant's AI features,
+  which meant a second host was shown another application's roadmap and could switch it on.
+
+  Changes are stored as *overrides* (config.js's third layer, in localStorage) and take effect
+  immediately: configure() and setConfigOverride() both dispatch the same event every element
+  already re-reads on. Nothing here writes to the page directly.
+
+  EVERY OVERRIDDEN THING SAYS SO. A section whose configuration has been edited shows `twsm-override`
+  with a Reset beside it, and the modal ends in a reset-everything button. Without that, a stale
+  localStorage record quietly reshapes the workspace and produces bug reports nobody can reproduce
+  from the source tree — which is the main hazard of making configuration editable at all.
+
+  EVERY SECTION IS A SHUT <details>. The modal opens as a list of titles with a disclosure arrow
+  each, and one is unfolded at a time. This is the same move the Outcomes rows already made for the
+  same reason: the sections are a stack of unrelated editors, and stacked open they ran to several
+  screens, so the shape of the thing could not be read without scrolling it. The <h2> stays inside
+  the <summary> — summary's content model allows heading content — so the modal keeps its document
+  outline. One consequence worth knowing: a `twsm-override` marker now sits inside a shut section,
+  so the footer's reset-everything button is the only always-visible sign that anything is
+  overridden.
+
+  Real USWDS component markup (.usa-checkbox, .usa-button, .usa-modal__*), same as the other two
+  modals — USWDS is the project's default for form controls, not a credit-assistant-only
+  convenience. This modal is also mounted in fact-explorer (via
+  taxpert/react/workspace-settings-modal), which vendors its own real USWDS (see its
+  src/styles/uswds.scss) specifically so this markup renders correctly there too.
+-->
+<template id="twsm-sections">
+  <details class="twsm-section" data-section="flags">
+    <summary class="twsm-section__summary">
+      <h2 class="twsm-section__title">Feature Flags</h2>
+      <!-- The native disclosure marker is hidden (workspace-settings-modal.css) in favor of this
+           one, so it can sit at the row's trailing edge instead of leading the title — USWDS's own
+           `expand_more` glyph, the same path the tool panels' row chevrons already draw. -->
+      <svg class="twsm-section__chevron" aria-hidden="true" focusable="false" viewBox="0 0 24 24">
+        <path fill="currentColor" d="M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z" />
+      </svg>
+    </summary>
+    <p class="twsm-section__hint">
+      Enable feature flags to override the default build
+    </p>
+    <div class="twsm-options" data-options="flags"></div>
+    <p class="twsm-empty" data-empty="flags" hidden>This application declares no feature flags.</p>
+  </details>
+
+  <!--
+    The Outcome tracker's content. A determination is JSON end to end — that is what outcome-kinds.js
+    made true — so the whole list can be edited here and stored as a `determinations` override.
+
+    Fact paths are typed against a <datalist> of everything the graph knows rather than a combo box
+    per field: a determination carries up to fourteen paths, and fourteen ARIA comboboxes is a lot of
+    machinery for a field whose whole job is "type, with suggestions". The datalist is built once and
+    shared by every path input in the section.
+  -->
+  <details class="twsm-section" data-section="outcomes">
+    <summary class="twsm-section__summary">
+      <h2 class="twsm-section__title">Outcomes</h2>
+      <svg class="twsm-section__chevron" aria-hidden="true" focusable="false" viewBox="0 0 24 24">
+        <path fill="currentColor" d="M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z" />
+      </svg>
+    </summary>
+    <p class="twsm-section__hint">
+     Configure the Outcome tracker. Each outcome names the one fact that <em>is</em> the answer,
+      how that fact is spoken, and the facts that feed it.
+    </p>
+    <div class="twsm-outcomes" data-options="outcomes"></div>
+    <p class="twsm-empty" data-empty="outcomes" hidden>
+      This application tracks no outcomes.
+    </p>
+    <datalist id="twsm-fact-paths"></datalist>
+    <button class="usa-button usa-button--outline twsm-add" type="button" data-add="outcome">
+      Add outcome
+    </button>
+    <p class="twsm-override" data-override="determinations" hidden>
+      Changed from the build default.
+      <button class="usa-button usa-button--unstyled twsm-reset" type="button"
+              data-reset="determinations">
+        Reset
+      </button>
+    </p>
+  </details>
+
+    <!--
+    Which tools this workspace *offers* — not which are currently open, which is the Tools modal's
+    question. Unticking one removes it from the Tools modal and from the dock, and writes a `tools`
+    override.
+  -->
+  <details class="twsm-section" data-section="tools">
+    <summary class="twsm-section__summary">
+      <h2 class="twsm-section__title">Tools</h2>
+      <svg class="twsm-section__chevron" aria-hidden="true" focusable="false" viewBox="0 0 24 24">
+        <path fill="currentColor" d="M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z" />
+      </svg>
+    </summary>
+    <p class="twsm-section__hint">
+      The tools this workspace offers. A tool switched off here is not listed in the Tools modal and
+      cannot be opened.
+    </p>
+    <div class="twsm-options" data-options="tools"></div>
+    <p class="twsm-empty" data-empty="tools" hidden>This workspace offers no tools.</p>
+    <p class="twsm-override" data-override="tools" hidden>
+      Changed from the build default.
+      <button class="usa-button usa-button--unstyled twsm-reset" type="button" data-reset="tools">
+        Reset
+      </button>
+    </p>
+  </details>
+
+  <!--
+    Penultimate, and the only section that is not a setting in the same sense: it changes which
+    application the workspace is laid over rather than how this workspace behaves. It sits down here
+    with Advanced rather than at the top because it is a rare, deliberate act — the sections above
+    are what someone opens this modal for.
+
+    It replaced two controls that did the same job in two places and agreed with neither: a grid of
+    application cards on the landing page (which made a page whose whole point is to be empty), and
+    an "App:" <select> in fact-explorer's own header (which existed only there, so an application
+    could not be swapped from the application itself). Being a workspace setting means it is
+    reachable from the gear on every page of every host — which is the only place that is true.
+
+    SWITCHING KEEPS THE DESTINATION. Each row lists an application's modes, and choosing one goes to
+    the mode you are already on — Browse All to Browse All, Path Mode to Path Mode — falling back to
+    the application's first mode when it has no counterpart. See shared/js/apps.js.
+
+    The whole section is absent for a host that is the only application there is: one option is a
+    label, not a picker.
+  -->
+  <details class="twsm-section" data-section="apps" hidden>
+    <summary class="twsm-section__summary">
+      <h2 class="twsm-section__title">Applications</h2>
+      <svg class="twsm-section__chevron" aria-hidden="true" focusable="false" viewBox="0 0 24 24">
+        <path fill="currentColor" d="M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z" />
+      </svg>
+    </summary>
+    <p class="twsm-section__hint">
+      Available Applications
+    </p>
+    <div class="twsm-apps" data-options="apps" role="radiogroup" aria-label="Application"></div>
+  </details>
+
+  <!--
+    Last. Everything above is a switch or a list with its own words; this is raw configuration, and
+    two of its fields change where the workspace talks to the network. Endpoints in particular are
+    behind a disclosure on purpose: an editable apiBase points the chat and scenario-generation
+    backends at any origin, which should take a deliberate second click rather than sitting beside a
+    checkbox. It reads as one of the sections now because they are all disclosures — this one was
+    simply first, and is now last but one — Applications sits above it.
+  -->
+  <details class="twsm-section" data-section="advanced">
+    <summary class="twsm-section__summary">
+      <h2 class="twsm-section__title">Advanced</h2>
+      <svg class="twsm-section__chevron" aria-hidden="true" focusable="false" viewBox="0 0 24 24">
+        <path fill="currentColor" d="M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z" />
+      </svg>
+    </summary>
+
+    <div class="twsm-field">
+      <label class="usa-label twsm-field__label" for="twsm-endpoints">
+        Endpoints, one “name = value” per line
+      </label>
+      <textarea class="usa-textarea twsm-facts" id="twsm-endpoints" rows="3"
+                data-field="endpoints"></textarea>
+    </div>
+    <p class="twsm-override" data-override="endpoints" hidden>
+      Changed from the build default.
+      <button class="usa-button usa-button--unstyled twsm-reset" type="button"
+              data-reset="endpoints">
+        Reset
+      </button>
+    </p>
+
+    <!--
+      The whole override record, as text. This is how a setup is shared: localStorage belongs to one
+      browser, and there is no server to keep it on. It is also the escape hatch for anything the
+      sections above do not offer a control for — the nav taxonomy, `strings` — without this modal
+      having to grow a bespoke editor per namespace.
+    -->
+    <div class="twsm-field">
+      <label class="usa-label twsm-field__label" for="twsm-import">
+        All workspace overrides (JSON)
+      </label>
+      <textarea class="usa-textarea twsm-facts" id="twsm-import" rows="8"
+                data-field="overrides" spellcheck="false"></textarea>
+    </div>
+    <p class="twsm-error" data-error="import" hidden></p>
+    <div class="twsm-outcome__actions">
+      <button class="usa-button" type="button" data-action="import">Apply JSON</button>
+      <button class="usa-button usa-button--unstyled" type="button" data-action="revert-import">
+        Discard edits
+      </button>
+    </div>
+  </details>
+
+  <!--
+    Scoped to the configuration overrides, and says so. Feature flags keep their own record and
+    their own visible checkboxes with a build default each, so they are already resettable one at a
+    time and do not need sweeping up here.
+  -->
+  <div class="twsm-footer" hidden>
+    <button class="usa-button usa-button--outline twsm-reset-all" type="button">
+      Reset configuration to the build defaults
+    </button>
+  </div>
+</template>
+
+<!--
+  One row: a feature flag, or a tool. `usa-checkbox__input--tile` is USWDS's tile variant — the
+  bordered box is the label, so the whole box is the click target and its selected fill follows from
+  `:checked` — no JS class mirror, and no bespoke box in workspace-settings-modal.css beyond
+  recoloring it.
+
+  The id, value, `data-flag`/`data-tool` and label text are stamped on per entry.
+-->
+<template id="twsm-option">
+  <div class="twsm-option usa-checkbox">
+    <input class="usa-checkbox__input usa-checkbox__input--tile" type="checkbox">
+    <label class="usa-checkbox__label"></label>
+  </div>
+</template>
+
+<!--
+  One application. A radio rather than a checkbox because the workspace is over exactly one at a
+  time, and USWDS's tile variant for the same reason the flag and tool rows use it — the bordered
+  box is the label, so the whole row is the click target and its selected fill follows from
+  `:checked` with no JS class mirror.
+
+  The modes line is inside the <label> so it is part of that click target, and is filled with the
+  application's own destination labels — the host's words, not ours. A row is not a link: choosing
+  it navigates through the same resolution as the switch (see apps.js), which depends on where you
+  are now and so cannot be baked into an href here.
+-->
+<template id="twsm-app">
+  <div class="twsm-app usa-radio">
+    <input class="usa-radio__input usa-radio__input--tile" type="radio" name="workspace-settings-app">
+    <label class="usa-radio__label">
+      <span class="twsm-app__name"></span>
+      <span class="twsm-app__modes"></span>
+    </label>
+  </div>
+</template>
+
+<!--
+  One determination. Shut by default — the list is read far more often than it is edited, and an
+  accordion per row keeps the modal the same height whether a host tracks one outcome or six.
+-->
+<template id="twsm-outcome">
+  <details class="twsm-outcome">
+    <summary class="twsm-outcome__summary">
+      <span class="twsm-outcome__label"></span>
+    </summary>
+    <div class="twsm-outcome__body">
+      <div class="twsm-field">
+        <label class="usa-label twsm-field__label" data-field="label-for">Name</label>
+        <input class="usa-input" type="text" data-field="label">
+      </div>
+      <div class="twsm-field">
+        <label class="usa-label twsm-field__label" data-field="rollup-for">
+          Outcome fact
+        </label>
+        <input class="usa-input" type="text" list="twsm-fact-paths" data-field="rollupPath">
+      </div>
+      <div class="twsm-field">
+        <label class="usa-label twsm-field__label" data-field="kind-for">Spoken as</label>
+        <select class="usa-select" data-field="kind"></select>
+      </div>
+      <div class="twsm-kind-fields" data-field="kind-fields"></div>
+
+      <div class="twsm-sections" data-field="sections"></div>
+      <div class="twsm-outcome__actions">
+        <button class="usa-button usa-button--unstyled" type="button" data-action="add-section">
+          Add group
+        </button>
+        <button class="usa-button usa-button--unstyled" type="button" data-action="move-up">
+          Move up
+        </button>
+        <button class="usa-button usa-button--unstyled" type="button" data-action="move-down">
+          Move down
+        </button>
+        <button class="usa-button usa-button--unstyled twsm-remove" type="button"
+                data-action="remove">
+          Remove outcome
+        </button>
+      </div>
+    </div>
+  </details>
+</template>
+
+<!-- One group of facts inside a determination. The paths are a textarea, one per line: a group can
+     hold a dozen, and a row each would bury the heading it belongs to. -->
+<template id="twsm-outcome-section">
+  <fieldset class="usa-fieldset twsm-outcome-section">
+    <div class="twsm-field">
+      <label class="usa-label twsm-field__label" data-field="heading-for">Group name</label>
+      <input class="usa-input" type="text" data-field="heading">
+    </div>
+    <div class="twsm-field">
+      <label class="usa-label twsm-field__label" data-field="facts-for">
+        Facts, one path per line
+      </label>
+      <textarea class="usa-textarea twsm-facts" rows="4" data-field="facts"></textarea>
+    </div>
+    <button class="usa-button usa-button--unstyled twsm-remove" type="button"
+            data-action="remove-section">
+      Remove group
+    </button>
+  </fieldset>
+</template>
+
+<!-- One labelled text field, cloned per property of whichever outcome kind is selected. -->
+<template id="twsm-kind-field">
+  <div class="twsm-field">
+    <label class="usa-label twsm-field__label"></label>
+    <input class="usa-input" type="text">
+  </div>
+</template>

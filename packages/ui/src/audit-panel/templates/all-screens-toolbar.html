@@ -1,0 +1,46 @@
+<!--
+  Markup for <taxpert-screens-toolbar> — the sub-nav under the global nav, naming which of the
+  Experience Explorer's three destinations you are on: the Product Experience, Path Mode, or Browse
+  All.
+
+  Each is a separate destination in the global nav, not a checkbox on one page, so each names
+  itself. All three title blocks ship here and the element hides the two that aren't the current
+  mode — the copy is content, and content belongs in markup rather than in a MODES object in the JS.
+
+  Only the two screen listings have anything to filter. A path is one continuous scroll through a
+  single journey and the Product Experience is one screen at a time, so the tab strip is always
+  rendered and hidden — by `body.path-mode` and by `[mode="product"]` on the host
+  (all-screens-toolbar.css) — rather than conditionally built.
+-->
+<template id="tst-toolbar">
+  <!-- A <header> rather than role="toolbar": it leads with the destination's <h1>, so it names the
+       page as much as it holds its section filter. -->
+  <header class="all-screens__toolbar">
+    <div class="all-screens__toolbar-inner">
+      <!-- On the Product Experience this block is the whole of the bar: there is no listing under
+           it to filter, and the <h1> is the workspace's name for the destination rather than the
+           page's own title — which is why the element does not sync document.title from it here. -->
+      <div class="all-screens__mode" data-mode="product">
+        <h1 class="all-screens__mode-title">Product Experience</h1>
+        <p class="all-screens__mode-description">The built user experience.</p>
+      </div>
+      <div class="all-screens__mode" data-mode="path">
+        <h1 class="all-screens__mode-title">Path Mode</h1>
+        <p class="all-screens__mode-description">Only what this Fact Graph&rsquo;s answers actually lead to, up to the next unanswered question.</p>
+      </div>
+      <div class="all-screens__mode" data-mode="browse">
+        <h1 class="all-screens__mode-title">Browse All</h1>
+        <p class="all-screens__mode-description">Every screen in the flow, unconditionally.</p>
+      </div>
+    </div>
+    <nav class="all-screens__section-tabs" aria-label="Section" role="tablist">
+      <button class="all-screens__section-tab" type="button" role="tab"
+              data-section="" aria-selected="true">All sections</button>
+    </nav>
+  </header>
+</template>
+
+<!-- One section tab. The element stamps the slug and the title. -->
+<template id="tst-section-tab">
+  <button class="all-screens__section-tab" type="button" role="tab" aria-selected="false"></button>
+</template>

@@ -1,0 +1,157 @@
+/* The Outcome tracker tool: its determination accordions and the fact tables inside them.
+
+   Split out of tool-panel.css for the same reason watchlist.css is — the panel chrome and the
+   generic .ttp-row treatment stay there, and everything a *determination* needs is here.
+
+   No state is mirrored in a class. A determination's colour comes off `[data-status]`, which the JS
+   sets from the fact graph, and an expanded one is `[open]`, which the browser sets. */
+
+/* ── Panel body ──────────────────────────────────────────────────────────── */
+
+taxpert-outcome-tracker {
+  display: block;
+}
+
+/* ── A determination ─────────────────────────────────────────────────────── */
+
+/* The status mark is the row's one piece of colour: green once the determination has settled, and
+   the part-drawn ring in the host's primary until then. The label and value stay body text, so a
+   determination that came back "No" doesn't read as an error — it is an answer. */
+.ttp-outcome__row[data-status="settled"] .ttp-outcome__status {
+  color: var(--ttp-green);
+}
+
+/* The part-drawn ring reads as "still working" the way a spinner does, without spinning: an
+   animation here would run for as long as the determination stays open, which can be the whole
+   session. */
+.ttp-outcome__row[data-status="pending"] .ttp-outcome__status {
+  color: var(--ttp-primary);
+}
+
+/* A determination's name is the heading of everything under it, so it gets a little more weight
+   than the generic row label and the outcome underneath sits close to it. */
+.ttp-outcome__row .ttp-row__label {
+  font-size: 1rem;
+}
+
+/* The detail is a table of facts, not a paragraph: it runs the full width of the card, and its own
+   headings and hairlines do the separating, so the generic row detail's indent and padding go. */
+.ttp-outcome__detail {
+  padding: 0;
+  border-top: 1px solid var(--ttp-base-lighter);
+}
+
+/* ── A section of facts ──────────────────────────────────────────────────── */
+
+.ttp-outcome__heading {
+  display: flex;
+  gap: 0.25em;
+  margin: 0;
+  padding: var(--ttp-units-1) var(--ttp-units-2);
+  border-bottom: 1px solid var(--ttp-base-lighter);
+  background: var(--ttp-base-lightest);
+  color: var(--ttp-base-darkest);
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+/* ── One fact ────────────────────────────────────────────────────────────── */
+
+/* All the rows in a section share one two-column grid: `max-content` gives the status column a
+   single, consistent left edge sized to its widest label, `minmax(0, 1fr)` gives the path column
+   the rest and lets it wrap — the middle of
+   `/isDisqualifiedMarriedNotMfjSameResidenceSeparatedNoQcs` is the part you are reading. A `<li>`
+   is `display: contents`, so it contributes no box of its own and its two children become grid
+   items directly; DOM order alone pairs each path with its state, since every fact hands the grid
+   exactly one column's worth of each. That is also what makes the status column line up: sized
+   once across the whole list rather than per row, it can't drift with how wide any one row's icon
+   + label happens to be. */
+.ttp-outcome__facts {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  /* Stretch, not `center`. The two cells each draw the row's bottom hairline, and centring sized
+     each to its own content instead of to the row: wherever a path wrapped to two lines, its cell
+     was the full row height and the "Incomplete" beside it was one line tall and floating in the
+     middle, so the two halves of what should be one line under the row sat several pixels apart.
+     The cells fill the row now and each centres its own content (the state cell is a flex row; the
+     path cell is made one below), which is what actually lines the pair up. */
+  align-items: stretch;
+  /* No column-gap. The two cells each draw the row's bottom hairline, so any gap between them is a
+     gap in that line — the underline came out as two short rules with a notch between them rather
+     than as one line under the row. The breathing room the gap was providing is now
+     `padding-inline-end` on the path cell and `padding-inline-start` on the state cell below, which
+     separates the *content* by the same amount while leaving the two borders touching. */
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ttp-outcome__fact {
+  display: contents;
+  color: var(--ttp-base-darkest);
+  font-size: 0.8125rem;
+  line-height: 1.3;
+}
+
+/* Padding and the row's hairline move onto the two grid cells — the `<li>` they used to live on no
+   longer has a box to draw them on. Matching values on both cells is what makes two independent
+   borders read as one continuous line under the row. */
+.ttp-outcome__path,
+.ttp-outcome__state {
+  padding-block: var(--ttp-units-1);
+  border-bottom: 1px solid var(--ttp-base-lighter);
+}
+
+/* The last fact of the last section sits on the card's own bottom border. */
+.ttp-outcome__section:last-child .ttp-outcome__fact:last-child > * {
+  border-bottom: 0;
+}
+
+/* A flex box so a one-line path sits level with the state beside it, and a wrapped one still centres
+   in the taller row rather than riding its top edge. */
+.ttp-outcome__path {
+  display: flex;
+  align-items: center;
+  padding-inline: var(--ttp-units-2) var(--ttp-units-05);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.ttp-outcome__state {
+  display: flex;
+  align-items: center;
+  gap: var(--ttp-units-05);
+  padding-inline: var(--ttp-units-05) var(--ttp-units-2);
+}
+
+/* An unanswered fact is the bare word, greyed — nothing has happened to it yet. */
+.ttp-outcome__fact[data-status="incomplete"] .ttp-outcome__state,
+.ttp-outcome__fact[data-status="unknown"] .ttp-outcome__state {
+  color: var(--ttp-base-dark);
+}
+
+.ttp-outcome__fact-icon {
+  flex: 0 0 auto;
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+/* No status draws a blank slot today — every entry in FACT_STATE (taxpert-outcome-tracker.js) names
+   an icon, so the `hidden` the template ships is always cleared. The rule is kept because it is what
+   makes going back to a blank one safe: `[hidden]`'s UA default is `display: none`, which drops the
+   icon out of the flex row entirely and lets the label creep left into where the mark would have
+   sat, out of line with "True" / "False" above it. Hiding it visually instead keeps its reserved
+   width + gap in the row. */
+.ttp-outcome__fact-icon[hidden] {
+  display: inline-block;
+  visibility: hidden;
+}
+
+.ttp-outcome__fact[data-status="complete"] .ttp-outcome__fact-icon {
+  color: var(--ttp-green);
+}
+
+.ttp-outcome__fact[data-status="false"] .ttp-outcome__fact-icon {
+  color: var(--ttp-red);
+}

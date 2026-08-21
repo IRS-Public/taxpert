@@ -1,0 +1,36 @@
+/* Feature-flag gating, the DOM convention feature-flags.js documents.
+
+   Anything gated by a flag — the Explain rail tab, the Manage scenario modal's AI generation
+   section — is *rendered* and carries data-ff="<kebab flag name>". It stays hidden until <body>
+   carries the matching `ff-<flag>` class, which applyFlags() (and the scenario modal's
+   setAiScenarioGeneration(), the React adapter's entry point) is the only writer of.
+
+   This replaces a JS fan-out that reached separately into the rail, the modal and the panel on
+   every flag change — three surfaces to keep in step, and a fourth to add for each new flag.
+
+   Lives in shared/ rather than in one bundle's stylesheet because both the panel's own CSS and
+   the standalone scenario-modal.css that fact-explorer imports on its own need these rules;
+   each @imports this so either one stands up alone. */
+
+[data-ff] {
+  display: none;
+}
+
+/* One pair per flag — CSS can't match a class against an attribute value, so a new flag adds a
+   rule here alongside its entry in the host's config.featureFlags. */
+
+body.ff-ai-scenario-generation [data-ff="ai-scenario-generation"] {
+  display: revert;
+}
+
+body.ff-ai-fact-explanation [data-ff="ai-fact-explanation"] {
+  display: revert;
+}
+
+/* Not `revert`, unlike the pair above: those gate a <section> and a rail <li>, whose UA default
+   (block / list-item) is what they want back. This one gates a .tgn-item, whose own rule sets
+   `display: flex` for its icon/label/check row — `revert` would drop to the plain <a> default
+   (inline) and break that layout, so the value is repeated here instead. */
+body.ff-author-mode [data-ff="author-mode"] {
+  display: flex;
+}

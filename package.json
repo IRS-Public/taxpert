@@ -1,0 +1,14 @@
+{
+  "name": "taxpert-workspace",
+  "private": true,
+  "description": "The Taxpert workspace UI and its companion services. See README.md.",
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "format": "npm run format --workspaces --if-present"
+  }
+}

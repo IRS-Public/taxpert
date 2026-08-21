@@ -1,0 +1,149 @@
+/* ── Fact explain popup (M4): derivation view ───────────────────────────
+   Class vocabulary ported from the credit-assistant audit panel. These stay
+   GLOBAL: factRender.js emits them as raw HTML strings and scenarioValue.jsx
+   references them, so the names must not change. */
+.hr-body {
+  font-size: var(--font-md);
+  line-height: 1.5;
+}
+.hr-group {
+  margin: var(--space-05) 0;
+}
+.hr-group > ul {
+  margin: 2px 0 2px 0;
+  padding-left: 18px;
+  list-style: none;
+  border-left: 2px solid #e3e8ec;
+}
+.hr-group > ul > li {
+  margin: 3px 0;
+}
+.hr-op {
+  font-weight: 700;
+  font-size: var(--font-xs);
+  letter-spacing: 0.03em;
+  color: var(--color-text-muted);
+}
+.hr-all > .hr-op {
+  color: var(--color-primary);
+}
+.hr-any > .hr-op {
+  color: #b9770e;
+}
+.hr-op--not {
+  color: var(--color-danger);
+}
+.hr-not,
+.hr-case,
+.hr-switch {
+  margin: 3px 0;
+}
+.hr-switch {
+  padding-left: 10px;
+  border-left: 2px solid #ede3f7;
+}
+.hr-kw {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+.hr-eq {
+  color: var(--color-text-muted);
+  font-weight: 700;
+}
+.hr-dep-path {
+  font-family: var(--font-mono);
+  font-size: var(--font-sm);
+}
+.hr-nav {
+  color: var(--color-primary);
+  cursor: pointer;
+  border-bottom: 1px dotted var(--color-primary);
+}
+.hr-nav:hover {
+  background: var(--color-primary-tint-2);
+}
+.hr-qualifier {
+  color: var(--color-text-muted);
+}
+.hr-writable {
+  color: var(--color-success);
+  font-style: italic;
+}
+.hr-literal {
+  color: var(--color-text);
+  background: #f2f2f2;
+  border-radius: 3px;
+  padding: 0 var(--space-05);
+}
+.hr-fn-op {
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+.hr-unknown {
+  color: var(--color-text-faint);
+  font-style: italic;
+}
+.hr-error {
+  color: var(--color-danger);
+  font-size: var(--font-md);
+}
+.hr-xml-view {
+  background: var(--color-surface-alt);
+  padding: var(--space-105);
+  border-radius: var(--radius);
+  font-size: var(--font-xs);
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-x: auto;
+}
+
+/* Scenario live-value chip (N5). Shown in the fact detail panel when a scenario
+   is loaded: the engine-computed value + a complete/incomplete badge. Amber when
+   incomplete, matching SCENARIO_STATUS.incomplete on the canvas. */
+.hr-value-chip {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-1);
+  margin: 0 0 var(--space-105);
+  padding: var(--space-1) 10px;
+  border-radius: var(--radius);
+  border: 1px solid #cfe3cb;
+  background: #f0f8ee;
+  font-size: var(--font-sm);
+}
+.hr-value-chip--incomplete {
+  border-color: #e6d29a;
+  background: #fdf6e1;
+}
+/* Compact variant rendered on the canvas nodes (FgmNode): no label, tighter
+   spacing so a loaded scenario's values show without opening the DetailPanel. */
+.hr-value-chip--compact {
+  gap: 6px;
+  margin: 6px 0 0;
+  padding: 3px 6px;
+  border-radius: var(--radius-sm);
+}
+.hr-value-chip--compact .hr-value-chip__value {
+  font-size: var(--font-xs);
+}
+.hr-value-chip--compact .hr-value-chip__badge {
+  font-size: 9px;
+}
+.hr-value-chip__label {
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-size: 10px;
+}
+.hr-value-chip__value {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--color-text);
+  word-break: break-word;
+}
+.hr-value-chip__badge {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--color-text-muted);
+}

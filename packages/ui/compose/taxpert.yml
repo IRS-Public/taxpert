@@ -1,0 +1,81 @@
+# Taxpert capability overlay, for a Form Builder app that lives in its own repo.
+#
+# The workspace UI itself needs nothing here — it is `npm i taxpert`, vendored into the app's
+# website-static/vendor/taxpert/ by its own `make copy-shared-ui`. This file is only for the two
+# capabilities that are separate processes.
+#
+# Ships inside the npm package, so an app reaches it through node_modules:
+#
+#   docker compose \
+#     -f docker-compose.yml \
+#     -f node_modules/taxpert/compose/taxpert.yml \
+#     --profile explorer --profile ai up
+#
+# Compose's top-level `include:` works too, if you would rather not repeat the -f each time.
+#
+# Pair each profile with the form-builder build flag that makes your app emit what the service reads:
+#
+#   --profile explorer   ->  build your app with --formBuilderGraph
+#   --profile ai         ->  build your app with --aiFactExplanation / --aiScenarioGeneration
+#
+# Author Mode needs neither: its backend is form-builder's own AuthoringServer, in-process in your
+# app's JVM on :3004 under --authorMode. There is no service for it here by design.
+#
+# Required of you:
+#   TAXPERT_APP_DIR   path to your app's repo root — the directory holding fact-explorer.app.json
+#   TAXPERT_APP_HOST  how a container reaches your app, e.g. http://my-app (a compose service name)
+#
+# This is the published-image twin of the taxpert repository's own docker-compose.yml: same services,
+# same profiles, same TAXPERT_APP_HOST. The one difference is the app mount, because the two answer
+# different questions. Here it is TAXPERT_APP_DIR — *your* app, one of it, mounted at /apps/app.
+# There it is TAXPERT_APPS_DIR — a directory of app checkouts, mounted whole at /apps, because a
+# taxpert developer works against several at once. Both land at /apps, which is all the image cares
+# about. Keep the two files in step; the one in that repository is where they are developed.
+#
+# Optional:
+#   TAXPERT_ASSISTANT_PACK  a domain pack directory for the assistant. Without one it answers from
+#                           its neutral built-in pack.
+
+services:
+  fact-explorer:
+    profiles: ["explorer"]
+    image: ghcr.io/IRS-Public/taxpert-fact-explorer:0.1.0
+    # The image bakes no registry it can trust for you: it rescans /apps at start and serves
+    # whatever descriptors it finds. Mount one directory per app.
+    volumes:
+      - ${TAXPERT_APP_DIR:?set TAXPERT_APP_DIR to your app repo root}/fact-explorer.app.json:/apps/app/fact-explorer.app.json:ro
+    ports:
+      - "${TAXPERT_FACT_EXPLORER_PORT:-5180}:80"
+    restart: unless-stopped
+
+  chromadb:
+    profiles: ["ai"]
+    image: chromadb/chroma:1.5.9
+    volumes:
+      - taxpert-chroma-data:/data
+    restart: unless-stopped
+
+  assistant:
+    profiles: ["ai"]
+    image: ghcr.io/IRS-Public/taxpert-assistant:0.1.0
+    environment:
+      CHROMA_HOST: chromadb
+      CHROMA_PORT: "8000"
+      CHROMA_COLLECTION: irs_publications
+      # Your app serves its own fact dictionary; the assistant reads it at startup.
+      FACT_DICTIONARY_URL: ${TAXPERT_APP_HOST:?set TAXPERT_APP_HOST}/resources/fact-dictionary.xml
+      # Browser origins allowed to call this backend: your app, and Fact Explorer.
+      FRONTEND_ORIGIN: ${TAXPERT_FRONTEND_ORIGIN:-http://localhost:3000,http://localhost:5180}
+      # Ollama runs natively on the host, never containerized.
+      OLLAMA_HOST: ${OLLAMA_HOST:-http://host.docker.internal:11434}
+      DOMAIN_PACK: ${TAXPERT_ASSISTANT_PACK:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${TAXPERT_ASSISTANT_PORT:-8000}:8000"
+    depends_on:
+      - chromadb
+    restart: unless-stopped
+
+volumes:
+  taxpert-chroma-data:

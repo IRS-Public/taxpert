@@ -1,0 +1,22 @@
+node_modules/
+dist/
+.env.local
+*.log
+.DS_Store
+
+# Generated per-app FGM + scenario index (rebuild with `npm run make-fgm`), and the app registry
+# discovered from every fact-explorer.app.json in the apps directory (`npm run build-registry`).
+# The descriptors are the sources and are committed — in the apps that own them.
+public/data/*/
+public/data/apps.json
+
+# ...with two exceptions, kept deliberately. The applications live in their own repositories now, so
+# nothing in this one can regenerate a real graph, and these two snapshots are the only real-app
+# corpus the specs have: tests/_fixtures.js feeds them to the generator, cone, search, visibility and
+# scenario-filter suites (24 of the 145 tests). Refresh them by pointing FORM_BUILDER_APPS_DIR at a
+# checkout of those apps and running `npm run make-fgm`; never hand-edit them.
+!public/data/credit-assistant/
+!public/data/twe/
+
+# Vendored USWDS fonts/images (rebuild with `npm run copy-uswds-assets`; see src/styles/uswds.scss)
+public/uswds/

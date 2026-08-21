@@ -1,0 +1,137 @@
+<?xml version="1.0"?>
+<!--
+  A whole Fact Dictionary for a host that does not exist.
+
+  Small on purpose: enough shape to exercise every path the workspace takes through a dictionary,
+  and nothing that resembles a real tax application. If a change to taxpert only works because
+  the dictionary was big, or was EITC's, this file is where that shows up.
+
+  What it deliberately covers:
+    · a <Writable> boolean, integer, dollar and enum       — the four types fact-values.js formats
+    · a collection with a wildcard member fact             — `/*` path derivation, #id resolution
+    · a <Derived> with <All> and one with <Any>            — dependency annotation in Inspect
+    · a rollup fact fed by the others                      — the Outcome tracker's rollupPath
+    · a fact nothing reads                                 — proves an orphan does not break a render
+
+  The paths are deliberately un-taxlike (`/pet`, `/snacks`) so a stray EITC or withholding assumption
+  cannot accidentally line up with one.
+-->
+<FactDictionaryModule>
+  <Facts>
+    <Fact path="/hasPet">
+      <Description>Whether the household has a pet at all. The gate for everything below.</Description>
+      <Writable>
+        <Boolean/>
+      </Writable>
+    </Fact>
+
+    <Fact path="/petCount">
+      <Description>How many pets. An integer, so Inspect prints it without decoration.</Description>
+      <Writable>
+        <Int/>
+      </Writable>
+    </Fact>
+
+    <Fact path="/monthlyBudget">
+      <Description>A dollar fact — formatValue() must render this as $40, not 40.00.</Description>
+      <Writable>
+        <Dollar/>
+      </Writable>
+    </Fact>
+
+    <Fact path="/petKind">
+      <Description>An enum, whose raw value is its own option string rather than a boolean.</Description>
+      <Writable>
+        <Enum optionsPath="/petKindOptions"/>
+      </Writable>
+    </Fact>
+
+    <!-- A collection, so collectionIds() has a `/*` path to derive a root from. -->
+    <Fact path="/pets">
+      <Description>The pets themselves.</Description>
+      <Writable>
+        <Collection/>
+      </Writable>
+    </Fact>
+
+    <Fact path="/pets/*/name">
+      <Description>A member fact. Resolving this needs a collection id, which is the point.</Description>
+      <Writable>
+        <String/>
+      </Writable>
+    </Fact>
+
+    <Fact path="/pets/*/isFed">
+      <Writable>
+        <Boolean/>
+      </Writable>
+    </Fact>
+
+    <!-- <All>: every dependency must hold. -->
+    <Fact path="/isReadyForPet">
+      <Description>Derived from two writables, so Inspect has dependencies to annotate.</Description>
+      <Derived>
+        <All>
+          <Dependency path="/hasPet"/>
+          <Dependency path="/hasBudget"/>
+        </All>
+      </Derived>
+    </Fact>
+
+    <!-- <Any>: at least one dependency holds. -->
+    <Fact path="/needsSupplies">
+      <Derived>
+        <Any>
+          <Dependency path="/hasPet"/>
+          <Dependency path="/wantsPet"/>
+        </Any>
+      </Derived>
+    </Fact>
+
+    <Fact path="/hasBudget">
+      <Derived>
+        <GreaterThan>
+          <Left>
+            <Dependency path="/monthlyBudget"/>
+          </Left>
+          <Right>
+            <Dollar>0</Dollar>
+          </Right>
+        </GreaterThan>
+      </Derived>
+    </Fact>
+
+    <Fact path="/wantsPet">
+      <Writable>
+        <Boolean/>
+      </Writable>
+    </Fact>
+
+    <!-- The rollup: the one fact that *is* the fixture host's outcome. -->
+    <Fact path="/petDecision">
+      <Description>
+        The determination the fixture host's Outcome tracker follows. An enum rather than a boolean,
+        so the tracker's non-boolean branch is exercised too.
+      </Description>
+      <Derived>
+        <Switch>
+          <Case>
+            <When>
+              <Dependency path="/isReadyForPet"/>
+            </When>
+            <Then>
+              <EnumOption>approved</EnumOption>
+            </Then>
+          </Case>
+        </Switch>
+      </Derived>
+    </Fact>
+
+    <!-- Read by nothing. A render must survive an orphan. -->
+    <Fact path="/unreferencedNote">
+      <Writable>
+        <String/>
+      </Writable>
+    </Fact>
+  </Facts>
+</FactDictionaryModule>

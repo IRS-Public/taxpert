@@ -1,0 +1,38 @@
+/* Audit-panel debug stylesheet. Loaded via the toggled <link id="audit-panel-styles" disabled>
+   in fragments/head.html and split here into feature files, mirroring main.css's @import model.
+   A disabled parent <link> keeps its @imports disabled too, so the runtime disabled=false toggle
+   in taxpert-audit-panel.js still gates the whole tree (ADR-004 isolation). Cascade order matches
+   the original single file: shell → fact inspector → dashboards → chat, then the three modals the
+   panel owns but renders outside itself (scenario-modal.js, display-modal.js,
+   workspace-settings-modal.js). */
+@import "../../shared/styles/feature-flags.css";
+@import "panel-shell.css";
+@import "fact-inspector.css";
+@import "dashboards.css";
+@import "chat.css";
+@import "scenario-modal.css";
+@import "display-modal.css";
+@import "workspace-settings-modal.css";
+
+/* Token-fallback layer (mirrors global-nav.css's --tgn-* pattern): every --tap-* token
+   chains through the host's real USWDS token with a hard fallback, so the panel renders
+   identically inside credit-assistant (which supplies --base-/--primary-/etc. via
+   variables.css) and still looks reasonable in a bare host that supplies none. :where()
+   keeps specificity at zero so a host can override. Defined here on the shared root so
+   every descendant across the four imported files inherits the values. */
+:where(taxpert-audit-panel) {
+  --tap-base-lightest: var(--base-lightest, #f0f0f0);
+  --tap-base-lighter: var(--base-lighter, #dfe1e2);
+  --tap-base-light: var(--base-light, #a9aeb1);
+  --tap-base-dark: var(--base-dark, #565c65);
+  --tap-base-darkest: var(--base-darkest, #1b1b1b);
+  --tap-primary: var(--primary, #005ea2);
+  --tap-primary-lighter: var(--primary-lighter, #d9e8f6);
+  --tap-primary-light: var(--primary-light, #73b3e7);
+  --tap-primary-dark: var(--primary-dark, #1a4480);
+  --tap-blue-40v: var(--blue-40v, #2491ff);
+  --tap-units-05: var(--units-05, 0.25rem);
+  --tap-units-1: var(--units-1, 0.5rem);
+  --tap-units-2: var(--units-2, 1rem);
+  --tap-units-4: var(--units-4, 2rem);
+}

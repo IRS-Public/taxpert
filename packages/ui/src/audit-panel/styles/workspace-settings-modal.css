@@ -1,0 +1,514 @@
+/* <taxpert-workspace-settings-modal> — the "Workspace settings" dialog opened from the global
+   nav's settings gear (next to the workspace toggle). In credit-assistant, loaded through
+   audit-panel.css's @import chain and gated by the toggled <link id="audit-panel-styles">; in
+   fact-explorer, loaded directly by the react/WorkspaceSettingsModal.jsx adapter.
+
+   Self-contained: the base <dialog> chrome is declared here rather than inherited from
+   credit-assistant's components/modals.css, so the modal looks the same in any host. Like
+   <taxpert-scenario-modal>/<taxpert-display-modal>, the checkbox/button controls themselves are
+   real USWDS components (.usa-checkbox, .usa-button, .usa-modal__*) — USWDS is the project's
+   default, not something to reimplement in bespoke CSS. fact-explorer (the one host without
+   USWDS vendored some other way) loads its own copy specifically so this renders correctly there
+   too — see its src/styles/uswds.scss.
+
+   Token bridging: each --twsm-* color checks the host's own real token first (credit-assistant's
+   --primary/--base-* via the --tap-* layer from audit-panel.css, or fact-explorer's
+   --color-*), falling through to a hard-coded default — same two-tier pattern as global-nav.css's
+   --tgn-* tokens — so the modal's selected/focus accent picks up each host's actual brand color
+   instead of a generic one belonging to neither. --twsm-border is the one exception: the design
+   calls for exactly 1px #d6d7d9 everywhere, so it isn't token-bridged. */
+
+:where(taxpert-workspace-settings-modal) {
+  --twsm-border: #d6d7d9;
+  --twsm-text: var(--color-text, var(--tap-base-darkest, #1b1b1b));
+  --twsm-hint: var(--color-text-muted, var(--tap-base-dark, #565c65));
+  --twsm-selected-border: var(--color-primary, var(--tap-primary, #005ea2));
+  --twsm-selected-bg: var(--color-primary-tint, var(--tap-primary-lighter, #d9e8f6));
+  --twsm-font: var(--font-sans, 'Source Sans Pro Web', 'Source Sans Pro', 'Helvetica Neue', Helvetica, Roboto, Arial, sans-serif);
+
+  /* The section accordions' own lavender, matching the global nav's active-menu fill
+     (--tgn-menu-active in global-nav.css) so the settings gear reads as the same surface as the
+     nav it hangs off. Fixed rather than token-bridged, same as --twsm-border above: the design
+     calls for exactly this color, not a host's brand accent. */
+  --twsm-section-bg: #e6e6fa;
+
+  /* The dialog's own insets. Declared once because two things read them — the main block's padding
+     and the close button's position — and the X sitting on the heading depends on the two agreeing. */
+  --twsm-inset-x: 2rem;
+  --twsm-inset-top: 1.5rem;
+}
+
+taxpert-workspace-settings-modal {
+  display: contents;
+}
+
+.twsm-dialog {
+  display: block;
+  box-sizing: border-box;
+  width: 90vw;
+  max-width: 32.375rem; /* 518px — the design's modal width */
+  max-height: 90vh;
+  margin: auto;
+  padding: 0;
+  overflow-y: auto;
+  border: 1px solid var(--twsm-border);
+  border-radius: 0.25rem;
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  color: var(--twsm-text);
+  font-family: var(--twsm-font);
+  font-size: 1rem;
+  line-height: 1.5;
+  text-align: left; /* every row in this modal is left-aligned */
+  z-index: 1050;
+}
+
+.twsm-dialog:not([open]) {
+  display: none;
+}
+
+.twsm-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+/* USWDS gives .usa-modal__content a 2rem padding-top to clear its own close button, which sits
+   above the main block in its markup. This shell puts the close button inside .twsm-main instead,
+   so that band is dead space over the heading — every inset in this dialog is .twsm-main's. */
+.twsm-dialog .usa-modal__content {
+  padding-top: 0;
+}
+
+/* Every rule below is scoped through .twsm-dialog rather than written as a bare class. `.twsm-main`
+   and `.twsm-close` collide head-on with credit-assistant's own components/modals.css, which sets
+   `.usa-modal__main { padding-bottom: .5rem }` and `.usa-modal__close { top: 0; right: 0 }` on the
+   same elements at the same specificity — so which one wins is decided by stylesheet order, and the
+   order differs per host. The audit-panel modals happen to load after it (their own <link>); the
+   tool-panels bundle loads from inside main.css *before* it, which is why the Tools dialog was
+   drawing its close button in the corner and losing its bottom inset. Two classes beat one
+   everywhere, so the dialogs now look the same wherever they are loaded from. This is the same
+   defence the `.usa-modal__heading.twsm-heading` rule below already documents. */
+.twsm-dialog .twsm-main {
+  position: relative;
+  box-sizing: border-box;
+  /* Full width, explicitly. USWDS makes .usa-modal__content a `display: flex` column and gives
+     .usa-modal__main `margin: 0 auto` — and an auto margin on a flex line's *cross* axis absorbs the
+     free space instead of stretching, so the main block sized itself to its widest child rather than
+     to the dialog. That put the whole modal at the intrinsic width of the longest label in it ("Reset
+     configuration to the build defaults"), which is why it drew narrow in Fact Explorer while the
+     same component drew full-width in a host whose own modal CSS happened to re-declare a width.
+     Zeroing the side margins restores the stretch; the width and border-box make it independent of
+     which rule wins. */
+  width: 100%;
+  margin-inline: 0;
+  padding: var(--twsm-inset-top) var(--twsm-inset-x) 2rem;
+}
+
+/* On the heading's line, not floating in the corner above it. It starts at the same top inset the
+   heading does and takes the heading's line box as its height, so USWDS's own `align-items: center`
+   centres the icon on the words rather than on a taller box. The right inset is pulled back by the
+   button's padding so the icon — not the hit area — lands flush with the section rules below. */
+.twsm-dialog .twsm-close {
+  position: absolute;
+  top: var(--twsm-inset-top);
+  right: calc(var(--twsm-inset-x) - 0.25rem);
+  box-sizing: border-box;
+  height: 1.7875rem; /* .twsm-heading's line box: 1.375rem × 1.3 */
+  min-width: 0;
+  margin: 0;
+  padding: 0 0.25rem;
+  background: transparent;
+  color: var(--twsm-text);
+}
+
+.twsm-dialog .twsm-close:hover,
+.twsm-dialog .twsm-close:active {
+  background: transparent;
+  color: var(--twsm-text);
+}
+
+.twsm-dialog .twsm-close:focus-visible {
+  outline: 2px solid var(--twsm-selected-border);
+  outline-offset: 2px;
+}
+
+/* The heading's rule is the only line in this modal — the section itself runs together.
+   Selector is doubled up with .usa-modal__heading (the element carries both classes — see
+   workspace-settings-modal.js) so this wins on specificity over real USWDS's own
+   .usa-modal__heading rule, which sets font-family to its "heading" role (serif by default)
+   — a single-class rule here would only win by accident of stylesheet load order, and does
+   in some hosts but not others. */
+.usa-modal__heading.twsm-heading {
+  margin: 0 0 1.25rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--twsm-border);
+  font-family: var(--twsm-font);
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+/* ── Section ─────────────────────────────────────────────────────────────── */
+/* Every section is a shut <details> (see workspace-settings-modal.html), so the modal opens as a
+   stack of lavender rows, each its own pill — the global nav's --tgn-menu-active fill, not a plain
+   list of titles with a rule between them. Opening one frames it in a 4px rule of the same color,
+   which is what tells you which pill is the one holding the content underneath it; a closed pill
+   carries no border, because there is nothing under it to frame.
+
+   --twsm-section-pad is still the one number that spaces an open section's content from its own
+   summary and from the next pill down, the same job it always did. */
+
+.twsm-section {
+  --twsm-section-pad: 1rem;
+
+  margin-top: 0.75rem;
+}
+
+.twsm-section:first-of-type {
+  margin-top: 0;
+}
+
+/* The pill is wider than the text above it: rather than sitting at the same --twsm-inset-x the
+   heading and hint text use, it is pulled out to sit 1rem off the dialog's true edge — the target
+   design's rows read as nearly full-bleed, not centered inside the same margin everything else
+   uses. 1rem rather than a hairline gap because flush-to-the-border read as clipped, not wide.
+   Computed off --twsm-inset-x rather than a fixed value so it stays correct at the narrow
+   viewport below, where that variable shrinks. The footer's reset button gets the same treatment
+   so the two land flush with each other. */
+.twsm-section,
+.twsm-footer {
+  margin-inline: calc(2rem - var(--twsm-inset-x));
+}
+
+/* The whole title row is the toggle. flex + justify-content puts the title at the leading edge and
+   the chevron at the trailing one; the native disclosure marker is hidden because the chevron below
+   replaces it, drawn (and rotated) on purpose rather than left to whatever the browser ships. */
+.twsm-section__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.25rem;
+  background: var(--twsm-section-bg);
+  cursor: pointer;
+  list-style: none;
+}
+
+.twsm-section__summary::-webkit-details-marker {
+  display: none;
+}
+
+.twsm-section__summary:focus-visible {
+  outline: 2px solid var(--twsm-selected-border);
+  outline-offset: 2px;
+}
+
+/* The heading is inside the <summary> to keep the modal's document outline; inline so it shares the
+   row's line instead of being pushed below it by its own block box. */
+.twsm-section__title {
+  display: inline;
+  margin: 0;
+  font-family: var(--twsm-font);
+  font-size: 1.0625rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+/* USWDS's own expand_more glyph — the same path the tool panels' row chevrons draw — so a shut
+   section reads as "opens downward" and an open one, rotated, as "was opened from here". */
+.twsm-section__chevron {
+  flex: 0 0 auto;
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--twsm-text);
+  transition: transform 0.15s ease;
+}
+
+.twsm-section[open] .twsm-section__chevron {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .twsm-section__chevron {
+    transition: none;
+  }
+}
+
+/* The frame an open section gets, in the same lavender its summary is already filled with — the
+   border rounds past the summary's own corners, and the summary loses its bottom two so the two
+   pieces read as one continuous pill rather than a rounded row inside a rounded box. Padding moves
+   here (from the old flat .twsm-section rule) so the content lines up under the summary's own
+   inset instead of touching the frame. */
+.twsm-section[open] {
+  padding: 0 1rem 1rem;
+  border: 4px solid var(--twsm-section-bg);
+  border-radius: 0.375rem;
+}
+
+.twsm-section[open] > .twsm-section__summary {
+  margin: 0 -1rem;
+  border-radius: 0.125rem 0.125rem 0 0;
+}
+
+.twsm-section__hint {
+  margin: var(--twsm-section-pad) 0 0.75rem;
+  font-size: 0.9375rem;
+  color: var(--twsm-text);
+}
+
+/* An open section's own first block sets the gap under the title; anything that lands there without
+   a margin of its own (the Advanced fields, an empty state) gets the same one. */
+.twsm-section > .twsm-section__summary + * {
+  margin-top: var(--twsm-section-pad);
+}
+
+/* ── Option rows ─────────────────────────────────────────────────────────── */
+/* Each choice is its own bordered box — the Display modal's option rows use the same treatment
+   now. The Tools modal is the one holdout with stock USWDS rows, since a tool checkbox there reads
+   as one item in a list rather than a switch you are throwing for the whole workspace.
+
+   The box is USWDS's own tile variant (`usa-checkbox__input--tile` on the input — see
+   workspace-settings-modal.html), not a bespoke one on the wrapper. USWDS draws the tile on the
+   *label*, which is what makes the whole box a click target rather than just the control and its
+   words, and gives it the padding, radius, and control-art offset every other USWDS tile has. Only
+   the colors are ours: the design's 1px border instead of USWDS's 2px gray, and the host's brand
+   token for the selected fill instead of the primary USWDS compiled in. Both rules sit on the
+   input, not the label, so they outweigh USWDS's own `--tile` pair in any load order. */
+
+.twsm-option .usa-checkbox__input--tile + .usa-checkbox__label {
+  border: 1px solid var(--twsm-border);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+/* Selected follows from the control itself, rather than from a `--selected` class the JS toggles. */
+.twsm-option .usa-checkbox__input--tile:checked + .usa-checkbox__label {
+  border-color: var(--twsm-selected-border);
+  background-color: var(--twsm-selected-bg);
+}
+
+/* USWDS gives .usa-checkbox a white background of its own; with the tile drawing the box, that
+   would show as white corners around a selected tile's rounded ones. */
+.twsm-option.usa-checkbox {
+  background: transparent;
+}
+
+/* ── Application rows ────────────────────────────────────────────────────── */
+/* The same tile treatment as an option row, on USWDS's *radio* variant: the workspace is over one
+   application at a time, so the control has to say so. Everything below is the two-line body inside
+   that tile — the tile itself, its border and its selected fill, are USWDS's and the rules above's
+   twins, deliberately kept as separate selectors rather than a shared class, because
+   `.usa-checkbox__label` and `.usa-radio__label` are different USWDS components and grouping them
+   would mean one rule silently depending on both staying identical. */
+
+.twsm-apps {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.twsm-app .usa-radio__input--tile + .usa-radio__label {
+  border: 1px solid var(--twsm-border);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.twsm-app .usa-radio__input--tile:checked + .usa-radio__label {
+  border-color: var(--twsm-selected-border);
+  background-color: var(--twsm-selected-bg);
+}
+
+.twsm-app.usa-radio {
+  background: transparent;
+}
+
+.twsm-app__name {
+  display: block;
+  font-weight: 700;
+}
+
+/* The application's own modes. Muted and smaller: it is what you would get, not what you are
+   choosing between — the choice is the application. */
+.twsm-app__modes {
+  display: block;
+  margin-top: 0.125rem;
+  color: var(--twsm-hint);
+  font-size: 0.875rem;
+}
+
+/* Shown in place of the rows when the host declares no feature flags — the library's own default,
+   and the state of any application that has nothing in testing. Muted, because it is a statement
+   about this build rather than something to act on. */
+.twsm-empty {
+  margin: 0;
+  color: var(--twsm-hint);
+  font-size: 0.9375rem;
+  font-style: italic;
+}
+
+/* ── Narrow viewports ────────────────────────────────────────────────────── */
+
+@media (max-width: 30em) {
+  /* Narrowing the inset takes the close button with it — that is what the property is for. An
+     element selector beats the zero-specificity :where() the defaults are declared in. */
+  taxpert-workspace-settings-modal {
+    --twsm-inset-x: 1.25rem;
+  }
+
+  .twsm-dialog .twsm-main {
+    padding-bottom: 1.5rem;
+  }
+}
+
+/* ── Overridden markers ──────────────────────────────────────────────────── */
+/* A section whose configuration no longer matches the build says so, with the way back beside it.
+   Quiet — this is a note about where a value came from, not a warning — but always present, because
+   a workspace edited in one browser and not in another is otherwise indistinguishable from a bug. */
+
+.twsm-override {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0.75rem 0 0;
+  color: var(--twsm-hint);
+  font-size: 0.875rem;
+}
+
+.twsm-dialog .twsm-reset {
+  font-size: 0.875rem;
+}
+
+/* The reset-everything button, shown only while there is something to reset. Its own row, above the
+   dialog's bottom inset, separated by the same rule — and now by the same gap — that divides the
+   sections, so it reads as the end of that stack rather than as a block pushed away from it. */
+.twsm-footer {
+  padding-top: 1rem;
+  border-top: 1px solid var(--twsm-border);
+}
+
+.twsm-footer[hidden] {
+  display: none;
+}
+
+/* USWDS buttons size to their own label by default and carry their own horizontal margin for
+   sitting beside other buttons; both are reset here so the button spans exactly the widened
+   footer above — the same width as the section pills — rather than a narrower control floating
+   inside it, or a wider one overflowing it. */
+.twsm-dialog .twsm-reset-all {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
+}
+
+/* ── Outcomes editor ─────────────────────────────────────────────────────── */
+/* A determination is a nested form — name, fact, wording, then a group of facts per section — so
+   each one is a shut <details>. That keeps the modal the same height whether a host tracks one
+   outcome or six, and means the list can be read at a glance before anything is opened. The marker
+   is USWDS-plain; the summary carries the row's own name, which is the only thing to see when
+   shut. */
+
+.twsm-outcome {
+  margin-top: 0.5rem;
+  border: 1px solid var(--twsm-border);
+  border-radius: 0.25rem;
+}
+
+.twsm-outcome__summary {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.twsm-outcome__summary:focus-visible {
+  outline: 2px solid var(--twsm-selected-border);
+  outline-offset: -2px;
+}
+
+.twsm-outcome__body {
+  padding: 0 1rem 1rem;
+  border-top: 1px solid var(--twsm-border);
+}
+
+.twsm-field {
+  margin-top: 0.75rem;
+}
+
+/* USWDS's .usa-label carries a 1.5rem top margin meant for a form column; inside these rows the
+   field's own margin already does that spacing, and both together doubles it. */
+.twsm-dialog .twsm-field__label {
+  margin-top: 0;
+  font-size: 0.875rem;
+}
+
+/* `border-box` is the load-bearing half. USWDS gives these `width: 100%` and then its own padding and
+   1px border on top — .usa-select's padding-right is 2rem, to clear the chevron it paints — so under
+   the UA's default content-box each control renders wider than the box it sits in: the select by
+   42px, the inputs and the facts textarea by 18px each, which is the overflow inside an open outcome.
+   It looks fine in a host whose global reset happens to say `* { box-sizing: border-box }` and breaks
+   in one that doesn't, so this dialog states it rather than inheriting it — the same reason the
+   chrome above is declared here instead of borrowed from the host. */
+.twsm-dialog .twsm-field .usa-input,
+.twsm-dialog .twsm-field .usa-select,
+.twsm-dialog .twsm-field .usa-textarea {
+  box-sizing: border-box;
+  max-width: none; /* USWDS caps these at 30rem, which is narrower than this dialog */
+}
+
+/* Fact paths are read as a column of paths, so they get the mono face the Inspect panel's XML does
+   — a proportional font makes two similar paths hard to tell apart at a glance. */
+.twsm-dialog .twsm-facts {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.8125rem;
+}
+
+/* A group of facts inside a determination: indented under the fields it belongs to, and ruled on
+   the left so the nesting is visible without a second border box.
+
+   The right padding matches the left. It used to be 0, so a full-width .usa-input inside ran 0.75rem
+   further right than its own label's indent — reading as an input overflowing the group rather than
+   sitting in it. `min-width: 0` because this is a <fieldset>, and a fieldset's initial `min-width` is
+   `min-content` rather than `auto`: without it, one long unbroken fact path in the textarea below can
+   push the whole group wider than the dialog instead of wrapping. */
+.twsm-outcome-section {
+  min-width: 0;
+  margin: 1rem 0 0;
+  padding: 0 0.75rem 0.5rem;
+  border: none;
+  border-left: 2px solid var(--twsm-border);
+}
+
+.twsm-outcome__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.twsm-dialog .twsm-remove {
+  color: var(--twsm-hint);
+}
+
+.twsm-add {
+  margin-top: 1rem;
+}
+
+/* An outcome whose wording comes from host code rather than from a descriptor. */
+.twsm-note {
+  margin: 0.5rem 0 0;
+  color: var(--twsm-hint);
+  font-size: 0.875rem;
+  font-style: italic;
+}
+
+/* ── Advanced ────────────────────────────────────────────────────────────── */
+/* Nothing of its own left: Advanced was the first section to be a disclosure, and now that they all
+   are, `.twsm-section` above carries its rule, its insets and its summary treatment. It stays last
+   in the markup, which is the whole of what still sets it apart.
+
+   Why an import failed. Red, because unlike `.twsm-override` this is something that did not happen
+   and has to be acted on. */
+.twsm-error {
+  margin: 0.5rem 0 0;
+  color: var(--twsm-error, #b50909);
+  font-size: 0.875rem;
+}

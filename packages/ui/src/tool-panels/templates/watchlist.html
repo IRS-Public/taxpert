@@ -1,0 +1,174 @@
+<!--
+  Markup for the Watchlist tool: the panel body (<taxpert-watchlist>), one pinned-fact row, the
+  "Add fact" dialog body (<taxpert-add-fact-modal>), and the combo box both of its fields are built
+  from.
+
+  Split out of tool-panel.html rather than added to it so the markup is fetched only when the
+  Watchlist is actually switched on — a panel body is the one part of this bundle a host is likely
+  never to open. The <dialog> chrome around the modal is the shared shell in
+  ../../shared/templates/shared.html, as with every other Taxpert modal.
+
+  As everywhere in this package, ids here are a contract: getTemplate(id) checks
+  document.getElementById(id) first, so credit-assistant can server-render a translated
+  <template id="ttp-watchlist"> and it wins over this copy with no change to the JS.
+-->
+
+<!--
+  The panel body. Three parts in a fixed order — the standing explanation, the list of pinned facts,
+  and the button that adds one. The list is empty on first open, which is the whole of the design's
+  "empty" state: no separate empty-state markup, because the hint and the button already say what
+  the tool is for.
+-->
+<template id="ttp-watchlist">
+  <p class="ttp-body__hint">Track the value of one of more facts as you work or load scenarios.</p>
+
+  <!-- Plain container, not a list: each row is a <details>, whose own disclosure semantics are the
+       useful ones, and an ARIA list wrapped round them would override exactly that. -->
+  <div class="ttp-watch__list"></div>
+
+  <button class="usa-button ttp-body__action ttp-watch__add" type="button">
+    <svg class="ttp-body__action-icon" aria-hidden="true" focusable="false"><use href="#ttp-icon-add"></use></svg>
+    Add fact
+  </button>
+</template>
+
+<!--
+  One pinned fact. A <details>, so expanding it is browser behaviour rather than a click handler and
+  a click handler's aria-expanded to keep in step — the chevron turn is `details[open]` in CSS.
+
+  Everything that changes as the fact graph settles is addressed by `data-field`, and the row's
+  status is the host element's `data-status` attribute: watchlist.css picks the icon colour off it,
+  and taxpert-watchlist.js swaps the one <use href> rather than rebuilding the row. That is what
+  lets an open row stay open across an `fg-update`.
+
+  The kebab is a real <button> inside the <summary> (phrasing content, so valid) rather than the
+  decorative <svg> the stub carried: it opens a menu, so it has to be operable. Its click handler
+  calls preventDefault(), which is what stops the summary underneath from toggling.
+-->
+<template id="ttp-watchlist-row">
+  <details class="ttp-row ttp-watch__row">
+    <summary class="ttp-row__summary">
+      <svg class="ttp-row__icon ttp-watch__status" aria-hidden="true" focusable="false">
+        <use href="#ttp-icon-pending"></use>
+      </svg>
+      <span class="ttp-row__text">
+        <span class="ttp-row__label" data-field="path"></span>
+        <span class="ttp-row__value" data-field="value"></span>
+        <span class="usa-sr-only" data-field="status-label"></span>
+      </span>
+      <span class="ttp-watch__menu">
+        <button class="ttp-watch__kebab" type="button" aria-haspopup="true" aria-expanded="false">
+          <svg class="ttp-row__kebab" aria-hidden="true" focusable="false"><use href="#ttp-icon-more_vert"></use></svg>
+          <span class="usa-sr-only" data-field="menu-label"></span>
+        </button>
+        <span class="ttp-watch__menu-list" role="menu" hidden>
+          <button class="ttp-watch__menu-item" type="button" role="menuitem" data-action="reveal">
+            Reveal in canvas
+          </button>
+        </span>
+      </span>
+      <svg class="ttp-row__chevron" aria-hidden="true" focusable="false"><use href="#ttp-icon-expand_more"></use></svg>
+    </summary>
+
+    <div class="ttp-row__detail ttp-watch__detail">
+      <!-- <div> is valid inside a <dl> and keeps each term with its own definition, which is what
+           makes the two-column grid possible. -->
+      <dl class="ttp-watch__data">
+        <div class="ttp-watch__data-row">
+          <dt>Current value</dt>
+          <dd data-field="detail-value"></dd>
+        </div>
+        <div class="ttp-watch__data-row">
+          <dt>Fact type</dt>
+          <dd data-field="detail-type"></dd>
+        </div>
+        <div class="ttp-watch__data-row">
+          <dt>Fact path</dt>
+          <dd class="ttp-watch__mono" data-field="detail-path"></dd>
+        </div>
+        <!-- Hidden for a fact that isn't in a collection; there is nothing to say about it. -->
+        <div class="ttp-watch__data-row" data-field="detail-collection-row" hidden>
+          <dt>Collection ID</dt>
+          <dd class="ttp-watch__mono" data-field="detail-collection"></dd>
+        </div>
+      </dl>
+
+      <div class="ttp-watch__actions">
+        <button class="usa-button usa-button--unstyled ttp-watch__action" type="button" data-action="reveal">
+          Reveal in canvas
+        </button>
+        <button class="usa-button usa-button--unstyled ttp-watch__action" type="button" data-action="remove">
+          <svg class="ttp-watch__action-icon" aria-hidden="true" focusable="false"><use href="#ttp-icon-delete"></use></svg>
+          Remove fact
+        </button>
+      </div>
+    </div>
+  </details>
+</template>
+
+<!--
+  The "Add fact" dialog's body. Two fields and a submit, matching the Fact Inspector's own pair —
+  the difference is that the collection id is chosen from the ids actually in the graph rather than
+  typed out by hand from memory.
+
+  Each field's control is mounted into its `data-mount` slot at render time, because a combo box is
+  built by combo-box.js rather than declared here: the <label> needs the input's real id, and that
+  id is minted per instance.
+-->
+<template id="ttp-add-fact">
+  <section class="ttp-add-fact">
+    <div class="usa-form-group ttp-add-fact__group">
+      <label class="usa-label ttp-add-fact__label" data-label="path">Fact path</label>
+      <div data-mount="path"></div>
+    </div>
+
+    <div class="usa-form-group ttp-add-fact__group">
+      <label class="usa-label ttp-add-fact__label" data-label="collection">Collection ID</label>
+      <div data-mount="collection"></div>
+    </div>
+
+    <p class="usa-error-message ttp-add-fact__error" data-field="error" role="alert" hidden></p>
+
+    <button class="usa-button ttp-add-fact__submit" type="button" data-action="add">Add fact</button>
+  </section>
+</template>
+
+<!--
+  A combo box: a text input that filters a listbox, the USWDS component's behaviour without its JS.
+
+  Deliberately *not* USWDS's own `.usa-combo-box` markup. That component is enhanced and driven by
+  uswds.min.js through document-level delegated listeners, which fact-explorer doesn't load at
+  all and which would fight this file's handlers where it is loaded. The class names are ours, the
+  interaction contract is the ARIA combobox pattern, and the look is USWDS's — see watchlist.css.
+
+  The toggle carries `unfold_more` rather than the component's default `expand_more`, so the field
+  reads as the same kind of control as the workspace's other dropdowns.
+-->
+<template id="ttp-combo">
+  <div class="ttp-combo">
+    <input class="usa-input ttp-combo__input"
+           type="text"
+           role="combobox"
+           placeholder="- Select -"
+           aria-autocomplete="list"
+           aria-expanded="false"
+           autocomplete="off"
+           autocapitalize="off"
+           spellcheck="false">
+    <span class="ttp-combo__separator" aria-hidden="true"></span>
+    <button class="ttp-combo__toggle" type="button" tabindex="-1" aria-label="Toggle the dropdown list">
+      <svg class="ttp-combo__toggle-icon" aria-hidden="true" focusable="false"><use href="#ttp-icon-unfold_more"></use></svg>
+    </button>
+    <!-- A combobox's popup is a listbox, not a select: the input above owns the value and the
+         typeahead, and this is the list aria-expanded and aria-activedescendant point at. A native
+         select would take away the filtering that is the whole point of the control. Same escape
+         hatch, and same reason, as the USWDS role="button" link in credit-assistant's page.html. -->
+    <!-- [html-validate-disable-next prefer-native-element -- a combobox popup is a listbox] -->
+    <ul class="ttp-combo__list" role="listbox" hidden></ul>
+    <span class="ttp-combo__status usa-sr-only" role="status"></span>
+  </div>
+</template>
+
+<template id="ttp-combo-option">
+  <li class="ttp-combo__option" role="option" aria-selected="false"></li>
+</template>

@@ -1,0 +1,315 @@
+/* The Fact Explorer control panel: the floating card on the canvas, and its three sections —
+   Search, Filter, Layers — plus the scenario status row at its foot.
+
+   It is USWDS markup now (`.usa-input`, `.usa-select`, `.usa-checkbox--tile`, `.usa-fieldset`),
+   drawn by the same a-la-carte packages the shared Taxpert modals use here (styles/uswds.scss). So
+   the rules below place and size things; the controls themselves — the boxes, their checked and
+   focus states, their label typography — are USWDS's, exactly as they are in the Display options
+   dialog this panel sits next to. Anything this file draws itself (the layer switch) is what USWDS
+   has no component for.
+
+   What used to be here and is gone: the five bespoke pickers (slice, find, layer checkboxes,
+   orientation, scenario overlay) and their hand-rolled `.seg-btn` / `.facet-chip` / `.scenario-btn`
+   art. Layout, the scenario overlay and Reset layout are Display options now (the nav's Display
+   button, a shared modal with its own stylesheet); the notes toolbar's Export/Import are gone
+   outright.
+
+   There was an app picker here too (.app-picker), first in the row. Which application the canvas
+   represents is a workspace setting now — taxpert's "Applications" section, behind the nav's gear —
+   because this panel exists only in Fact Explorer, and an application should be switchable from the
+   product experience and Browse All as well. */
+
+/* ── The panel ─────────────────────────────────────────────────────────────
+   A collapsible card, floated over the canvas at the top-left. Its own scroll: the Layers section
+   lists every tag, fact kind and edge kind, which is taller than a short viewport. */
+
+.fe-panel {
+  position: absolute;
+  z-index: var(--z-header);
+  top: var(--space-105);
+  left: var(--space-105);
+  display: flex;
+  flex-direction: column;
+  width: 340px;
+  /* React Flow's default `<Controls>` shares this left edge, stacked at the bottom: 4 buttons
+     (zoom in, zoom out, fit view, lock) at 26px each plus its own 15px margin from the viewport
+     edge, ~119px. A long Filter/Layers list must stop clear of that regardless of viewport height,
+     or it grows down over the zoom/fit/lock buttons — so the reserved space here is that footprint
+     plus this panel's own top offset and a full spacing unit of breathing room, not a tuned guess. */
+  max-height: calc(100vh - var(--space-105) - 119px - var(--space-2) - var(--space-105));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-panel);
+  font-family: var(--font-ui);
+  color: var(--color-text);
+}
+
+/* The whole header row is the toggle — the chevron is the affordance, not the hit target. */
+.fe-panel__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1);
+  padding: var(--space-105) var(--space-2);
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  color: inherit;
+}
+
+.fe-panel__heading {
+  font-size: 1.0625rem;
+  font-weight: 700;
+}
+
+.fe-panel__chevron {
+  color: var(--color-text-muted);
+}
+
+.fe-panel__body {
+  overflow-y: auto;
+  padding: 0 var(--space-2) var(--space-2);
+  border-top: 1px solid var(--color-divider);
+}
+
+/* Counts + data source, in the design's italic caption. Body copy like the section hints under it —
+   it is a sentence about what is on the canvas, and it was the one line in the panel still set two
+   steps below everything around it. */
+.fe-panel__counts {
+  margin: var(--space-105) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-body);
+  font-style: italic;
+}
+
+/* ── Sections ──────────────────────────────────────────────────────────────
+   Title, hint, controls — the same rhythm as the shared modals' `.tdm-section`, so the panel and
+   the Display dialog read as one system rather than as two. */
+
+.fe-section {
+  margin-top: var(--space-2);
+}
+
+.fe-section__title {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.fe-section__hint {
+  margin: var(--space-05) 0 0;
+  font-size: var(--font-body);
+  color: var(--color-text);
+}
+
+/* A labelled control (Scope), and the bare label that heads a group of them (Type). */
+.fe-field {
+  margin-top: var(--space-1);
+}
+
+.fe-field__label {
+  margin: 0 0 var(--space-05);
+  font-size: var(--font-body);
+  font-weight: 700;
+}
+
+.fe-field__label--standalone {
+  margin-top: var(--space-105);
+}
+
+/* Full width of the card, and USWDS's own body size (--font-body is 1rem). They were --font-2xs,
+   10px, on the reasoning that a control in a 340px card should be smaller than a control on a
+   full-width page. It read as a different, older application docked beside the Display dialog, whose
+   inputs are 1rem — and 10px is below the size anyone should have to read a value back at. The
+   `font-family` is still worth stating: USWDS sets its own on these elements directly, so it does
+   not inherit from `.fe-panel`, and naming --font-ui here is what keeps the Scope dropdown in the
+   same face as the prose above it whatever either one is set to. */
+.fe-panel .usa-input,
+.fe-panel .usa-select {
+  max-width: none;
+  width: 100%;
+  font-family: var(--font-ui);
+  font-size: var(--font-body);
+}
+
+/* One choice. USWDS's tile variant draws the bordered box, its checked fill and its focus ring, so
+   there is nothing here to keep in step with `:checked` — only the row's spacing and font. Same
+   --font-body as the controls above: a checkbox/radio row is a control, not the hint text beside it. */
+.fe-option {
+  margin-top: var(--space-1);
+}
+
+.fe-panel .fe-option .usa-checkbox__label,
+.fe-panel .fe-option .usa-radio__label {
+  margin-top: 0;
+  font-family: var(--font-ui);
+  font-size: var(--font-body);
+}
+
+/* USWDS centers the tile's icon on the label with a `margin-top` baked in at compile time from its
+   own default body text. That is the size the labels are set at again, so the two now agree — but
+   centering by percentage keeps them agreeing if either moves, which is what the baked-in offset
+   could not do while the labels were 10px and the icon floated above the line box. */
+.fe-panel .fe-option .usa-checkbox__label::before,
+.fe-panel .fe-option .usa-radio__label::before {
+  top: 50%;
+  margin-top: 0;
+  transform: translateY(-50%);
+}
+
+/* ── Search ────────────────────────────────────────────────────────────── */
+
+.fe-search__input {
+  margin-top: var(--space-1);
+}
+
+.fe-search__matches {
+  display: flex;
+  align-items: center;
+  gap: var(--space-05);
+  margin-top: var(--space-05);
+  color: var(--color-text-muted);
+  font-size: var(--font-sm);
+}
+
+.fe-search__count {
+  flex: 1;
+  white-space: nowrap;
+}
+
+.fe-search__step {
+  padding: 0 var(--space-05);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: var(--font-sm);
+}
+
+.fe-search__step:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ── Layers ────────────────────────────────────────────────────────────────
+   One <fieldset> per layer: its name and switch in the <legend>, its kinds beneath. Disabling the
+   fieldset (the "Knockouts" view) disables every control inside it for free — which is the reason
+   the group is a fieldset rather than a <div>. */
+
+.fe-layer {
+  margin: var(--space-105) 0 0;
+  padding: 0;
+  border: none;
+}
+
+.fe-layer__legend {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1);
+  width: 100%;
+  padding: 0;
+}
+
+.fe-layer__title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+
+/* The kinds sit under their layer's title, sharing its left edge rather than stepping in from it.
+   They were indented by --space-105 to read as nested, but the nesting is already said twice over —
+   the block is inside the layer's <fieldset> and disappears with its switch — and the indent put
+   every checkbox tile a notch to the right of "Flow elements" / "Facts" / "Connectors" above it, so
+   the panel's controls had three left edges instead of one. */
+.fe-layer__options {
+  padding-left: 0;
+}
+
+/* A layer whose switch is off draws no kinds — see the comment in LayerControls.jsx. Said here
+   because the rule above sets no `display`, so the UA's `[hidden] { display: none }` would already
+   do it; this is the explicit version, and the place to change if the block ever gains a display of
+   its own. */
+.fe-layer__options[hidden] {
+  display: none;
+}
+
+/* The layer switch. Written here because USWDS has no switch component; `aria-checked` is the
+   state, so the stylesheet reads the same attribute a screen reader does and no class mirrors it. */
+
+.fe-switch {
+  flex: 0 0 auto;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  line-height: 0;
+}
+
+.fe-switch__track {
+  display: block;
+  position: relative;
+  width: 34px;
+  height: 18px;
+  border-radius: 9px;
+  background: var(--color-disabled);
+  transition: background 120ms ease-in-out;
+}
+
+.fe-switch__track::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--color-surface);
+  transition: transform 120ms ease-in-out;
+}
+
+.fe-switch[aria-checked='true'] .fe-switch__track {
+  background: var(--color-primary);
+}
+
+.fe-switch[aria-checked='true'] .fe-switch__track::after {
+  transform: translateX(16px);
+}
+
+.fe-switch:focus-visible .fe-switch__track {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.fe-switch:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+/* ── Scenario status ───────────────────────────────────────────────────────
+   All that is left of the overlay controls: loading, failure, and the AI summary. It renders
+   nothing when there is nothing to say. */
+
+.fe-scenario-status {
+  margin-top: var(--space-2);
+  padding-top: var(--space-105);
+  border-top: 1px solid var(--color-divider);
+  font-size: var(--font-body);
+}
+
+.fe-scenario-status__busy {
+  color: var(--color-text-muted);
+}
+
+.fe-panel .fe-scenario-status__explain {
+  width: 100%;
+  margin: 0;
+}
+
+.fe-scenario-status__error {
+  margin-top: var(--space-05);
+}

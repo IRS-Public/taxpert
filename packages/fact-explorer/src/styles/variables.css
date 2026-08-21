@@ -1,0 +1,72 @@
+:root {
+  /* Colors — palette */
+  --color-primary: #2b6cb0;
+  --color-primary-hover: #2461a0; /* darker primary for active blue button states */
+  --color-danger: #c0392b;
+  --color-success: #3e8635;
+  --color-accent: #7b3fb5;
+  --color-warning: #caa53a;
+
+  /* Colors — text */
+  --color-text: #1b1f23;
+  --color-text-muted: #6b7785;
+  --color-text-faint: #9aa3ab;
+  --color-disabled: #b8c0c8;
+
+  /* Colors — surfaces / borders / dividers */
+  --color-border: #d6dbe0;
+  --color-border-light: #eef1f4;
+  --color-divider: #e6eaee;
+  --color-surface: #fff;
+  --color-surface-alt: #f6f8fa;
+
+  /* Colors — blue tints (chips, hovers) */
+  --color-primary-tint: #eef4fb;
+  --color-primary-tint-2: #eef5fc;
+  --color-primary-border: #cfe0f2;
+
+  /* Colors — banner lavender */
+  --color-banner: #e6e6fa;
+
+  /* Spacing */
+  --space-05: 4px;
+  --space-1: 8px;
+  --space-105: 12px;
+  --space-2: 16px;
+
+  /* Radius */
+  --radius-sm: 4px;
+  --radius: 6px;
+  --radius-lg: 8px;
+  --radius-pill: 10px;
+
+  /* Type */
+  /* The small end of the scale, for the canvas: node titles, edge labels and the legend, where the
+     text is a label on a diagram rather than something to read. The control panel used to draw its
+     own body copy and form controls from here too — see --font-body. */
+  --font-2xs: 10px;
+  --font-xs: 11px;
+  --font-sm: 12px;
+  --font-md: 13px;
+  /* Panel body copy, and every control in it. 1rem, the same size the shared Taxpert modals set
+     (display-modal.css), because the control panel and the Display dialog sit side by side on this
+     page and are meant to read as one system — at 10–11px the panel looked like a different, older
+     application docked next to it. */
+  --font-body: 1rem;
+  /* Source Sans Pro — the Taxpert type family, and the face USWDS sets on its own form controls, so
+     the panel's prose and the controls inside it stop rendering in two different fonts. "Source Sans
+     Pro Web" is the @font-face USWDS emits here (public/uswds/fonts/source-sans-pro, vendored by
+     `npm run copy-uswds-assets`); the rest of the stack is for a build served without it. */
+  --font-ui:
+    'Source Sans Pro Web', 'Source Sans Pro', 'Helvetica Neue', Helvetica, Roboto, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Shadow / z-index */
+  --shadow-panel: 0 6px 18px rgba(0, 0, 0, 0.12);
+  --shadow-launcher: 0 2px 6px rgba(0, 0, 0, 0.15);
+  --z-header: 5;
+  --z-chat: 7;
+
+  /* Legacy alias — referenced by base/explain ports. */
+  --fg: var(--color-text);
+}

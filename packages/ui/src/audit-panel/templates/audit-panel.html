@@ -1,0 +1,129 @@
+<!--
+  Markup for <taxpert-audit-panel> — the panel shell, its rail tabs, and the built-in section
+  bodies. Loaded by src/audit-panel/js/templates.js; see src/shared/js/templates.js for how a host
+  can override any of these by putting a <template> with the same id on the page (which is how
+  credit-assistant could server-render `#{...}`-translated copies later without touching this
+  package — the English literals below are what the ported Thymeleaf fragments' i18n keys became).
+
+  Every id here is a contract: the ported section modules query the document for them.
+-->
+
+<!-- ── Panel shell ──────────────────────────────────────────────────────────────────────────── -->
+
+<!--
+  The resizer handle, the content pane and the tab rail. Fixed shape — the sections that go inside
+  are cloned in separately, one per descriptor. aria-valuemin/max are re-set from JS as the
+  viewport changes; the values here are the defaults the panel starts from.
+-->
+<template id="tap-shell">
+  <div class="audit-panel__resizer"
+       id="audit-panel-resizer"
+       role="separator"
+       aria-label="Resize audit panel"
+       aria-orientation="vertical"
+       aria-valuemin="320"
+       aria-valuemax="960"
+       tabindex="0"></div>
+  <div class="audit-panel__content"></div>
+  <nav class="audit-panel__rail" aria-label="Audit panel sections">
+    <ul role="tablist" aria-orientation="vertical">
+      <li role="presentation">
+        <button class="audit-panel__tab audit-panel__tab--toggle"
+                id="toggle-audit-panel"
+                type="button"
+                aria-label="Toggle audit panel"
+                aria-expanded="false"
+                title="Toggle audit panel">
+          <!-- USWDS navigate_far_before, inlined. One glyph, mirrored by CSS on
+               body.audit-panel-open (see panel-shell.css) to become navigate_far_next — rather
+               than swapping an <img src> at a credit-assistant-specific icon path, which 404s in
+               every other host. -->
+          <svg class="usa-icon audit-panel__tab-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path fill="currentColor" d="M18.41 16.59 13.82 12l4.59-4.59L17 6l-6 6 6 6zM6 6h2v12H6z" />
+          </svg>
+        </button>
+      </li>
+    </ul>
+  </nav>
+</template>
+
+<!-- One rail tab. The panel stamps data-tab, aria-controls, the title and the two labels. -->
+<template id="tap-rail-tab">
+  <li role="presentation">
+    <button class="audit-panel__tab" role="tab" type="button" aria-selected="false">
+      <span class="audit-panel__tab-label" aria-hidden="true"></span>
+      <span class="usa-sr-only"></span>
+    </button>
+  </li>
+</template>
+
+<!-- ── Section bodies ───────────────────────────────────────────────────────────────────────── -->
+
+<!--
+  Fact Inspector. `data-fact-path-input` / `data-track-selected-fact` / `data-clear-tracked-facts`
+  are the wiring contract audited-fact.js's wireFactInspector() binds listeners to — these carried
+  inline `onkeydown=`/`onclick=` attributes before, which need their handlers on `window` and are
+  blocked outright by any Content-Security-Policy worth having.
+-->
+<template id="tap-fact-inspector">
+  <h2>Fact Inspector</h2>
+  <div id="audit-panel__fact-list"></div>
+  <div class="usa-form-group">
+    <label class="usa-label twe-question" for="fact-select">Fact Path</label>
+    <input list="fact-options" class="usa-input" id="fact-select" data-fact-path-input>
+    <datalist id="fact-options" aria-invalid="false"></datalist>
+  </div>
+  <div class="usa-form-group">
+    <label class="usa-label twe-question" for="fact-collection-id">Collection ID</label>
+    <input id="fact-collection-id" class="usa-input" type="text" autocomplete="off" aria-invalid="false">
+  </div>
+  <button class="usa-button" id="add-fact-button" type="button" data-track-selected-fact>Add fact</button>
+</template>
+
+<!-- Explain &amp; Analyze — the AI chat section (gated behind the ai-fact-explanation flag). -->
+<template id="tap-explain">
+  <h2>Explain &amp; Analyze</h2>
+  <div id="chat-status" class="chat-status"></div>
+  <div id="chat-messages" class="chat-messages" role="log" aria-live="polite" aria-label="Chat conversation"></div>
+  <div class="chat-input-row">
+    <div class="usa-form-group">
+      <label class="usa-label twe-question" for="chat-fact-select">Fact Path</label>
+      <div class="ap-fact-row">
+        <input list="chat-fact-options" class="usa-input" id="chat-fact-select" data-fact-path-input>
+        <button class="usa-button usa-button--unstyled" type="button"
+                title="Clear all tracked facts" aria-label="Clear all tracked facts"
+                data-clear-tracked-facts>Clear facts</button>
+      </div>
+      <datalist id="chat-fact-options" aria-invalid="false"></datalist>
+    </div>
+    <textarea class="chat-container__textarea" placeholder="Ask about this application..."
+              aria-label="Ask about this application" rows="3"></textarea>
+    <button id="chat-submit-btn" class="chat-container__submit-btn" type="button"
+            aria-label="Submit question">Send</button>
+  </div>
+</template>
+
+<!-- ── Fact Inspector card ──────────────────────────────────────────────────────────────────── -->
+
+<!--
+  The <audited-fact> shadow-root contents (formerly fragments/audit-panel/fact-template.html, then
+  a JS string in audited-fact.js). Cloned once per tracked fact; the `part=` names are the styling
+  contract a host page can reach the shadow root through.
+-->
+<template id="tap-fact">
+  <h3 part="heading" class="audit-panel__fact__path"></h3>
+  <dl part="fact-data">
+    <dt part="fact-term">Fact Type:</dt>
+    <dd part="fact-definition" class="audit-panel__fact__type"></dd>
+  </dl>
+  <dl part="fact-data">
+    <dt part="fact-term">Value:</dt>
+    <dd part="fact-definition" class="audit-panel__fact__value"></dd>
+  </dl>
+  <div class="audit-panel__fact__definition">
+    <pre part="code-block"><code><slot name="definition"></slot></code></pre>
+  </div>
+  <div class="audit-panel__fact__controls">
+    <button part="remove-button" class="usa-button audit-panel__fact__remove" type="button">Remove fact</button>
+  </div>
+</template>

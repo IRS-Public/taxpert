@@ -1,0 +1,209 @@
+/* Canvas node renderers + chrome widgets: FgmNode, FrameNode, Legend,
+   FacetFilters. Colours and shapes that vary per node category / state are
+   computed at runtime from src/canvas/style.js and arrive as inline CSS custom
+   properties (--node-bg, --node-border, --node-ring, …); the static geometry
+   lives here. */
+
+/* ── FgmNode ─────────────────────────────────────────────────────────────── */
+.fgm-node {
+  position: relative;
+  width: 230px; /* fixed canvas node width (layout-coupled, not a spacing token) */
+  background: var(--node-bg);
+  border: 2px var(--node-border-style, solid) var(--node-border);
+  border-radius: var(--node-radius, var(--radius-lg));
+  padding: var(--space-1) var(--space-105);
+  font-size: var(--font-sm);
+  line-height: 1.3;
+  opacity: var(--node-opacity, 1);
+  outline: var(--node-outline, none);
+  box-shadow: var(--node-shadow, none);
+}
+
+/* Octagon (knockout): clip-path replaces border-radius; an outline would be
+   clipped, so selection/search emphasis rides on box-shadow instead. */
+.fgm-node--octagon {
+  min-height: 84px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 14px 26px;
+  clip-path: var(--node-clip);
+}
+
+.fgm-node__title {
+  font-weight: 600;
+  color: var(--color-text);
+  word-break: break-word;
+}
+
+.fgm-node__subtitle {
+  color: var(--color-text-muted);
+  font-size: var(--font-xs);
+  margin-top: 2px;
+  word-break: break-word;
+}
+
+/* Annotation dot (M5). Colour from ANNOTATION_TAG_STYLE → --badge-bg. */
+.fgm-node__annotation {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--badge-bg, var(--color-text-muted));
+  border: 2px solid var(--color-surface);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  z-index: 2;
+}
+
+/* Dependency-cone hub pin (node.data.hub). Border colour from the node's
+   category → --badge-border. */
+.fgm-node__hub {
+  position: absolute;
+  bottom: -8px;
+  right: -8px;
+  font-size: var(--font-xs);
+  line-height: 1;
+  background: var(--color-surface);
+  border: 1px solid var(--badge-border, var(--color-text-faint));
+  border-radius: var(--radius-lg);
+  padding: 1px 3px;
+  z-index: 2;
+}
+
+/* Input-type badge for fg-set question nodes. Glyph + outline colour come from
+   the node category border → --badge-color / --badge-border. */
+.fgm-node__input-badge {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  border: 1.5px solid var(--badge-border, var(--color-text-faint));
+  color: var(--badge-color, var(--color-text-faint));
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 13px;
+  text-align: center;
+  z-index: 2;
+}
+
+/* "Explain this node" launcher (N7). Default = white bg / blue glyph / gray
+   outline; active (hover/focus) = blue bg / white glyph. The swap is driven by
+   the .fgm-node__explain--active modifier whose colours arrive as custom props
+   from EXPLAIN_BADGE. */
+.fgm-node__explain {
+  position: absolute;
+  bottom: -8px;
+  left: -8px;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border-radius: var(--radius-lg);
+  background: var(--badge-bg);
+  color: var(--badge-color);
+  border: 1.5px solid var(--badge-border);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  font-size: 9px;
+  line-height: 13px;
+  text-align: center;
+  cursor: pointer;
+  z-index: 2;
+}
+
+/* ── FrameNode ───────────────────────────────────────────────────────────── */
+.frame-node {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: var(--node-bg);
+  background-clip: padding-box;
+  opacity: var(--node-opacity, 0.55);
+  border: 2px dashed var(--node-border);
+  outline: var(--node-outline, none);
+  border-radius: var(--radius-pill);
+}
+
+.frame-node__title {
+  font-size: var(--font-xs);
+  font-weight: 700;
+  color: var(--node-border);
+  padding: var(--space-05) var(--space-1);
+  letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.frame-node__annotation {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-danger);
+}
+
+/* ── Legend ──────────────────────────────────────────────────────────────── */
+.legend {
+  position: absolute;
+  z-index: var(--z-header);
+  top: var(--space-105);
+  right: var(--space-105);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-1) var(--space-105);
+  font-family: var(--font-ui);
+  font-size: var(--font-sm);
+  max-width: 240px;
+}
+
+.legend__toggle {
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+  font-weight: 600;
+}
+
+.legend__body {
+  margin-top: var(--space-1);
+  display: grid;
+  gap: var(--space-05);
+}
+
+.legend__row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Category swatch — bg/border arrive from CATEGORY_STYLE. */
+.legend__swatch {
+  width: 14px;
+  height: 14px;
+  background: var(--swatch-bg);
+  border: 2px solid var(--swatch-border);
+  border-radius: 3px;
+  flex: 0 0 auto;
+}
+
+/* Edge swatch — a horizontal rule; stroke colour/style from EDGE_STYLE. */
+.legend__edge {
+  width: 18px;
+  height: 0;
+  border-top: 2px var(--swatch-style, solid) var(--swatch-border);
+  flex: 0 0 auto;
+}
+
+.legend__divider {
+  width: 100%;
+  border: none;
+  /* Hairline rule colour predates the token palette (#eee); kept verbatim. */
+  border-top: 1px solid #eee;
+  margin: var(--space-05) 0;
+}

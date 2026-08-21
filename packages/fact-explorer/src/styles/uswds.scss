@@ -1,0 +1,51 @@
+// Real USWDS components — a-la-carte, not the full `uswds` bundle.
+//
+// Fact Explorer has its own separate design system (variables.css, base.css) and its own
+// reset; `@use "uswds"` (or the precompiled dist/css/uswds.min.css) would layer USWDS's own
+// reset on top of bare elements (button, h1, legend, ...) across the *entire* app, not just the
+// shared UI that actually needs it. Scoping to just the packages taxpert's shared components
+// assume are present avoids that: none of usa-checkbox/usa-button/usa-icon/usa-modal touch a bare
+// element selector, only their own .usa-* classes.
+//
+// Why this exists at all: <taxpert-workspace-settings-modal> (taxpert/react/workspace-
+// settings-modal, mounted in App.jsx) renders real `.usa-checkbox`/`.usa-button`/`.usa-modal__*`
+// markup — same as it does in credit-assistant, which vendors USWDS separately (see its
+// website-static/vendor/uswds-3.13.0/). Fact Explorer needs its own equivalent so that markup actually
+// renders (and looks the same as it does there), rather than falling back to unstyled native
+// controls.
+//
+// $theme-font-path / $theme-image-path point at public/uswds/{fonts,img} — vendored by
+// `npm run copy-uswds-assets` (scripts/copy-uswds-assets.mjs) from @uswds/uswds's dist/, kept in
+// its original relative layout so the @font-face / background-image url()s below resolve as
+// absolute site-root paths with no bundler-specific rewriting.
+@use 'uswds-core' with (
+  $theme-font-path: '/uswds/fonts',
+  $theme-image-path: '/uswds/img',
+  $theme-show-notifications: false
+);
+
+@use 'usa-checkbox';
+// The Applications section's rows are `.usa-radio` tiles — the workspace is over one application at
+// a time. Missing from this list, they rendered as bare native radios here while the same modal
+// showed proper tiles in an app that vendors USWDS whole: the modal is one component and must not
+// look like two.
+@use 'usa-radio';
+@use 'usa-button';
+@use 'usa-icon';
+@use 'usa-modal';
+
+// <taxpert-scenario-modal> (taxpert/react/scenario-modal) additionally renders real
+// .usa-form-group/.usa-label/.usa-select/.usa-textarea/.usa-tag/.usa-error-message markup for
+// its "Load existing scenario" and filter-dropdown sections.
+// The canvas control panel (canvas/controls/) is USWDS markup too — a search input, the scope
+// <select>, tile checkboxes for every filter and layer kind, and one <fieldset> per layer. The
+// packages it needs beyond the modals' are here; see styles/controls.css.
+@use 'usa-fieldset';
+
+@use 'usa-form-group';
+@use 'usa-label';
+@use 'usa-select';
+@use 'usa-textarea';
+@use 'usa-tag';
+@use 'usa-error-message';
+@use 'usa-input';

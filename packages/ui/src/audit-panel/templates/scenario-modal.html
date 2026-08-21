@@ -1,0 +1,84 @@
+<!--
+  Body of the "Manage scenario" modal (<taxpert-scenario-modal>). The <dialog> chrome around it is
+  the shared shell in ../../shared/templates/shared.html.
+
+  One <section> per task, separated by a rule (see scenario-modal.css). Each leads with the task's
+  name and a one-line description of what pressing its button will do. Every id here is a
+  contract — fact-graph-io.js queries the document for them.
+-->
+<template id="tsm-sections">
+  <section class="tsm-section tsm-section--inline">
+    <div class="tsm-section__text">
+      <h2 class="tsm-section__title">Reset scenario</h2>
+      <p class="tsm-section__hint">Clear all facts, responses, and progress.</p>
+    </div>
+    <fg-reset class="tsm-section__action">
+      <button class="usa-button usa-button--outline" type="reset">Start over</button>
+    </fg-reset>
+  </section>
+
+  <section class="tsm-section tsm-section--inline">
+    <div class="tsm-section__text">
+      <h2 class="tsm-section__title">Copy fact graph</h2>
+      <p class="tsm-section__hint">Copy current fact graph to clipboard as JSON.</p>
+      <span id="copy-fg-status" class="tsm-status">Copied to clipboard!</span>
+    </div>
+    <button class="usa-button usa-button--outline tsm-section__action" type="button" id="copy-fact-graph-btn">Copy fact graph</button>
+  </section>
+
+  <section class="tsm-section">
+    <h2 class="tsm-section__title">Paste fact graph</h2>
+    <p class="tsm-section__hint">Paste and load JSON fact graph.</p>
+    <div class="usa-form-group tsm-section__row">
+      <label class="usa-label usa-sr-only" for="load-fact-graph">Paste fact graph JSON</label>
+      <textarea id="load-fact-graph" class="usa-textarea tsm-textarea" rows="2"></textarea>
+      <button class="usa-button usa-button--outline tsm-section__action" type="button" id="load-fact-graph-btn">Load fact graph</button>
+    </div>
+  </section>
+
+  <!-- AI generation is an alpha feature: rendered always, revealed by
+       body.ff-ai-scenario-generation (shared/styles/feature-flags.css). -->
+  <section class="tsm-section" id="scenario-gen-block" data-ff="ai-scenario-generation">
+    <h2 class="tsm-section__title">
+      Generate a scenario
+      <span class="usa-tag tsm-tag">Alpha</span>
+    </h2>
+    <p class="tsm-section__hint">Generate and load a scenario with AI.</p>
+    <div class="usa-form-group tsm-section__row">
+      <label class="usa-label usa-sr-only" for="scenario-gen-prompt">Describe the scenario you want</label>
+      <textarea class="usa-textarea tsm-textarea" id="scenario-gen-prompt" rows="2"
+                placeholder="e.g. single filer, 2 qualifying children, 2024, ~$55k wages, disqualified"></textarea>
+      <button class="usa-button usa-button--outline tsm-section__action" type="button" id="generate-scenario-btn">Load AI scenario</button>
+    </div>
+    <div id="scenario-gen-status" class="scenario-gen__status" role="status" aria-live="polite"></div>
+    <div id="scenario-gen-result" class="scenario-gen__result" hidden="hidden">
+      <p id="scenario-gen-description" class="scenario-gen__description"></p>
+      <button class="usa-button usa-button--outline" type="button" id="download-scenario-btn">Download .json</button>
+    </div>
+  </section>
+
+  <section class="tsm-section" id="scenario-library-block">
+    <h2 class="tsm-section__title">Load existing scenario</h2>
+    <p class="tsm-section__hint">Select and load a scenario from the library.</p>
+    <div class="scenario-filters"></div>
+    <div class="usa-form-group">
+      <label class="usa-label" for="scenario-select">Existing scenarios</label>
+      <select class="usa-select" id="scenario-select">
+        <option value="" disabled="disabled" selected="selected">- Select -</option>
+      </select>
+    </div>
+    <button class="usa-button usa-button--outline tsm-button--full" type="button" id="load-scenario-btn">Load scenario</button>
+    <button type="button" id="all-screens-clear-scenario" class="usa-button usa-button--unstyled tsm-clear">Clear scenario</button>
+  </section>
+</template>
+
+<!--
+  One host filter dropdown above the scenario <select>. The host owns the vocabulary (field
+  descriptors + parseFilename); the modal stamps the id, label and <option>s onto a clone of this.
+-->
+<template id="tsm-filter-field">
+  <div class="usa-form-group">
+    <label class="usa-label"></label>
+    <select class="usa-select"></select>
+  </div>
+</template>

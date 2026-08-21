@@ -1,0 +1,362 @@
+.audit-panel-resizing {
+  cursor: col-resize;
+  user-select: none;
+}
+
+/* ── Base panel — hidden until audit-mode is active ────────────────────── */
+
+.audit-panel {
+  --audit-panel-handle-width: 0.75rem;
+  --audit-panel-rail-width: 5rem;
+  display: none;
+  position: relative;
+
+  /* Buttons inside the content area get standard block spacing */
+  .audit-panel__content button {
+    display: block;
+    margin: 1rem 0;
+  }
+
+  /* Inline fact-select rows reset the block-button override */
+  .ap-fact-row button {
+    display: inline-flex;
+    margin: 0;
+    flex-shrink: 0;
+  }
+
+  h1,
+  h2 {
+    font-weight: 600;
+  }
+
+  .inline {
+    display: inline;
+  }
+
+  .animate-success {
+    animation: fadeInOut 2s ease-in-out;
+  }
+}
+
+/* ── Body layout in audit-mode ─────────────────────────────────────────── */
+
+/* When audit mode is on, body becomes a flex row and the aside sits on the right */
+.audit-mode {
+  display: flex;
+  overflow: hidden;
+  height: 100vh;
+}
+
+.audit-mode .app-container {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100vh;
+  position: relative;
+  overflow: scroll;
+  overflow-x: hidden;
+}
+
+/* The rail and its content pane have been replaced by the tool panels behind the nav's Tools
+   button, so they are hidden by default. The <taxpert-audit-panel> element itself stays mounted and
+   connected either way: it still creates and owns the scenario, display and workspace-settings
+   modals, so this hides the rail rather than removing the panel.
+
+   `legacyAuditPanel` brings it back, for a host that declares the flag. That gate was briefly
+   dropped and the hide made unconditional — which left any host still declaring the flag with a
+   checkbox in Workspace settings that did nothing at all when ticked, which is worse than either
+   keeping the rail or removing the flag. If the rail is ever really deleted, delete the flag and
+   this rule together; a declared flag must move something.
+
+   Specificity, not order, is what makes this win over the `.audit-mode .audit-panel` rule below:
+   two classes, a pseudo-class and an element beats two classes. */
+body.audit-mode:not(.ff-legacy-audit-panel) .audit-panel {
+  display: none;
+}
+
+/* Audit panel visible as thin rail */
+.audit-mode .audit-panel {
+  display: flex;
+  flex-direction: row;
+  flex: 0 0 var(--audit-panel-rail-width, 2.75rem);
+  height: 100vh;
+  background: white;
+  overflow: hidden;
+}
+
+
+/* ── Audit panel open (a tab is active) ────────────────────────────────── */
+
+.audit-mode.audit-panel-open .app-container {
+  flex: 0 0 calc(100vw - var(--audit-panel-width, 38vw));
+}
+
+.audit-mode.audit-panel-open .audit-panel {
+  flex: 0 0 var(--audit-panel-width, 38vw);
+}
+
+.audit-panel-open .audit-panel__rail {
+  order: -1;
+  border-right: 1px solid var(--tap-base-lighter);
+  border-left: none;
+  padding-left: 1rem;
+}
+
+/* ── Resizer — only meaningful when content is visible ─────────────────── */
+
+.audit-panel__resizer {
+  display: none;
+  border-left: 2px solid var(--tap-base-lighter);
+  bottom: 0;
+  cursor: col-resize;
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: 1rem;
+  z-index: 1;
+
+  &:hover {
+    border-left-color: var(--tap-blue-40v);
+  }
+
+  &:focus {
+    outline: 0.25rem solid var(--tap-blue-40v);
+    outline-offset: -0.125rem;
+  }
+}
+
+.audit-panel-open .audit-panel__resizer {
+  display: block;
+}
+
+/* ── Content pane — hidden until a tab is activated ────────────────────── */
+
+.audit-panel__content {
+  display: none;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  overflow: scroll;
+  overflow-x: hidden;
+  position: relative;
+  padding: var(--tap-units-4);
+}
+
+.audit-panel__content #audit-panel-explain-section {
+  position: absolute;
+  inset: 0;
+}
+
+.audit-panel-open .audit-panel__content {
+  display: block;
+}
+
+/* ── Content header (h1 + close button row) ───────────────────────────── */
+
+.audit-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 1;
+  padding-bottom: var(--tap-units-2);
+  border-bottom: 1px solid var(--tap-base-lighter);
+  margin-bottom: var(--tap-units-2);
+}
+
+.audit-panel__header h1 {
+  margin: 0;
+}
+
+#close-audit-panel {
+  align-items: center;
+  appearance: none;
+  background-color: transparent;
+  border: 0;
+  cursor: pointer;
+  display: flex;
+  font-size: 1.5rem;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Per-tab section visibility ────────────────────────────────────────── */
+
+/* Exactly one section shows at a time, and none while the panel is collapsed. CSS can't compare
+   the panel's data-active-tab against a section's data-tab, so the panel sets `hidden` on the
+   inactive ones (_syncSectionVisibility) and these two generic rules do the rest. This replaces an
+   id-by-id enumeration that hard-coded `#audit-panel` and listed the five tabs that existed when
+   it was written — a host-registered section (credit-assistant's Eligibility dashboard) had no
+   rule at all, and two of the five ids named tabs that no longer exist. */
+.audit-panel__content [data-tab] {
+  display: none;
+}
+
+.audit-panel__content [data-tab]:not([hidden]) {
+  display: block;
+}
+
+/* ── Tab rail ───────────────────────────────────────────────────────────── */
+
+.audit-panel__rail {
+  flex: 0 0 var(--audit-panel-rail-width, 2.75rem);
+  width: var(--audit-panel-rail-width, 2.75rem);
+  height: 100%;
+  background: #e6e6fa;
+  border-left: 1px solid var(--tap-base-lighter);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: hidden;
+}
+
+.audit-panel__rail ul {
+  list-style: none;
+  padding: 0.375rem 0;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.audit-panel__tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--tap-base-dark);
+  /* Override the content-area button margin */
+  margin: 0;
+}
+
+.audit-panel__tab:hover {
+  background: var(--tap-base-lightest);
+  color: var(--tap-primary);
+  border-color: var(--tap-base-lighter);
+}
+
+.audit-panel__tab[aria-selected="true"] {
+  background: var(--tap-primary-lighter);
+  color: var(--tap-primary-dark);
+  border-color: var(--tap-primary-light);
+}
+
+.audit-panel__tab:focus-visible {
+  outline: 0.25rem solid var(--tap-blue-40v);
+  outline-offset: -0.125rem;
+}
+
+.audit-panel__tab-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* ── Toggle button ─────────────────────────────────────────────────────── */
+
+#toggle-audit-panel {
+    border-bottom: 1px solid var(--tap-base-lighter);
+    height: auto;
+    flex: 1;
+    width: 100%;
+    justify-content: flex-start;
+    padding-top: 0.5rem;
+}
+
+#toggle-audit-panel:hover {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* The collapse/expand glyph is one inlined navigate_far_before icon, mirrored into
+   navigate_far_next when the panel is open — rather than a JS `img.src` swap against a
+   credit-assistant-specific /vendor/uswds/… path that 404s in every other host. */
+.audit-panel__tab-icon {
+  transition: transform 0.15s ease;
+}
+
+.audit-panel-open .audit-panel__tab-icon {
+  transform: scaleX(-1);
+}
+
+/* ── Section card styling ───────────────────────────────────────────────── */
+
+.audit-panel__section {
+  border: 1px solid var(--tap-base-lighter);
+  margin: 1rem 0;
+  padding: 0.5rem 2rem;
+  border-radius: 4px;
+}
+
+/* User will have to toggle between the audit panel and the main content on small screens */
+@media (max-width: 579px) {
+  .audit-mode.audit-panel-open .app-container {
+    flex: 0 0 0;
+    width: 0;
+  }
+
+  .audit-mode.audit-panel-open .audit-panel {
+    flex: 0 0 calc(100vw - var(--audit-panel-rail-width, 2.75rem));
+  }
+
+  .audit-panel__resizer {
+    display: none !important;
+  }
+
+  .audit-panel-open .audit-panel__rail {
+    padding-left: 0;
+  }
+}
+
+/* ── AI scenario generation (rendered inside <taxpert-scenario-modal>) ──── */
+
+.scenario-gen__status {
+  font-size: 0.75rem;
+  color: var(--tap-base-light);
+  min-height: 1.25rem;
+  padding: 0.25rem 0;
+}
+
+.scenario-gen__result {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--tap-base-lighter);
+  border-radius: 0.25rem;
+}
+
+.scenario-gen__description {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+@keyframes fadeInOut {
+  0% {
+    opacity: 0;
+    visibility: visible;
+  }
+  20% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}

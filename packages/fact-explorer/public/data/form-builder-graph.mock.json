@@ -1,0 +1,188 @@
+{
+  "version": "1.0-mock",
+  "generatedAt": "2026-06-02T00:00:00Z",
+  "taxYear": 2025,
+  "_note": "Hand-authored S0 coverage fixture. Lifted from real flow/*.xml + facts/*.xml so the renderers are built against faithful shapes. Replaced slice-by-slice by the Scala generator (plan M1). Exercises every node category and edge kind at least once.",
+
+  "flowPages": [
+    { "id": "page:filing-status", "route": "/filing-status", "title": "Filing Status", "sourceFile": "filing-status.xml",
+      "elementIds": ["fs:fg-set:knowsFilingStatus", "fs:fg-set:initialFilingStatus", "fs:fg-alert:eitc-marriage-dq", "fs:fg-alert:warn-mfj-info"] },
+    { "id": "page:qualifying-children", "route": "/qualifying-children", "title": "Qualifying Children", "sourceFile": "qualifying-children.xml",
+      "elementIds": ["qc:fg-collection:familyAndHousehold", "qc:fg-set:livedWithYouUS", "qc:fg-set:someoneElseCanClaim", "qc:fg-alert:child-dq"] },
+    { "id": "page:agi", "route": "/agi", "title": "Adjusted Gross Income", "sourceFile": "agi.xml",
+      "elementIds": ["agi:fg-detail:studentLoan", "agi:fg-set:studentLoanInterest"] },
+    { "id": "page:results", "route": "/results", "title": "Results", "sourceFile": "results.xml",
+      "elementIds": ["results:block:eligible"] }
+  ],
+
+  "flowElements": [
+    {
+      "id": "fs:fg-set:knowsFilingStatus", "pageId": "page:filing-status", "tag": "fg-set", "parentId": null, "order": 0,
+      "factPath": "/knowsFilingStatus", "inputType": "boolean", "optionsPath": null,
+      "gate": { "kind": "if-true", "factPath": "/hasSelectedChosenTaxYear" },
+      "condition": null, "alert": null, "collection": null, "state": null,
+      "questionText": "Do you know the filing status you will use when filing your taxes?",
+      "headingText": null, "fgShowPaths": ["/taxYear"], "modalLinkId": "modal-filing-status",
+      "conditionalSpans": [],
+      "rawXml": "<fg-set path=\"/knowsFilingStatus\" if-true=\"/hasSelectedChosenTaxYear\"><question>Do you know the filing status you will use when filing your <fg-show path=\"/taxYear\"/> taxes?</question><input type=\"boolean\"/></fg-set>"
+    },
+    {
+      "id": "fs:fg-set:initialFilingStatus", "pageId": "page:filing-status", "tag": "fg-set", "parentId": null, "order": 1,
+      "factPath": "/initialFilingStatus", "inputType": "enum", "optionsPath": "/initialFilingStatusOptions",
+      "gate": { "kind": "if-true", "factPath": "/knowsFilingStatus" },
+      "condition": null, "alert": null, "collection": null, "state": null,
+      "questionText": "What filing status will you use?",
+      "headingText": null, "fgShowPaths": [], "modalLinkId": null, "conditionalSpans": []
+    },
+    {
+      "id": "fs:fg-alert:eitc-marriage-dq", "pageId": "page:filing-status", "tag": "fg-alert", "parentId": null, "order": 2,
+      "factPath": null,
+      "condition": { "factPath": "/isDisqualifiedMarriedNotFilingJointly", "operator": "isTrue" },
+      "alert": { "alertType": "error", "alertKey": "eitc-marriage-disqualified", "knockout": true },
+      "collection": null, "state": null, "questionText": null,
+      "headingText": "You don't qualify for the EITC", "fgShowPaths": [], "modalLinkId": null, "conditionalSpans": [],
+      "rawXml": "<fg-alert alert-type=\"error\" alert-key=\"eitc-marriage-disqualified\" knockout=\"true\" condition=\"/isDisqualifiedMarriedNotFilingJointly\" operator=\"isTrue\"><heading>You don't qualify for the EITC</heading></fg-alert>"
+    },
+    {
+      "id": "fs:fg-alert:warn-mfj-info", "pageId": "page:filing-status", "tag": "fg-alert", "parentId": null, "order": 3,
+      "factPath": null,
+      "condition": { "factPath": "/isFilingStatusMFJ", "operator": "isTrue" },
+      "alert": { "alertType": "info", "alertKey": "mfj-info", "knockout": false },
+      "collection": null, "state": null, "questionText": null,
+      "headingText": "Filing jointly note", "fgShowPaths": [], "modalLinkId": null, "conditionalSpans": []
+    },
+
+    {
+      "id": "qc:fg-collection:familyAndHousehold", "pageId": "page:qualifying-children", "tag": "fg-collection", "parentId": null, "order": 0,
+      "factPath": "/familyAndHousehold", "inputType": null, "optionsPath": null,
+      "gate": { "kind": "if-true", "factPath": "/primaryFilerIsClaimingQualifyingChildren" },
+      "condition": null, "alert": null,
+      "collection": { "itemName": "child", "determiner": "another", "addItemIfTrue": "/flowShouldAllowAddAnotherQualifyingChild" },
+      "state": null, "questionText": null, "headingText": null, "fgShowPaths": [], "modalLinkId": null, "conditionalSpans": []
+    },
+    {
+      "id": "qc:fg-set:livedWithYouUS", "pageId": "page:qualifying-children", "tag": "fg-set", "parentId": "qc:fg-collection:familyAndHousehold", "order": 1,
+      "factPath": "/familyAndHousehold/*/livedWithYouUS", "inputType": "boolean", "optionsPath": null,
+      "gate": null, "condition": null, "alert": null, "collection": null, "state": null,
+      "questionText": "Was your main home in the U.S. for more than half the year?",
+      "headingText": null, "fgShowPaths": [], "modalLinkId": null,
+      "conditionalSpans": [
+        { "conditionPath": "/isFilingStatusMFJ", "operator": "isFalse", "text": "your" },
+        { "conditionPath": "/isFilingStatusMFJ", "operator": "isTrue", "text": "your and your spouse's" }
+      ]
+    },
+    {
+      "id": "qc:fg-set:someoneElseCanClaim", "pageId": "page:qualifying-children", "tag": "fg-set", "parentId": "qc:fg-collection:familyAndHousehold", "order": 2,
+      "factPath": "/familyAndHousehold/*/someoneElseCanClaim", "inputType": "boolean", "optionsPath": null,
+      "gate": { "kind": "if-true", "factPath": "/familyAndHousehold/*/livedWithYouUS" },
+      "condition": null, "alert": null, "collection": null, "state": null,
+      "questionText": "Can someone else claim this child?",
+      "headingText": null, "fgShowPaths": [], "modalLinkId": null, "conditionalSpans": []
+    },
+    {
+      "id": "qc:fg-alert:child-dq", "pageId": "page:qualifying-children", "tag": "fg-alert", "parentId": "qc:fg-collection:familyAndHousehold", "order": 3,
+      "factPath": null,
+      "condition": { "factPath": "/familyAndHousehold/*/livedWithYouUS", "operator": "isFalse" },
+      "alert": { "alertType": "warning", "alertKey": "child-does-not-qualify", "knockout": false },
+      "collection": null, "state": null, "questionText": null,
+      "headingText": "This child does not qualify", "fgShowPaths": [], "modalLinkId": null, "conditionalSpans": []
+    },
+
+    {
+      "id": "agi:fg-detail:studentLoan", "pageId": "page:agi", "tag": "fg-detail", "parentId": null, "order": 0,
+      "factPath": null, "inputType": null, "optionsPath": null,
+      "gate": { "kind": "if-true", "factPath": "/isEligibleForStudentLoanInterestDeduction" },
+      "condition": null, "alert": null, "collection": null, "state": null,
+      "questionText": null, "headingText": "Student loan interest deduction", "fgShowPaths": [], "modalLinkId": null, "conditionalSpans": []
+    },
+    {
+      "id": "agi:fg-set:studentLoanInterest", "pageId": "page:agi", "tag": "fg-set", "parentId": "agi:fg-detail:studentLoan", "order": 1,
+      "factPath": "/studentLoanInterestDeduction", "inputType": "dollar", "optionsPath": null,
+      "gate": { "kind": "if-true", "factPath": "/isEligibleForStudentLoanInterestDeduction" },
+      "condition": null, "alert": null, "collection": null, "state": null,
+      "questionText": "How much student loan interest did you pay?",
+      "headingText": null, "fgShowPaths": [], "modalLinkId": null, "conditionalSpans": []
+    },
+
+    {
+      "id": "results:block:eligible", "pageId": "page:results", "tag": "conditional-block", "parentId": null, "order": 0,
+      "factPath": null,
+      "condition": { "factPath": "/eitcDisqualifiedDueToAgiOrEarnedIncomeLimits", "operator": "isFalse" },
+      "alert": null, "collection": null, "state": null,
+      "questionText": null,
+      "headingText": "You may be eligible for the EITC", "fgShowPaths": ["/earnedIncomeCredit"], "modalLinkId": null, "conditionalSpans": []
+    }
+  ],
+
+  "facts": [
+    { "id": "fact:/knowsFilingStatus", "path": "/knowsFilingStatus", "name": "Knows filing status", "description": "Whether the taxpayer knows their filing status.", "kind": "writable", "typeNode": "Boolean", "sourceFile": "filingStatus.xml", "taxYear": null, "dependencyPaths": [],
+      "rawXml": "<Fact path=\"/knowsFilingStatus\"><Name>Knows filing status</Name><Writable><Boolean/></Writable></Fact>" },
+    { "id": "fact:/hasSelectedChosenTaxYear", "path": "/hasSelectedChosenTaxYear", "name": "Has selected tax year", "kind": "derived", "typeNode": "Boolean", "sourceFile": "flowConfirmations.xml", "taxYear": null,
+      "dependencyPaths": [{ "raw": "/chosenTaxYear", "resolvedAbstract": "/chosenTaxYear", "wildcard": false }] },
+    { "id": "fact:/taxYear", "path": "/taxYear", "name": "Tax year", "kind": "derived", "typeNode": "Int", "sourceFile": "constants.xml", "taxYear": null, "dependencyPaths": [] },
+    { "id": "fact:/initialFilingStatus", "path": "/initialFilingStatus", "name": "Initial filing status", "kind": "writable", "typeNode": "Enum", "sourceFile": "filingStatus.xml", "taxYear": null, "dependencyPaths": [] },
+    { "id": "fact:/isFilingStatusMFJ", "path": "/isFilingStatusMFJ", "name": "Is filing jointly", "kind": "derived", "typeNode": "Boolean", "sourceFile": "filingStatus.xml", "taxYear": null,
+      "dependencyPaths": [{ "raw": "/initialFilingStatus", "resolvedAbstract": "/initialFilingStatus", "wildcard": false }],
+      "rawXml": "<Fact path=\"/isFilingStatusMFJ\"><Name>Is filing jointly</Name><Derived><Equal><Left><Dependency path=\"/initialFilingStatus\"/></Left><Right><Enum>marriedFilingJointly</Enum></Right></Equal></Derived></Fact>" },
+    { "id": "fact:/isDisqualifiedMarriedNotFilingJointly", "path": "/isDisqualifiedMarriedNotFilingJointly", "name": "Disqualified: married not filing jointly", "kind": "derived", "typeNode": "Boolean", "sourceFile": "predicates.xml", "taxYear": null,
+      "dependencyPaths": [{ "raw": "/isFilingStatusMFJ", "resolvedAbstract": "/isFilingStatusMFJ", "wildcard": false }],
+      "rawXml": "<Fact path=\"/isDisqualifiedMarriedNotFilingJointly\"><Derived><Any><Not><Dependency path=\"/isFilingStatusMFJ\"/></Not></Any></Derived></Fact>" },
+    { "id": "fact:/familyAndHousehold", "path": "/familyAndHousehold", "name": "Family and household", "kind": "writable", "typeNode": "Collection", "sourceFile": "familyAndHousehold.xml", "taxYear": null, "dependencyPaths": [] },
+    { "id": "fact:/primaryFilerIsClaimingQualifyingChildren", "path": "/primaryFilerIsClaimingQualifyingChildren", "name": "Claiming qualifying children", "kind": "writable", "typeNode": "Boolean", "sourceFile": "familyAndHousehold.xml", "taxYear": null, "dependencyPaths": [] },
+    { "id": "fact:/flowShouldAllowAddAnotherQualifyingChild", "path": "/flowShouldAllowAddAnotherQualifyingChild", "name": "Allow add another child", "kind": "derived", "typeNode": "Boolean", "sourceFile": "flowConfirmations.xml", "taxYear": null, "dependencyPaths": [] },
+    { "id": "fact:/familyAndHousehold/*/livedWithYouUS", "path": "/familyAndHousehold/*/livedWithYouUS", "name": "Lived with you in the US", "kind": "writable", "typeNode": "Boolean", "sourceFile": "familyAndHousehold.xml", "taxYear": null, "dependencyPaths": [] },
+    { "id": "fact:/familyAndHousehold/*/someoneElseCanClaim", "path": "/familyAndHousehold/*/someoneElseCanClaim", "name": "Someone else can claim", "kind": "writable", "typeNode": "Boolean", "sourceFile": "familyAndHousehold.xml", "taxYear": null, "dependencyPaths": [] },
+    { "id": "fact:/familyAndHousehold/*/isEitcQualifyingChild", "path": "/familyAndHousehold/*/isEitcQualifyingChild", "name": "Is an EITC qualifying child", "kind": "derived", "typeNode": "Boolean", "sourceFile": "familyAndHousehold.xml", "taxYear": null,
+      "dependencyPaths": [
+        { "raw": "../livedWithYouUS", "resolvedAbstract": "/familyAndHousehold/*/livedWithYouUS", "wildcard": true },
+        { "raw": "../someoneElseCanClaim", "resolvedAbstract": "/familyAndHousehold/*/someoneElseCanClaim", "wildcard": true }
+      ],
+      "rawXml": "<Fact path=\"/familyAndHousehold/*/isEitcQualifyingChild\"><Derived><All><Dependency path=\"../livedWithYouUS\"/><Not><Dependency path=\"../someoneElseCanClaim\"/></Not></All></Derived></Fact>" },
+    { "id": "fact:/eitcQualifyingChildren", "path": "/eitcQualifyingChildren", "name": "Number of EITC qualifying children", "kind": "derived", "typeNode": "Int", "sourceFile": "eitcEligibility.xml", "taxYear": null,
+      "dependencyPaths": [{ "raw": "/familyAndHousehold/*/isEitcQualifyingChild", "resolvedAbstract": "/familyAndHousehold/*/isEitcQualifyingChild", "wildcard": true }],
+      "rawXml": "<Fact path=\"/eitcQualifyingChildren\"><Derived><Count><Dependency path=\"/familyAndHousehold/*/isEitcQualifyingChild\"/></Count></Derived></Fact>" },
+    { "id": "fact:/isEligibleForStudentLoanInterestDeduction", "path": "/isEligibleForStudentLoanInterestDeduction", "name": "Eligible for student loan interest deduction", "kind": "derived", "typeNode": "Boolean", "sourceFile": "studentLoanInterestDeduction.xml", "taxYear": null, "dependencyPaths": [] },
+    { "id": "fact:/studentLoanInterestDeduction", "path": "/studentLoanInterestDeduction", "name": "Student loan interest deduction", "kind": "writable", "typeNode": "Dollar", "sourceFile": "studentLoanInterestDeduction.xml", "taxYear": null, "dependencyPaths": [] },
+    { "id": "fact:/eitcDisqualifiedDueToAgiOrEarnedIncomeLimits", "path": "/eitcDisqualifiedDueToAgiOrEarnedIncomeLimits", "name": "Disqualified due to AGI/earned income limits", "kind": "derived", "typeNode": "Boolean", "sourceFile": "eitcEligibility.xml", "taxYear": null, "dependencyPaths": [] },
+    { "id": "fact:/earnedIncomeCredit", "path": "/earnedIncomeCredit", "name": "Earned income credit", "kind": "derived", "typeNode": "Dollar", "sourceFile": "eitcCalculations.xml", "taxYear": null,
+      "dependencyPaths": [{ "raw": "/eitcQualifyingChildren", "resolvedAbstract": "/eitcQualifyingChildren", "wildcard": false }],
+      "rawXml": "<Fact path=\"/earnedIncomeCredit\"><Derived><Switch><Case><When><Dependency path=\"/eitcDisqualifiedDueToAgiOrEarnedIncomeLimits\"/></When><Then><Dollar>0</Dollar></Then></Case></Switch></Derived></Fact>" }
+  ],
+
+  "edges": [
+    { "id": "e-seq-1", "source": "fs:fg-set:knowsFilingStatus", "target": "fs:fg-set:initialFilingStatus", "kind": "sequential" },
+    { "id": "e-seq-2", "source": "fs:fg-set:initialFilingStatus", "target": "fs:fg-alert:eitc-marriage-dq", "kind": "sequential" },
+
+    { "id": "e-bind-1", "source": "fs:fg-set:knowsFilingStatus", "target": "fact:/knowsFilingStatus", "kind": "binds" },
+    { "id": "e-bind-2", "source": "fs:fg-set:initialFilingStatus", "target": "fact:/initialFilingStatus", "kind": "binds" },
+    { "id": "e-bind-3", "source": "qc:fg-collection:familyAndHousehold", "target": "fact:/familyAndHousehold", "kind": "binds" },
+    { "id": "e-bind-4", "source": "qc:fg-set:livedWithYouUS", "target": "fact:/familyAndHousehold/*/livedWithYouUS", "kind": "binds" },
+    { "id": "e-bind-5", "source": "qc:fg-set:someoneElseCanClaim", "target": "fact:/familyAndHousehold/*/someoneElseCanClaim", "kind": "binds" },
+    { "id": "e-bind-6", "source": "agi:fg-set:studentLoanInterest", "target": "fact:/studentLoanInterestDeduction", "kind": "binds" },
+
+    { "id": "e-gate-1", "source": "fs:fg-set:knowsFilingStatus", "target": "fact:/hasSelectedChosenTaxYear", "kind": "gates", "operator": "if-true" },
+    { "id": "e-gate-2", "source": "fs:fg-set:initialFilingStatus", "target": "fact:/knowsFilingStatus", "kind": "gates", "operator": "if-true" },
+    { "id": "e-gate-3", "source": "qc:fg-collection:familyAndHousehold", "target": "fact:/primaryFilerIsClaimingQualifyingChildren", "kind": "gates", "operator": "if-true" },
+    { "id": "e-gate-4", "source": "qc:fg-collection:familyAndHousehold", "target": "fact:/flowShouldAllowAddAnotherQualifyingChild", "kind": "gates", "operator": "add-item-if-true" },
+    { "id": "e-gate-5", "source": "qc:fg-set:someoneElseCanClaim", "target": "fact:/familyAndHousehold/*/livedWithYouUS", "kind": "gates", "operator": "if-true" },
+    { "id": "e-gate-6", "source": "agi:fg-detail:studentLoan", "target": "fact:/isEligibleForStudentLoanInterestDeduction", "kind": "gates", "operator": "if-true" },
+    { "id": "e-gate-7", "source": "agi:fg-set:studentLoanInterest", "target": "fact:/isEligibleForStudentLoanInterestDeduction", "kind": "gates", "operator": "if-true" },
+
+    { "id": "e-ko-1", "source": "fs:fg-alert:eitc-marriage-dq", "target": "fact:/isDisqualifiedMarriedNotFilingJointly", "kind": "knocks-out", "operator": "isTrue" },
+
+    { "id": "e-show-1", "source": "fs:fg-alert:warn-mfj-info", "target": "fact:/isFilingStatusMFJ", "kind": "shows", "operator": "isTrue" },
+    { "id": "e-show-2", "source": "qc:fg-alert:child-dq", "target": "fact:/familyAndHousehold/*/livedWithYouUS", "kind": "shows", "operator": "isFalse" },
+    { "id": "e-show-3", "source": "results:block:eligible", "target": "fact:/eitcDisqualifiedDueToAgiOrEarnedIncomeLimits", "kind": "shows", "operator": "isFalse" },
+
+    { "id": "e-disp-1", "source": "fs:fg-set:knowsFilingStatus", "target": "fact:/taxYear", "kind": "displays" },
+    { "id": "e-disp-2", "source": "results:block:eligible", "target": "fact:/earnedIncomeCredit", "kind": "displays" },
+
+    { "id": "e-dep-1", "source": "fact:/isFilingStatusMFJ", "target": "fact:/initialFilingStatus", "kind": "depends", "via": "Equal" },
+    { "id": "e-dep-2", "source": "fact:/isDisqualifiedMarriedNotFilingJointly", "target": "fact:/isFilingStatusMFJ", "kind": "depends", "via": "Any" },
+    { "id": "e-dep-3", "source": "fact:/familyAndHousehold/*/isEitcQualifyingChild", "target": "fact:/familyAndHousehold/*/livedWithYouUS", "kind": "depends", "via": "All" },
+    { "id": "e-dep-4", "source": "fact:/familyAndHousehold/*/isEitcQualifyingChild", "target": "fact:/familyAndHousehold/*/someoneElseCanClaim", "kind": "depends", "via": "All" },
+    { "id": "e-dep-5", "source": "fact:/eitcQualifyingChildren", "target": "fact:/familyAndHousehold/*/isEitcQualifyingChild", "kind": "depends", "via": "Count" },
+    { "id": "e-dep-6", "source": "fact:/earnedIncomeCredit", "target": "fact:/eitcQualifyingChildren", "kind": "depends", "via": "Switch" },
+    { "id": "e-dep-7", "source": "fact:/hasSelectedChosenTaxYear", "target": "fact:/taxYear", "kind": "depends", "via": "Dependency" }
+  ]
+}

@@ -1,0 +1,71 @@
+/* Annotation widgets: the DetailPanel per-node editor and the header toolbar
+   (note count + export/import/reset-layout). */
+
+/* Per-node editor mounted at the top of DetailPanel. */
+.annotate-editor {
+  background: var(--color-surface-alt);
+  border: 1px solid #e3e8ec; /* one-off divider, slightly lighter than --color-divider */
+  border-radius: var(--radius-lg);
+  padding: 10px;
+  margin-bottom: 14px;
+}
+
+.annotate-editor__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-bottom: 6px;
+}
+
+.annotate-editor__label {
+  font-size: var(--font-sm);
+  color: var(--color-text-muted);
+}
+
+/* Tag color dot — the swatch color is driven by ANNOTATION_TAG_STYLE inline. */
+.annotate-editor__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.annotate-editor__select {
+  font-size: var(--font-sm);
+}
+
+.annotate-editor__textarea {
+  width: 100%;
+  font-size: var(--font-sm);
+  font-family: inherit;
+  padding: 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.annotate-editor__actions {
+  display: flex;
+  gap: var(--space-1);
+  margin-top: 6px;
+}
+
+.annotate-editor__btn {
+  font-size: var(--font-sm);
+  cursor: pointer;
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+.annotate-editor__btn--delete {
+  color: var(--color-danger);
+}
+
+.annotate-editor__saved {
+  font-size: var(--font-xs);
+  color: var(--color-text-faint);
+  margin-left: auto;
+  align-self: center;
+}

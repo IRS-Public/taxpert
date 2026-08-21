@@ -1,0 +1,199 @@
+/* <taxpert-tools-modal> — the "Tools" dialog opened from the global nav's Tools button.
+
+   Self-contained, like the audit-panel bundle's modals: the base <dialog> chrome is declared here
+   rather than inherited from a host's own modal CSS, so it looks the same in any host, while the
+   controls themselves stay real USWDS components (.usa-checkbox, .usa-button, .usa-modal__*).
+
+   Token bridging follows workspace-settings-modal.css — each --ttm-* checks the host's own token
+   first (fact-explorer's --color-*, then credit-assistant's --primary/--base-* by way of the
+   --ttp-* layer in tool-panels.css) and falls through to a hard default. --ttm-border is the one
+   exception: the design calls for exactly 1px #d6d7d9, so it isn't token-bridged. */
+
+:where(taxpert-tools-modal) {
+  --ttm-border: #d6d7d9;
+  --ttm-text: var(--color-text, var(--ttp-base-darkest, #1b1b1b));
+  --ttm-focus: var(--color-primary, var(--ttp-primary, #005ea2));
+
+  /* A checked tile's frame and fill. The twins of --twsm-selected-* in workspace-settings-modal.css,
+     resolved through this bundle's own --ttp-* layer rather than the audit panel's --tap-*. */
+  --ttm-selected-border: var(--color-primary, var(--ttp-primary, #005ea2));
+  --ttm-selected-bg: var(--color-primary-tint, var(--ttp-primary-lighter, #d9e8f6));
+  --ttm-font: var(--font-sans, 'Source Sans Pro Web', 'Source Sans Pro', 'Helvetica Neue', Helvetica, Roboto, Arial, sans-serif);
+
+  /* The dialog's own insets. Declared once because two things read them — the main block's padding
+     and the close button's position — and the X sitting on the heading depends on the two agreeing. */
+  --ttm-inset-x: 2rem;
+  --ttm-inset-top: 1.5rem;
+}
+
+taxpert-tools-modal {
+  display: contents;
+}
+
+.ttm-dialog {
+  display: block;
+  box-sizing: border-box;
+  width: 90vw;
+  max-width: 32.375rem; /* 518px — the design's modal width */
+  max-height: 90vh;
+  margin: auto;
+  padding: 0;
+  overflow-y: auto;
+  border: 1px solid var(--ttm-border);
+  border-radius: 0.25rem;
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  color: var(--ttm-text);
+  font-family: var(--ttm-font);
+  font-size: 1rem;
+  line-height: 1.5;
+  text-align: left;
+  z-index: 1050;
+}
+
+.ttm-dialog:not([open]) {
+  display: none;
+}
+
+.ttm-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+/* USWDS gives .usa-modal__content a 2rem padding-top to clear its own close button, which sits
+   above the main block in its markup and pulls itself up into that band with a -2rem margin. This
+   shell puts the close button inside .ttm-main instead, so the band is dead space over the heading —
+   every inset in this dialog is .ttm-main's. The other three modals have always zeroed it; this one
+   did not, which is where its extra padding came from. */
+.ttm-dialog .usa-modal__content {
+  padding-top: 0;
+}
+
+/* Every rule below is scoped through .ttm-dialog rather than written as a bare class. `.ttm-main`
+   and `.ttm-close` collide head-on with credit-assistant's own components/modals.css, which sets
+   `.usa-modal__main { padding-bottom: .5rem }` and `.usa-modal__close { top: 0; right: 0 }` on the
+   same elements at the same specificity — so which one wins is decided by stylesheet order, and the
+   order differs per host. The audit-panel modals happen to load after it (their own <link>); the
+   tool-panels bundle loads from inside main.css *before* it, which is why the Tools dialog was
+   drawing its close button in the corner and losing its bottom inset. Two classes beat one
+   everywhere, so the dialogs now look the same wherever they are loaded from. This is the same
+   defence the `.usa-modal__heading.ttm-heading` rule below already documents. */
+.ttm-dialog .ttm-main {
+  position: relative;
+  box-sizing: border-box;
+  /* Full width, explicitly — see the same rule in workspace-settings-modal.css. USWDS's
+     .usa-modal__content is a flex column and .usa-modal__main carries `margin: 0 auto`, whose auto
+     cross-axis margins suppress the stretch and size this block to its widest child instead. */
+  width: 100%;
+  margin-inline: 0;
+  padding: var(--ttm-inset-top) var(--ttm-inset-x) 2rem;
+}
+
+/* On the heading's line, not floating in the corner above it. It starts at the same top inset the
+   heading does and takes the heading's line box as its height, so USWDS's own `align-items: center`
+   centres the icon on the words rather than on a taller box. The right inset is pulled back by the
+   button's padding so the icon — not the hit area — lands flush with the section rules below. */
+.ttm-dialog .ttm-close {
+  position: absolute;
+  top: var(--ttm-inset-top);
+  right: calc(var(--ttm-inset-x) - 0.25rem);
+  box-sizing: border-box;
+  height: 1.7875rem; /* .ttm-heading's line box: 1.375rem × 1.3 */
+  min-width: 0;
+  margin: 0;
+  padding: 0 0.25rem;
+  background: transparent;
+  color: var(--ttm-text);
+}
+
+.ttm-dialog .ttm-close:hover,
+.ttm-dialog .ttm-close:active {
+  background: transparent;
+  color: var(--ttm-text);
+}
+
+.ttm-dialog .ttm-close:focus-visible {
+  outline: 2px solid var(--ttm-focus);
+  outline-offset: 2px;
+}
+
+/* Doubled up with .usa-modal__heading (the element carries both classes) so this beats real USWDS's
+   own .usa-modal__heading rule, which sets the heading font to its serif "heading" role. No rule
+   under the heading itself: the section below draws its own border-top, the scenario modal's
+   arrangement. */
+.usa-modal__heading.ttm-heading {
+  margin: 0 0 1rem;
+  font-family: var(--ttm-font);
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+/* ── Section ─────────────────────────────────────────────────────────────── */
+/* One section here, but it carries the same rule-and-padding as a scenario-modal section so the two
+   dialogs stack the same way. Its rows start straight after the rule with no title in between, so
+   the top padding is short by the 0.75rem USWDS already puts above a checkbox label — together they
+   come to the scenario modal's 1.25rem. */
+
+.ttm-section {
+  padding: 0.5rem 0 1.25rem;
+  border-top: 1px solid var(--ttm-border);
+}
+
+/* ── Option rows ─────────────────────────────────────────────────────────── */
+/* A tool row is USWDS's *tile* checkbox — the same treatment the Workspace settings modal's option
+   rows use, so the two surfaces that both list tools look like one component. USWDS owns the box,
+   the control art, and both the checked and focus treatments; `.ttm-option` stays on each row as the
+   "one tool" hook for the JS and its spec.
+
+   Only the colors and the label weight are ours, and both rules sit on the *input* rather than the
+   label so they outweigh USWDS's own `--tile` pair in any load order — the same defence, and the
+   same 1px-instead-of-2px border, as .twsm-option in workspace-settings-modal.css. */
+
+.ttm-option .usa-checkbox__input--tile + .usa-checkbox__label {
+  border: 1px solid var(--ttm-border);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+/* Selected follows from the control itself, rather than from a `--selected` class the JS toggles. */
+.ttm-option .usa-checkbox__input--tile:checked + .usa-checkbox__label {
+  border-color: var(--ttm-selected-border);
+  background-color: var(--ttm-selected-bg);
+}
+
+/* USWDS gives .usa-checkbox a white background of its own; with the tile drawing the box, that would
+   show as white corners around a selected tile's rounded ones. */
+.ttm-option.usa-checkbox {
+  background: transparent;
+}
+
+/* Inside the tile now, so it needs no indent of its own — USWDS's label padding already clears the
+   control art. Full body contrast rather than a muted grey: in the design the description carries
+   the same weight of meaning as the label, and only the weight separates them. */
+.ttm-option .ttm-option__hint {
+  margin-top: 0.25rem;
+  color: var(--ttm-text);
+  font-size: 0.9375rem;
+  font-weight: 400;
+}
+
+/* ── Reset ───────────────────────────────────────────────────────────────── */
+
+.ttm-reset {
+  margin: 1rem 0 0;
+}
+
+/* ── Narrow viewports ────────────────────────────────────────────────────── */
+
+@media (max-width: 30em) {
+  /* Narrowing the inset takes the close button with it — that is what the property is for. An
+     element selector beats the zero-specificity :where() the defaults are declared in. */
+  taxpert-tools-modal {
+    --ttm-inset-x: 1.25rem;
+  }
+
+  .ttm-dialog .ttm-main {
+    padding-bottom: 1.5rem;
+  }
+}

@@ -1,0 +1,69 @@
+/* Tool-panels stylesheet. The bundle's @import root, mirroring audit-panel.css's model: one
+   entry point per bundle, split into feature files, so a host loads a single href.
+
+   Cascade order is chrome → layout → modals → tools: the panel declares its own look, the dock
+   arranges panels, the modals are independent of both, and a tool's own file comes last so it can
+   refine the generic .ttp-row treatment it sits inside. */
+@import "tool-panel.css";
+@import "tool-dock.css";
+@import "tools-modal.css";
+@import "inspect.css";
+@import "outcome-tracker.css";
+@import "watchlist.css";
+@import "overrides.css";
+
+/* Token-fallback layer (mirrors global-nav.css's --tgn-* and audit-panel.css's --tap-*): every
+   --ttp-* token chains through the host's own real token with a hard fallback, so the panels render
+   identically inside credit-assistant (which supplies --base-/--primary-/etc. via variables.css)
+   and still look reasonable in a bare host that supplies none. :where() keeps specificity at zero so
+   a host can override. Declared on both roots the bundle owns, since a floating panel and the modal
+   are rendered outside the dock's subtree.
+
+   --ttp-accent is deliberately not token-bridged: the drag and drop affordances are one deliberate
+   colour in the designs, and a host's generic primary would wash the lifted panel's outline out
+   against the panel header behind it.
+
+   taxpert-add-fact-modal is on the list for the same reason taxpert-tools-modal is: it is appended
+   to <body>, so it inherits nothing from the dock's subtree. The tool bodies are not: they render
+   inside a panel and inherit its tokens. */
+:where(taxpert-tool-dock, taxpert-tool-panel, taxpert-tools-modal, taxpert-add-fact-modal) {
+  --ttp-base-lightest: var(--base-lightest, #f0f0f0);
+  --ttp-base-lighter: var(--base-lighter, #dfe1e2);
+  --ttp-base-light: var(--base-light, #a9aeb1);
+  --ttp-base-dark: var(--base-dark, #565c65);
+  --ttp-base-darkest: var(--base-darkest, #1b1b1b);
+  --ttp-primary: var(--primary, #005ea2);
+  --ttp-primary-lighter: var(--primary-lighter, #d9e8f6);
+  --ttp-primary-dark: var(--primary-dark, #1a4480);
+  --ttp-blue-40v: var(--blue-40v, #2491ff);
+  --ttp-green: var(--success, #00a91c);
+  --ttp-red: var(--error, #d54309);
+  --ttp-surface: var(--color-surface, #ffffff);
+  /* The title bar's violet, and the text that has to read on it. Not token-bridged for the same
+     reason --ttp-accent is not: it is one deliberate colour from the designs, and it is the *same*
+     violet as the selected rendered unit's outline in inspect.css — which cannot reach this token,
+     since it renders out in the host page's flow DOM. Change one and change the other. */
+  --ttp-bar: #6b21a8;
+  --ttp-on-bar: #ffffff;
+  --ttp-accent: #5b5bd6;
+  --ttp-units-05: var(--units-05, 0.25rem);
+  --ttp-units-1: var(--units-1, 0.5rem);
+  --ttp-units-2: var(--units-2, 1rem);
+  --ttp-font: var(--font-sans, 'Source Sans Pro Web', 'Source Sans Pro', 'Helvetica Neue', Helvetica, Roboto, Arial, sans-serif);
+  /* Inspect's Advanced readout is raw fact-dictionary XML, which needs the mono face — USWDS ships
+     Roboto Mono, and the fallback stack is the one its own $theme-font-type-mono resolves to. */
+  --ttp-font-mono: var(--font-mono, 'Roboto Mono Web', 'Roboto Mono', 'Bitstream Vera Sans Mono', Consolas, Monaco, monospace);
+
+  /* The two hard constraints from the designs. Both are also read by tool-layout.js, which clamps
+     drags against them — CSS enforces the floor, JS keeps the stored value from drifting below it. */
+  --ttp-min-width: 300px;
+  --ttp-min-height: 300px;
+}
+
+/* The sprite is appended to <body>, outside every element above, so it takes its own rule. */
+.ttp-sprite {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}

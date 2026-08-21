@@ -1,0 +1,317 @@
+/* The Inspect tool: the empty state the panel opens on, the accordion rows one selected unit
+   expands into, and the hover/selected treatment every rendered unit out in the host page wears
+   while the display option is on.
+
+   Loaded after tool-panel.css, so the generic .ttp-row treatment is already in place and only the
+   parts Inspect adds — the two-column data grid, the dependency table, the XML readout — are here.
+
+   That last section is the exception to this file's placement: it renders in the host page's flow
+   DOM, outside every root the --ttp-* token layer is declared on, so its rules carry their own
+   colours rather than reaching for the bundle's aliases. */
+
+/* ── Empty state ─────────────────────────────────────────────────────────── */
+
+.ttp-inspect__empty {
+  padding: var(--ttp-units-2) 0 0;
+  text-align: center;
+}
+
+.ttp-inspect__empty-title {
+  margin: 0 0 var(--ttp-units-1);
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.ttp-inspect__empty-hint {
+  margin: 0 auto var(--ttp-units-2);
+  max-width: 24rem;
+  color: var(--ttp-base-darkest);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+/* Sized in `em` so the illustration tracks the panel's text rather than its width — a floating
+   panel dragged wide should not get a billboard. */
+.ttp-inspect__empty-art {
+  display: block;
+  width: auto;
+  height: 12em;
+  margin: 0 auto;
+  color: var(--ttp-base-darkest);
+}
+
+.ttp-inspect__empty-bar {
+  fill: var(--ttp-base-lighter);
+}
+
+.ttp-inspect__empty-dot {
+  fill: var(--ttp-base-dark);
+}
+
+.ttp-inspect__empty-dot--dim {
+  fill: var(--ttp-base-light);
+}
+
+.ttp-inspect__empty-cursor {
+  fill: var(--ttp-base-darkest);
+  stroke: var(--ttp-surface);
+}
+
+/* ── A selected unit ─────────────────────────────────────────────────────── */
+
+/* The detail column is indented past the row icon by tool-panel.css; Inspect's sections carry
+   headings and a table, so they need the room back. */
+.ttp-inspect__detail {
+  padding-left: var(--ttp-units-1);
+  color: var(--ttp-base-darkest);
+}
+
+/* A rule between sections rather than around them: the sections are one continuous reading, and a
+   box each would read as three unrelated cards inside one row. */
+.ttp-inspect__section + .ttp-inspect__section,
+.ttp-inspect__section + [data-mount="advanced"] {
+  margin-top: var(--ttp-units-2);
+  padding-top: var(--ttp-units-2);
+  border-top: 1px solid var(--ttp-base-lighter);
+}
+
+.ttp-inspect__heading {
+  margin: 0 0 var(--ttp-units-1);
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.ttp-inspect__prose {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+/* ── Current state ───────────────────────────────────────────────────────── */
+
+.ttp-inspect__data {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+/* Two columns: the term takes what it needs down to a 6rem floor and the value takes the rest, so
+   the pair stays aligned across both rows without either being a fixed width. */
+.ttp-inspect__data-row {
+  display: grid;
+  grid-template-columns: minmax(6rem, auto) 1fr;
+  gap: var(--ttp-units-05) var(--ttp-units-2);
+}
+
+.ttp-inspect__data-row dt {
+  font-weight: 700;
+}
+
+.ttp-inspect__data-row dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* ── How it's evaluated ──────────────────────────────────────────────────── */
+
+.ttp-inspect__clauses {
+  margin: var(--ttp-units-1) 0 0;
+  padding-left: 1.25rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.ttp-inspect__clause {
+  margin-bottom: var(--ttp-units-05);
+}
+
+/* ── Dependencies ────────────────────────────────────────────────────────── */
+
+.ttp-inspect__deps {
+  width: 100%;
+  margin-top: var(--ttp-units-1);
+  border: 1px solid var(--ttp-base-lighter);
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  table-layout: fixed;
+}
+
+.ttp-inspect__deps th,
+.ttp-inspect__deps td {
+  padding: var(--ttp-units-05) var(--ttp-units-1);
+  border-bottom: 1px solid var(--ttp-base-lighter);
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.ttp-inspect__deps thead th {
+  background: var(--ttp-base-lightest);
+  font-weight: 700;
+}
+
+.ttp-inspect__dep-path {
+  font-weight: 400;
+}
+
+.ttp-inspect__deps tr:last-child th,
+.ttp-inspect__deps tr:last-child td {
+  border-bottom: 0;
+}
+
+/* ── Advanced ────────────────────────────────────────────────────────────── */
+
+.ttp-inspect__advanced-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--ttp-units-05);
+  cursor: pointer;
+  font-size: 0.875rem;
+  list-style: none;
+}
+
+.ttp-inspect__advanced-summary::-webkit-details-marker {
+  display: none;
+}
+
+.ttp-inspect__advanced-summary:focus-visible {
+  outline: 2px solid var(--ttp-blue-40v);
+  outline-offset: 2px;
+}
+
+.ttp-inspect__advanced-title {
+  font-weight: 700;
+}
+
+.ttp-inspect__advanced-note {
+  flex: 1 1 auto;
+  color: var(--ttp-base-dark);
+}
+
+.ttp-inspect__advanced[open] > summary > .ttp-row__chevron {
+  transform: rotate(180deg);
+}
+
+.ttp-inspect__fact-type {
+  margin: var(--ttp-units-1) 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.ttp-inspect__fact-type-label {
+  font-weight: 700;
+}
+
+/* The raw definition, set in the mono face USWDS ships (Roboto Mono) so its indentation reads as
+   structure. Wrapped rather than scrolled: a panel can be 300px wide, and a horizontal scrollbar
+   inside a vertical one is two scrollbars to find one attribute. */
+.ttp-inspect__xml {
+  margin: var(--ttp-units-1) 0 0;
+  padding: var(--ttp-units-1);
+  background: var(--ttp-base-lightest);
+  color: var(--ttp-base-darkest);
+  font-family: var(--ttp-font-mono);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* ── The host-page rendered unit ─────────────────────────────────────────── */
+/* What mounting the Inspect panel puts on the host page: the unit *is* the affordance. Hovering one
+   tints it and draws a dotted outline; clicking it opens the Inspect panel and swaps that for the
+   solid one, which stays until another unit is picked or the tool is closed. inspect-cues.js marks
+   which elements are in play ([data-inspect-unit]) and which one is selected; everything visual is
+   here.
+
+   These render out in the host page's flow DOM, outside every root the --ttp-* token layer is
+   declared on, so the colours are literals rather than bundle aliases — this is the one violet in
+   the designs, and a host's own primary would not be it.
+
+   Switching the option on must change nothing about how the flow lays out. That is why the box is
+   an `outline` (which takes no space) with an `outline-offset` standing in for the padding the
+   designs draw, and never a border. It also rules out the two things the old cue button did, both
+   of which restyled the host's own flow:
+
+   - `display: block` on a cued <fg-set>. It was meant for a host that leaves the custom element
+     inline, but it outranked the flow's `.hidden` (a class alone loses to an element-plus-class
+     selector) so a question the flow had hidden was forced back into the layout — a band of empty
+     space, invisible because `.hidden` also sets `opacity: 0`. Worse, it made the visibility test
+     in inspect-cues.js self-fulfilling: a unit that had been marked while it was on screen read
+     back the mark's own `display` afterwards and so never gave the mark up. A host that wants
+     <fg-set> to be a block says so itself — credit-assistant already does, in forms.css.
+   - `padding-right` on the block a cue was pinned to, to keep the corner clear. Reserving that room
+     re-wrapped the question copy, so toggling the option reflowed the page. */
+body.inspect-rendered-units [data-inspect-unit] {
+  cursor: pointer;
+  /* The hover tint, declared here as `none` and switched on below, so it inherits down the unit's
+     subtree — see the .usa-radio rule at the end of this section. */
+  --ttp-unit-tint: transparent;
+  /* The ring between the unit's own box and its dotted outline. `outline-offset` reserves that gap
+     but paints nothing in it, so the tint stopped at the content's edge and the page showed through
+     as a white margin inside the purple box — one element read as two. A box-shadow with no blur
+     and a spread equal to the offset fills exactly that ring and, like an outline, takes no space,
+     so switching Inspect on still moves nothing in the flow. Both are declared here rather than in
+     the hover rule so they have a value to transition *from*. */
+  box-shadow: 0 0 0 0.5rem var(--ttp-unit-tint);
+  transition: background-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* Hover, and keyboard focus landing inside the unit, read the same: this is the "you can inspect
+   this" state, and a keyboard user gets it without a tab stop of its own being added to the flow.
+
+   Two exclusions, both about picking one unit out of several that are technically under the
+   pointer. `:not(:has([data-inspect-unit]:hover))` keeps a question from lighting up along with the
+   <fg-show> nested inside it — the innermost wins, which is also what the click resolves to. And a
+   selected unit keeps its own treatment rather than reverting to this one while hovered. */
+body.inspect-rendered-units [data-inspect-unit]:not([data-inspect-selected]):hover:not(:has([data-inspect-unit]:hover)),
+body.inspect-rendered-units [data-inspect-unit]:not([data-inspect-selected]):focus-within:not(:has([data-inspect-unit]:focus-within)) {
+  --ttp-unit-tint: #f7f2fd;
+  outline: 2px dotted #7b3fd4;
+  outline-offset: 0.5rem;
+  background: var(--ttp-unit-tint);
+}
+
+/* The selected unit: heavier, solid, and untinted, so one glance separates "this is what the panel
+   is showing" from "this is what I am about to click". */
+body.inspect-rendered-units [data-inspect-unit][data-inspect-selected] {
+  outline: 3px solid #6b21a8;
+  outline-offset: 0.5rem;
+}
+
+/* Tinting the unit is not enough on its own: a child that paints its own opaque background punches
+   a white hole through the tint. USWDS's radio and checkbox wrappers are exactly that
+   (`.usa-radio { background: #fff }`), and they are the bottom half of every question this flow
+   asks, so a hovered question came out lavender above and white below.
+
+   They take the tint by inheritance rather than by repeating the hover selector: --ttp-unit-tint is
+   `transparent` on every marked unit and the real colour only while one is hovered, so this single
+   rule follows the hover around the page. Transparent rather than white when idle, so the wrapper
+   shows whatever the host has behind it — which is what USWDS's own white was standing in for.
+
+   Only these two. A child with a deliberate background of its own — an alert, a summary box, a tile
+   — is meant to keep it, and clearing every descendant's background would take those with it. */
+body.inspect-rendered-units [data-inspect-unit] .usa-radio,
+body.inspect-rendered-units [data-inspect-unit] .usa-checkbox {
+  background-color: var(--ttp-unit-tint);
+  /* Same fade as the unit around them, or the top half of a question would ease in while the bottom
+     half snapped. */
+  transition: background-color 0.25s ease;
+}
+
+/* The fade is an affordance, not decoration — it says "this responds" as the pointer crosses a page
+   of otherwise inert copy — but a quarter second of colour under the cursor is exactly what reduced
+   motion is asked for. The states themselves are unchanged; only the travel between them goes.
+
+   Last in the file on purpose: a media query adds no specificity, and these selectors are the same
+   ones declared above, so source order is the only thing deciding which `transition` wins. */
+@media (prefers-reduced-motion: reduce) {
+  body.inspect-rendered-units [data-inspect-unit],
+  body.inspect-rendered-units [data-inspect-unit] .usa-radio,
+  body.inspect-rendered-units [data-inspect-unit] .usa-checkbox {
+    transition: none;
+  }
+}
