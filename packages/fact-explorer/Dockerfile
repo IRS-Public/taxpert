@@ -32,7 +32,7 @@ FROM nginx:1.27-alpine AS runtime
 COPY packages/fact-explorer/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /workspace/packages/fact-explorer/dist /usr/share/nginx/html
 
-# Discovery has to survive the image boundary: a published image cannot know its consumer's apps.
+# Discovery has to survive the image boundary: a prebuilt image cannot know its consumer's apps.
 # The entrypoint rescans a mounted /apps and rewrites the served registry; with nothing mounted the
 # empty registry baked above stands, and the SPA says so. Node is here for that one script — the
 # served site is still static files out of nginx.

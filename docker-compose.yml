@@ -22,9 +22,10 @@
 #                      http://host.docker.internal:3003/app/eitc (the default). The assistant reads
 #                      the fact dictionary from there.
 #
-# `packages/ui/compose/taxpert.yml` is the same set of services for someone who has no checkout of
-# this repository: identical profiles and variables, published images instead of local builds. Keep
-# the two in step — this file is where they are developed.
+# `packages/ui/compose/taxpert.yml` is the same set of services, shipped inside the npm package for
+# an app repo that does not define them itself: identical profiles and variables, and the same local
+# builds — it just names the checkout explicitly, as TAXPERT_REPO, because it cannot assume it is
+# sitting in one. Keep the two in step; this file is where they are developed.
 #
 # Author Mode is deliberately absent: its backend is form-builder's own AuthoringServer, running
 # in-process inside the app's JVM on :3004 under --authorMode. There is no taxpert service for it.
@@ -46,8 +47,8 @@ services:
       context: .
       dockerfile: packages/fact-explorer/Dockerfile
     # Descriptors are mounted rather than baked, so the entrypoint rebuilds the registry at start.
-    # This is the same path a published image takes when someone points it at their own app —
-    # exercising it here is what keeps that path from rotting. One directory per app underneath.
+    # This is the same path the npm package's overlay takes when someone points it at their own
+    # app — exercising it here is what keeps that path from rotting. One directory per app under it.
     volumes:
       - ${TAXPERT_APPS_DIR:-./apps}:/apps:ro
     ports:

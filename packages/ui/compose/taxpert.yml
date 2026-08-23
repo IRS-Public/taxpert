@@ -1,15 +1,15 @@
 # Taxpert capability overlay, for a Form Builder app that lives in its own repo.
 #
-# The workspace UI itself needs nothing here — it is `npm i taxpert`, vendored into the app's
-# website-static/vendor/taxpert/ by its own `make copy-shared-ui`. This file is only for the two
-# capabilities that are separate processes.
+# The workspace UI itself needs nothing here — it is a `file:` npm dependency on a taxpert checkout,
+# vendored into the app's website-static/vendor/taxpert/ by its own `make copy-shared-ui`. This file
+# is only for the two capabilities that are separate processes.
 #
 # Ships inside the npm package, so an app reaches it through node_modules:
 #
 #   docker compose \
 #     -f docker-compose.yml \
 #     -f node_modules/taxpert/compose/taxpert.yml \
-#     --profile explorer --profile ai up
+#     --profile explorer --profile ai up --build
 #
 # Compose's top-level `include:` works too, if you would rather not repeat the -f each time.
 #
@@ -22,15 +22,29 @@
 # app's JVM on :3004 under --authorMode. There is no service for it here by design.
 #
 # Required of you:
+#   TAXPERT_REPO      path to a taxpert checkout. Both services are BUILT from it — see below.
 #   TAXPERT_APP_DIR   path to your app's repo root — the directory holding fact-explorer.app.json
 #   TAXPERT_APP_HOST  how a container reaches your app, e.g. http://my-app (a compose service name)
 #
-# This is the published-image twin of the taxpert repository's own docker-compose.yml: same services,
-# same profiles, same TAXPERT_APP_HOST. The one difference is the app mount, because the two answer
-# different questions. Here it is TAXPERT_APP_DIR — *your* app, one of it, mounted at /apps/app.
-# There it is TAXPERT_APPS_DIR — a directory of app checkouts, mounted whole at /apps, because a
-# taxpert developer works against several at once. Both land at /apps, which is all the image cares
-# about. Keep the two files in step; the one in that repository is where they are developed.
+# WHY TAXPERT_REPO, AND NOT AN IMAGE TAG. These two services were `ghcr.io/IRS-Public/…` images, and
+# that was the last thing in this ecosystem distributed through GitHub Packages. ghcr.io *is* GitHub
+# Packages: a pull is one `docker login` away from requiring a personal access token, and nothing
+# here is allowed to require a credential. Every other cross-repo dependency already arrives the way
+# this one now does — clone the repository, build from the checkout:
+#
+#   git clone https://github.com/IRS-Public/taxpert.git
+#   TAXPERT_REPO=$PWD/taxpert docker compose … --build
+#
+# The npm package you are reading this from is itself a `file:` dependency on that same checkout, so
+# TAXPERT_REPO is already on disk: it is the parent of the `packages/ui` your package.json points at.
+#
+# This is the sibling of the taxpert repository's own docker-compose.yml: same services, same
+# profiles, same build contexts, same TAXPERT_APP_HOST. The one difference is the app mount, because
+# the two answer different questions. Here it is TAXPERT_APP_DIR — *your* app, one of it, mounted at
+# /apps/app. There it is TAXPERT_APPS_DIR — a directory of app checkouts, mounted whole at /apps,
+# because a taxpert developer works against several at once. Both land at /apps, which is all the
+# container cares about. Keep the two files in step; the one in that repository is where they are
+# developed.
 #
 # Optional:
 #   TAXPERT_ASSISTANT_PACK  a domain pack directory for the assistant. Without one it answers from
@@ -39,9 +53,14 @@
 services:
   fact-explorer:
     profiles: ["explorer"]
-    image: ghcr.io/IRS-Public/taxpert-fact-explorer:0.1.0
-    # The image bakes no registry it can trust for you: it rescans /apps at start and serves
-    # whatever descriptors it finds. Mount one directory per app.
+    build:
+      # The repo root, because Fact Explorer is one package of an npm workspace: `taxpert` resolves
+      # to packages/ui through the root lockfile, so the root manifest and both packages have to be
+      # in scope.
+      context: ${TAXPERT_REPO:?set TAXPERT_REPO to a taxpert checkout}
+      dockerfile: packages/fact-explorer/Dockerfile
+    # The build bakes no registry it can trust for you: the container rescans /apps at start and
+    # serves whatever descriptors it finds. Mount one directory per app.
     volumes:
       - ${TAXPERT_APP_DIR:?set TAXPERT_APP_DIR to your app repo root}/fact-explorer.app.json:/apps/app/fact-explorer.app.json:ro
     ports:
@@ -50,6 +69,7 @@ services:
 
   chromadb:
     profiles: ["ai"]
+    # Docker Hub, and pinned to match the chromadb Python client in services/assistant/uv.lock.
     image: chromadb/chroma:1.5.9
     volumes:
       - taxpert-chroma-data:/data
@@ -57,7 +77,9 @@ services:
 
   assistant:
     profiles: ["ai"]
-    image: ghcr.io/IRS-Public/taxpert-assistant:0.1.0
+    build:
+      context: ${TAXPERT_REPO:?set TAXPERT_REPO to a taxpert checkout}/services/assistant
+      dockerfile: Dockerfile
     environment:
       CHROMA_HOST: chromadb
       CHROMA_PORT: "8000"

@@ -150,41 +150,45 @@ app — at a compose service name, for instance, if you do run it on this networ
 
 ### Getting the two Scala libraries
 
-Neither lives in this repository any more, and they arrive by different routes.
-
-**Form Builder** is published to GitHub Packages under `gov.irs`. GitHub Packages requires
-authentication even to read a public package, so a token is not optional:
-
-```bash
-export GITHUB_OWNER=IRS-Public
-export GITHUB_ACTOR=<your-github-login>
-export GITHUB_TOKEN=<PAT with read:packages>
-```
-
-**Fact Graph** is consumed independently of any GitHub-native service and is published to neither
-Maven Central nor GitHub Packages, so build it into your local Ivy cache once:
+Neither lives in this repository any more, and both arrive the same way: clone the repository, then
+publish it into your local Ivy cache. Neither is on Maven Central or any other remote, and neither
+needs to be — `~/.ivy2/local` is ahead of any remote in sbt's resolver chain, so a local publish is
+what an application resolves against, and no `resolvers` or `credentials` line appears in any
+`build.sbt`.
 
 ```bash
 git clone https://github.com/IRS-Public/fact-graph.git
 cd fact-graph && make publish        # sbt compile fastOptJS publishLocal
+
+git clone https://github.com/IRS-Public/form-builder.git
+cd form-builder && sbt publishLocal
 ```
 
-`make publish` is preferred over a bare `sbt publishLocal` on a first run, because it also runs
-`fastOptJS`, which produces the browser bundle `make copy-fg` looks for.
+In Fact Graph, `make publish` is preferred over a bare `sbt publishLocal` on a first run, because it
+also runs `fastOptJS`, which produces the browser bundle `make copy-fg` looks for. Form Builder has
+no Makefile and no browser bundle, so sbt drives it directly; use `sbt test publishLocal` once you
+are changing the scaffold rather than just consuming it.
 
-Then, from this repository:
+Where the checkouts go is the application's business, because the application is what reaches for
+them. The example applications expect all three — `fact-graph`, `form-builder` and `taxpert` — in
+the root of their repository, beside `credit-assistant/` and `tax-withholding-estimator/`, and their
+`make bootstrap` does both publishes and both `npm install`s from there:
 
 ```bash
-cd apps/<your-app> && make ci-setup && make dev
+cd ../form-builder-examples/credit-assistant && make bootstrap && make dev
 ```
 
-To work on Form Builder itself, clone it too and `sbt publishLocal`; `~/.ivy2/local` is ahead of any
-remote in sbt's resolver chain, so a local publish shadows the released version until you remove it.
+`make ci-setup` is what you run when you are not running `bootstrap`, and it is not optional. It
+runs `npm install` at the application root, which installs the `taxpert` package as a `file:` dependency on
+`../taxpert/packages/ui`, and `make copy-shared-ui` mirrors `node_modules/taxpert/src` into the
+application's vendor directory. Without a taxpert checkout at that path `npm install` fails, and
+without `ci-setup`, `copy-shared-ui` has nothing to copy. To install the workspace UI from a
+checkout kept somewhere else — this repository, while you are working on it — name that one
+instead, and leave `package.json` alone:
 
-`make ci-setup` is not optional. It runs `npm install` at the application root, which installs the
-`taxpert` package as a `file:` dependency, and `make copy-shared-ui` mirrors
-`node_modules/taxpert/src` into the application's vendor directory. Without it, `copy-shared-ui` has
-nothing to copy.
+```bash
+make ci-setup TAXPERT_UI=/path/to/taxpert/packages/ui
+```
 
 ### credit-assistant
 
@@ -450,7 +454,7 @@ site, serves it, and leaves an `sbt ~run` watcher regenerating on every edit.
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| sbt reports an unresolved dependency for `gov.irs#form-builder_3` | GitHub Packages needs auth even to read | Set `GITHUB_OWNER`, `GITHUB_ACTOR` and a `GITHUB_TOKEN` with `read:packages` |
+| sbt reports an unresolved dependency for `gov.irs#form-builder_3` | Form Builder is on no remote; your local Ivy cache is empty | Clone it and run `sbt publishLocal` |
 | sbt reports an unresolved dependency for `gov.irs#factgraph_3` | Fact Graph is on no remote; your local Ivy cache is empty | Clone it and run `make publish` |
 | `make dev` fails inside `copy-shared-ui` with a missing `node_modules/taxpert/src` | `make ci-setup` never ran, so the `file:` dependency was never installed | `make ci-setup` in that application |
 | `make ci` fails with "vendored shared UI is out of date" | The mirror drifted, usually from a hand-edit or a build that skipped the copy | `make copy-shared-ui`, and make the real change in `packages/ui/src/` |

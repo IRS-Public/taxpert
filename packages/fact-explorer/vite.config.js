@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, readdirSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, realpathSync } from 'node:fs'
 import { dirname, join, parse } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
@@ -15,10 +15,13 @@ const APPS_DIR = appsDir()
 
 // npm workspaces hoist dependencies to the workspace root, so a package is not necessarily under
 // this directory's own node_modules. Walk up until we find the one that holds it.
+// Resolved through realpath, because in a workspace `node_modules/<pkg>` is a symlink into
+// packages/ and Vite checks fs.allow against the *real* path: listing the link leaves the target
+// outside the allow-list, which is a 403 on every template the bundles fetch.
 function nodeModulesDir(pkg) {
   for (let dir = HERE; ; dir = dirname(dir)) {
     const candidate = join(dir, 'node_modules', pkg)
-    if (existsSync(candidate)) return candidate
+    if (existsSync(candidate)) return realpathSync(candidate)
     if (dir === parse(dir).root) return join(HERE, 'node_modules', pkg)
   }
 }

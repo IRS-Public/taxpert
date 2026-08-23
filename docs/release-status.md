@@ -248,12 +248,18 @@ this repository therefore has to build both from source before an application wi
 there is no way to pin a reproducible build to a published artifact. Snapshot resolution also means
 two developers on the same nominal version can be running different code.
 
-The npm packages are marked `"private": true` and are not published to a registry. Fact Explorer
-resolves `taxpert` through the npm workspace at this repository's root, and a Scala application
-vendors `node_modules/taxpert/src` into its own resource tree through `make copy-shared-ui` — from a
-published version once there is one, and from a checkout (`make link-taxpert`) until then. Those
-vendored directories are generated and gitignored, and `make check-shared-ui` fails a build if one
-has drifted.
+None of the npm packages is published to a registry, and all three are marked
+`"private": true` so that npm refuses rather than relies on nobody trying. Fact Explorer resolves
+`taxpert` through the npm workspace at this repository's root, and a Scala application vendors
+`node_modules/taxpert/src` into its own resource tree through `make copy-shared-ui`, from a
+`file:` dependency on a checkout. Those vendored directories are generated and gitignored, and
+`make check-shared-ui` fails a build if one has drifted.
+
+Nor are there published container images. `packages/ui/compose/taxpert.yml` used to name
+`ghcr.io/IRS-Public/taxpert-fact-explorer` and `-assistant`; it now builds both from a checkout
+named by `TAXPERT_REPO`. That closes the last route by which any part of this ecosystem could ask a
+consumer for a credential — ghcr.io is GitHub Packages, and a pull from a non-public image there
+needs a personal access token.
 
 ### Licensing is inconsistent
 

@@ -24,9 +24,10 @@ It ships as raw ESM and CSS with no build step, so it can be consumed with or wi
 |---|---|
 | Package name | `taxpert` |
 | Version | 0.1.0 |
-| License | `UNLICENSED` in `package.json`, with `publishConfig.access: public` |
+| License | `UNLICENSED` in `package.json` |
 | Repository | [github.com/IRS-Public/taxpert](https://github.com/IRS-Public/taxpert) |
-| Published files | `src/`, `react/`, `compose/` |
+| Distribution | `"private": true` — never published to a registry. Consumed as a `file:` dependency on a checkout, or through this repository's npm workspace. |
+| Files it ships | `src/`, `react/`, `compose/` |
 
 ## Where it fits
 
@@ -77,7 +78,7 @@ and CSS. Within a bundle, files are split into `js/`, `templates/` and `styles/`
 | `src/tool-panels/` | `<taxpert-tool-dock>` (`taxpert-tool-dock.js`), `<taxpert-tool-panel>`, `<taxpert-tools-modal>`, `<taxpert-add-fact-modal>`, the layout store, and the four tool bodies: `<taxpert-inspect>`, `<taxpert-outcome-tracker>`, `<taxpert-watchlist>`, `<taxpert-overrides>`. |
 | `src/shared/` | Cross-bundle helpers: `config.js`, `config-schema.js`, `apps.js`, `outcome-kinds.js`, `graph-adapter.js`, `flow-dom.js`, `storage-keys.js`, `templates.js`, `dom.js`, `modal-shell.js`, `collection-utils.js`, `embedded.js`, `favicon.js`, plus `img/favicon.png`, `styles/feature-flags.css` and `styles/embedded.css`. |
 | `react/` | Thin React adapters over the custom elements: `GlobalNav`, `ToolDock`, `ToolsModal`, `ScenarioModal`, `DisplayModal`, `WorkspaceSettingsModal`. React interop lives only here. |
-| `compose/` | `taxpert.yml`, a Docker Compose overlay that starts Fact Explorer and the assistant from published images, for an application with no checkout of this repository. |
+| `compose/` | `taxpert.yml`, a Docker Compose overlay that builds and starts Fact Explorer and the assistant, for an application whose own repository does not define them. It builds from a taxpert checkout named by `TAXPERT_REPO` — there are no published images. |
 | `tests/` | One `node --test` spec per module, plus `fixtures/host/` and `helpers/template-fetch.mjs`, which answers template fetches off disk under jsdom. |
 
 Never import across bundles by deep path. Every public entry point appears in the `exports` map in
@@ -212,8 +213,9 @@ import WorkspaceSettingsModal from 'taxpert/react/workspace-settings-modal'
 <WorkspaceSettingsModal />   {/* mount once; it self-wires to the nav's settings gear */}
 ```
 
-**Without a bundler.** A Form Builder application has none. It takes this as a dev dependency and
-copies `node_modules/taxpert/src` into its own static assets with its `make copy-shared-ui` target,
+**Without a bundler.** A Form Builder application has none. It takes this as a dev dependency — a
+`file:` path to a checkout, since nothing here is published to a registry — and copies
+`node_modules/taxpert/src` into its own static assets with its `make copy-shared-ui` target,
 then loads the elements with plain `<script type="module">` tags and imports the CSS from its
 `main.css`. Menu leaves render as real `<a href>` links, so the nav works before JS runs. The two
 applications that do this live in the

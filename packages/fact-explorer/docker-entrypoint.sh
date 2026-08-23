@@ -2,7 +2,7 @@
 # Regenerate the app registry from whatever descriptors are mounted at /apps, then hand off to
 # nginx.
 #
-# The image bakes an EMPTY registry at build time, because a published image cannot know its
+# The image bakes an EMPTY registry at build time, because a prebuilt image cannot know its
 # consumer's apps — that is the whole point of a shared Fact Explorer, and no application ships in
 # the taxpert repository. Mount one or more `<app>/fact-explorer.app.json` under /apps and the SPA
 # serves them. With nothing mounted there is nothing to show, and this says so rather than

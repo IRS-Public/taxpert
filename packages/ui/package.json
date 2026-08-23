@@ -4,12 +4,10 @@
   "description": "The Taxpert workspace: the framework-agnostic UI harness laid over a Form Builder app to make it understandable \u2014 global nav, audit panel, tool panels. Ships as raw ESM + CSS so it can be consumed with or without a bundler.",
   "type": "module",
   "license": "UNLICENSED",
+  "private": true,
   "repository": {
     "type": "git",
     "url": "git+https://github.com/IRS-Public/taxpert.git"
-  },
-  "publishConfig": {
-    "access": "public"
   },
   "exports": {
     ".": "./src/global-nav/js/taxpert-global-nav.js",

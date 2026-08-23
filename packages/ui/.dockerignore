@@ -1,0 +1,13 @@
+# This package is consumed as a *named build context* by the applications that vendor the workspace
+# UI:
+#
+#   docker build --build-context taxpert=../taxpert/packages/ui …
+#
+# and a named context has no .dockerignore of its own to fall back on — the application's
+# .dockerignore applies only to the application's own context. Without this file, a developer's
+# `node_modules/` rides along into every image build that names this directory.
+#
+# Those builds copy `src` and nothing else, but the whole directory is still transferred first.
+**/node_modules
+.git
+coverage

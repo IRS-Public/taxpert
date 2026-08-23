@@ -293,8 +293,10 @@ mounted read-only at `/apps`) and `TAXPERT_APP_HOST` (how a container reaches th
 app's own image, if it has one, is that repository's business; the examples each ship a Dockerfile
 that generates the site with `sbt run` and serves `out/` from `nginx:1.27-alpine`.
 
-`packages/ui/compose/taxpert.yml` is the same set of services as published images, shipped inside the
-npm package for an app repo that has no checkout of this one.
+`packages/ui/compose/taxpert.yml` is the same set of services, shipped inside the npm package for
+an app repo that does not define them itself. It builds them rather than pulling images: set
+`TAXPERT_REPO` to a taxpert checkout. There are no published images, and nothing in this stack ever
+asks for a registry credential.
 
 ### 3.1 Container inventory
 

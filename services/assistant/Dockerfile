@@ -2,8 +2,15 @@
 #
 # api — FastAPI chat backend. Build context is ./api.
 # Deps are installed with uv from the committed uv.lock for reproducibility.
+#
+# The base is Docker Hub's python image with uv installed from PyPI, rather than astral's own
+# `ghcr.io/astral-sh/uv:python3.12-bookworm-slim`. Nothing in this repository may depend on GitHub
+# Packages — ghcr.io is that registry, and a pull from it is one `docker login` away from needing a
+# token. uv is pinned here for the same reason the lockfile exists: the build should not drift.
 
-FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS runtime
+FROM python:3.12-slim-bookworm AS runtime
+ARG UV_VERSION=0.12.5
+RUN pip install --no-cache-dir "uv==${UV_VERSION}"
 
 WORKDIR /app
 ENV UV_COMPILE_BYTECODE=1 \

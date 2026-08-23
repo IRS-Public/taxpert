@@ -35,7 +35,7 @@ Five repositories make up the platform. This one is the fourth row.
 | [fact-graph](https://github.com/IRS-Public/fact-graph) | The rules engine. Declarative facts, derived and writable, with `Incomplete` propagation. Scala 3, cross-compiled so the same rules evaluate on the JVM during generation and in the browser at runtime. | `gov.irs::factgraph` |
 | [form-builder](https://github.com/IRS-Public/form-builder) | The scaffold. Flow XML plus a Fact Dictionary become a multi-language static site. Ships the browser theme, the flow runtime and the Author Mode backend inside its jar. | `gov.irs::form-builder` |
 | [form-builder-template](https://github.com/IRS-Public/form-builder-template) | Cookiecutter that emits a new Form Builder application. | `cookiecutter gh:IRS-Public/form-builder-template` |
-| **taxpert** (this one) | The optional workspace UI and its companion services. | `npm i taxpert`, plus container images |
+| **taxpert** (this one) | The optional workspace UI and its companion services. | `taxpert`, as a `file:` dependency on a checkout, plus container images |
 | [form-builder-examples](https://github.com/IRS-Public/form-builder-examples) | The two reference applications, Credit Assistant (EITC) and the Tax Withholding Estimator. Demonstration code, kept out of this repository so nothing here depends on an application. | Clone it beside this one |
 
 The dependency runs one way. Form Builder is required for an application to exist. Taxpert is
@@ -158,18 +158,30 @@ docker compose --profile ai up                      # assistant + ChromaDB
 docker compose --profile explorer --profile ai up   # everything
 ```
 
-The application itself runs from its own repository, natively. `gov.irs::form-builder` resolves from
-GitHub Packages, which requires authentication even to read a public package, so export a classic
-PAT with `read:packages` first.
+The application itself runs from its own repository, natively. Every library it needs comes from a
+local checkout: `gov.irs::factgraph` and `gov.irs::form-builder` are published into `~/.ivy2/local`,
+which is first in sbt's default resolver chain, and `taxpert` is a `file:` npm dependency. The
+example applications expect all three cloned into the root of that repository, beside
+`credit-assistant/` and `tax-withholding-estimator/`, and `make bootstrap` is the target that
+publishes them and installs the npm dependencies in one go.
 
 ```bash
-export GITHUB_OWNER=IRS-Public GITHUB_ACTOR=<your-github-login> GITHUB_TOKEN=<PAT read:packages>
 cd ../form-builder-examples/credit-assistant
-make ci-setup && make dev          # http://localhost:3003/app/eitc/
+make bootstrap                     # publish the Scala libraries, install npm dependencies
+make dev                           # http://localhost:3003/app/eitc/
 ```
 
-`make ci-setup` installs the `taxpert` dependency that the application's `make copy-shared-ui`
-mirrors into its vendor directory. The build fails without it.
+`make bootstrap` runs the same `npm install` that `make ci-setup` does, which installs the
+`taxpert` dependency that the application's `make copy-shared-ui` mirrors into its vendor
+directory. The build fails without it.
+
+That dependency is declared as `file:../taxpert/packages/ui`, so `npm install` needs a taxpert
+checkout at that path. To point it at this one instead of a second clone, name it — an edit here
+then reaches the application on its next `copy-shared-ui`:
+
+```bash
+make ci-setup TAXPERT_UI=../../taxpert/packages/ui
+```
 
 ### What is running
 

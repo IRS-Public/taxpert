@@ -155,7 +155,7 @@ export function buildRegistryFile(scanRoot, outPath) {
 }
 
 function main(argv) {
-  // --empty writes a registry with no apps. The Docker image uses it: a published image cannot know
+  // --empty writes a registry with no apps. The Docker image uses it: a prebuilt image cannot know
   // its consumer's apps, so it ships an empty registry and its entrypoint rewrites it from whatever
   // is mounted at /apps. Without a mount the SPA then says so, rather than 404ing on apps.json.
   if (argv.includes('--empty')) {
@@ -179,7 +179,7 @@ function main(argv) {
   const rootFlag = argv.indexOf('--root')
   const scanRoot = rootFlag === -1 ? appsDir() : resolve(argv[rootFlag + 1])
   // --out lets the runtime container rewrite the registry inside the served dist/ rather than
-  // into this checkout's public/. Discovery has to survive the image boundary: a published image
+  // into this checkout's public/. Discovery has to survive the image boundary: a prebuilt image
   // cannot know its consumer's apps, so it rescans a mounted /apps at start.
   const outFlag = argv.indexOf('--out')
   buildRegistryFile(scanRoot, outFlag === -1 ? undefined : argv[outFlag + 1])
