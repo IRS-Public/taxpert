@@ -1,11 +1,29 @@
+# The previous version of this file watched `/.github` for an npm manifest. There has never been a
+# package.json there, so nothing was ever updated; the pdf-lib ignore rule was inherited from an
+# application, and nothing here vendors pdf-lib.
+#
+# github-actions is the addition that matters for security: every workflow here pins its actions to
+# a commit SHA, and a pinned SHA is only as good as the thing that moves it forward.
 version: 2
 updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # One entry for the npm workspaces root — packages/ui and packages/fact-explorer share this
+  # lockfile, so Dependabot resolves both from here.
   - package-ecosystem: "npm"
-    directory: "/.github"
+    directory: "/"
     schedule:
       interval: "weekly"
     allow:
       - dependency-type: "direct"
-    ignore:
-      - dependency-name: "pdf-lib"
-        update-types: ["version-update:semver-major"]  # Optional: ignore v2.x if released
+
+  # The LLM chat backend. uv.lock is the resolved environment; pyproject.toml holds the constraints.
+  - package-ecosystem: "uv"
+    directory: "/services/assistant"
+    schedule:
+      interval: "weekly"
+    allow:
+      - dependency-type: "direct"

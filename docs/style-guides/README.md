@@ -50,7 +50,7 @@ of the scaffold and the workspace package, overwritten on every build.
 6. **Size layout against the container.** Container queries let the form reflow beside the workspace
    panels, which viewport media queries cannot do.
 
-## Two caveats on reading them
+## One caveat on reading them
 
 The guides quote **ADR-001 (TWE 2.0 Architecture)** and **ADR-004 (Internal Debugging Surfaces)**.
 Both live with the Tax Withholding Estimator, in
@@ -58,10 +58,15 @@ Both live with the Tax Withholding Estimator, in
 alongside ADR-002 on security scanning and ADR-003 on PDF generation. They predate the repository
 split and describe this platform as a whole.
 
-The guides were also written before the frontend was split into the scaffold and the workspace
-package, so some paths they cite have moved and their titles still say "TWE Frontend". The rules
-hold, but the file names in the excerpts do not always resolve. Two substitutions cover most of it.
-The Web Component and Fact Graph code cited as `website-static/js/fg-components.js` is now
-`form-builder/src/main/resources/form-builder/website-static/flow-runtime/js/`, and an application's
-own `fg-components.js` is a short entry point that imports that runtime. The audit panel cited as
-`website-static/js/audit-panel.js` is now [`packages/ui/src/audit-panel/`](../../packages/ui/src/audit-panel/).
+The guides were originally written against the frontend before it split into the scaffold and the
+workspace package, when the Web Component and Fact Graph code lived in one file,
+`website-static/js/fg-components.js`, and the workspace lived in another, `audit-panel.js`. Both
+have since been reorganized into several files apiece. The custom elements, the Fact Graph
+bootstrap and the navigation now live in the scaffold's flow runtime,
+`form-builder/src/main/resources/form-builder/website-static/flow-runtime/js/{fg-set,fg-collection,fg-display,fg-conditions,fg-fact-graph,fg-validation,fg-navigator,modals}.js`.
+An application still keeps a short `fg-components.js` of its own that imports that runtime and
+then whatever is genuinely its own, such as credit-assistant's knockout handlers. The workspace's
+files are now `packages/ui/src/audit-panel/js/{taxpert-audit-panel,chat,scenario-modal,display-modal,workspace-settings-modal}.js`
+and neighboring files in that bundle. The conventions in the guides still hold. Where a code
+excerpt names a specific file, treat it as illustrative of the pattern rather than a guarantee
+that the exact line still exists there.

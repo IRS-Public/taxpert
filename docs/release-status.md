@@ -258,7 +258,7 @@ None of the npm packages is published to a registry, and all three are marked
 Nor are there published container images. `packages/ui/compose/taxpert.yml` used to name
 `ghcr.io/IRS-Public/taxpert-fact-explorer` and `-assistant`; it now builds both from a checkout
 named by `TAXPERT_REPO`. That closes the last route by which any part of this ecosystem could ask a
-consumer for a credential — ghcr.io is GitHub Packages, and a pull from a non-public image there
+consumer for a credential. ghcr.io is GitHub Packages, and a pull from a non-public image there
 needs a personal access token.
 
 ### Licensing is inconsistent

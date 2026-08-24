@@ -11,10 +11,10 @@ The **`taxpert` package** is the optional npm workspace UI in `packages/ui/`, wh
 nav, the audit panel, and the tool panels over a running application.
 
 **The applications are not here.** This repository holds the workspace UI, Fact Explorer and the
-assistant; a Form Builder application lives in its own repository and these tools are pointed at it.
-The two used throughout this document — credit-assistant and tax-withholding-estimator — are the
+assistant. A Form Builder application lives in its own repository and these tools are pointed at it.
+The two used throughout this document, credit-assistant and tax-withholding-estimator, are the
 [example applications](https://github.com/IRS-Public/form-builder-example). Clone them (or your own app) into
-`apps/`, or set `TAXPERT_APPS_DIR`; see [`apps/README.md`](../apps/README.md).
+`apps/`, or set `TAXPERT_APPS_DIR`. See [`apps/README.md`](../apps/README.md).
 
 ## Related documents
 
@@ -142,7 +142,7 @@ overlay: `WATCHFILES_FORCE_POLLING: "true"` for uvicorn and `VITE_USE_POLLING: "
 
 Fact Explorer's dev proxy reaches an application at `host.docker.internal:<its devPort>`, which is
 how a container talks to an app running natively on the host. `VITE_APP_ORIGIN_<ID>` retargets one
-app — at a compose service name, for instance, if you do run it on this network.
+app, at a compose service name for instance, if you do run it on this network.
 
 ---
 
@@ -152,7 +152,7 @@ app — at a compose service name, for instance, if you do run it on this networ
 
 Neither lives in this repository any more, and both arrive the same way: clone the repository, then
 publish it into your local Ivy cache. Neither is on Maven Central or any other remote, and neither
-needs to be — `~/.ivy2/local` is ahead of any remote in sbt's resolver chain, so a local publish is
+needs to be. `~/.ivy2/local` is ahead of any remote in sbt's resolver chain, so a local publish is
 what an application resolves against, and no `resolvers` or `credentials` line appears in any
 `build.sbt`.
 
@@ -166,11 +166,11 @@ cd form-builder && sbt publishLocal
 
 In Fact Graph, `make publish` is preferred over a bare `sbt publishLocal` on a first run, because it
 also runs `fastOptJS`, which produces the browser bundle `make copy-fg` looks for. Form Builder has
-no Makefile and no browser bundle, so sbt drives it directly; use `sbt test publishLocal` once you
+no Makefile and no browser bundle, so sbt drives it directly. Use `sbt test publishLocal` once you
 are changing the scaffold rather than just consuming it.
 
 Where the checkouts go is the application's business, because the application is what reaches for
-them. The example applications expect all three — `fact-graph`, `form-builder` and `taxpert` — in
+them. The example applications expect all three, `fact-graph`, `form-builder` and `taxpert`, in
 the root of their repository, beside `credit-assistant/` and `tax-withholding-estimator/`, and their
 `make bootstrap` does both publishes and both `npm install`s from there:
 
@@ -183,7 +183,7 @@ runs `npm install` at the application root, which installs the `taxpert` package
 `../taxpert/packages/ui`, and `make copy-shared-ui` mirrors `node_modules/taxpert/src` into the
 application's vendor directory. Without a taxpert checkout at that path `npm install` fails, and
 without `ci-setup`, `copy-shared-ui` has nothing to copy. To install the workspace UI from a
-checkout kept somewhere else — this repository, while you are working on it — name that one
+checkout kept somewhere else, this repository, while you are working on it, name that one
 instead, and leave `package.json` alone:
 
 ```bash
@@ -192,8 +192,8 @@ make ci-setup TAXPERT_UI=/path/to/taxpert/packages/ui
 
 ### credit-assistant
 
-The EITC application — in [the example applications' repository](https://github.com/IRS-Public/form-builder-example),
-not this one; run these from its `credit-assistant/` directory. Serves `/app/eitc` on port 3003.
+The EITC application, in [the example applications' repository](https://github.com/IRS-Public/form-builder-example),
+not this one. Run these from its `credit-assistant/` directory. Serves `/app/eitc` on port 3003.
 
 | Command | What it does |
 |---|---|
@@ -271,19 +271,21 @@ make index                     # terminal 2, build the RAG index
 make dev                       # terminal 2, uvicorn on :8000 with reload
 ```
 
-`make chroma` persists to `./data/chroma`. `make index` embeds `data/irs_publications/*.pdf` and
-`data/html/*.html`. The remaining targets are `make test` (pytest), `make lint` (`black --check`),
+`make chroma` persists to `./data/chroma`. `make index` embeds `data/html/*.html`; the PDF branch
+of the indexer is complete but commented out, so `data/irs_publications/*.pdf` is not indexed until
+someone uncomments it (see [AI integration](./ai-integration.md#23-retrieval-rag)). The remaining
+targets are `make test` (pytest), `make lint` (`black --check`),
 `make format` (black), `make check-format` (`pre-commit run --all-files`), `make install-hooks`, and
 `make clean`.
 
 Start an application before `make dev`. The service fetches the fact dictionary over HTTP at startup
 from the URL in `FACT_DICTIONARY_URL`, which defaults to credit-assistant's dev server. Scenario
-generation additionally reads that app's `scenarios/` and `flow/` from disk — `SCENARIOS_DIR` and
+generation additionally reads that app's `scenarios/` and `flow/` from disk: `SCENARIOS_DIR` and
 `FLOW_DIR`, which default to a checkout under `apps/`.
 
 ### fact-graph and form-builder
 
-Both live in their own repositories now — see
+Both live in their own repositories now. See
 [fact-graph](https://github.com/IRS-Public/fact-graph) and
 [form-builder](https://github.com/IRS-Public/form-builder). Clone either one beside this repo if you want
 to work on it.
@@ -292,7 +294,7 @@ In fact-graph, `make publish` runs `sbt compile fastOptJS publishLocal`, and `ma
 on every edit. After a rebuild, run `make copy-fg` in each application to pick up the new browser
 bundle.
 
-Form Builder has no Makefile, so drive sbt directly — `sbt test publishLocal`. Republishing is what
+Form Builder has no Makefile, so drive sbt directly with `sbt test publishLocal`. Republishing is what
 makes a scaffold change visible: editing a stylesheet under
 `form-builder/src/main/resources/form-builder/website-static/` during an `sbt ~run` session in an
 application will not show up until you republish and restart, because the generator extracts those
@@ -410,11 +412,13 @@ detects that case and moves the project up one level instead.
 `cookiecutter.json` asks for `project_name` (default `My Tax Tool`), then `repo_name`, `app_id`,
 `url_segment`, `scala_package`, `brand`, and `storage_prefix`, each of which derives a sensible
 default from the answers above it. `dev_port` defaults to `3010`. `form_builder_version` and
-`factgraph_version` default to the two local snapshots. `fact_graph_path`, `form_builder_path`, and
-`taxpert_path` default to `../fact-graph`, `../form-builder`, and `../taxpert`.
+`factgraph_version` default to the two local snapshots. `fact_graph_path` and `form_builder_path`
+default to `../fact-graph` and `../form-builder`, and `taxpert_path` defaults to
+`../taxpert/packages/ui`.
 
-The three library paths are prompts, so a project generated outside this monorepo can point at
-libraries anywhere on disk.
+The three library paths are prompts rather than a fixed assumption, so a generated project can
+point at each library wherever it is actually checked out, not only at an adjacent sibling
+directory.
 
 ### The five toggles
 
@@ -454,8 +458,8 @@ site, serves it, and leaves an `sbt ~run` watcher regenerating on every edit.
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| sbt reports an unresolved dependency for `gov.irs#form-builder_3` | Form Builder is on no remote; your local Ivy cache is empty | Clone it and run `sbt publishLocal` |
-| sbt reports an unresolved dependency for `gov.irs#factgraph_3` | Fact Graph is on no remote; your local Ivy cache is empty | Clone it and run `make publish` |
+| sbt reports an unresolved dependency for `gov.irs#form-builder_3` | Form Builder is on no remote, your local Ivy cache is empty | Clone it and run `sbt publishLocal` |
+| sbt reports an unresolved dependency for `gov.irs#factgraph_3` | Fact Graph is on no remote, your local Ivy cache is empty | Clone it and run `make publish` |
 | `make dev` fails inside `copy-shared-ui` with a missing `node_modules/taxpert/src` | `make ci-setup` never ran, so the `file:` dependency was never installed | `make ci-setup` in that application |
 | `make ci` fails with "vendored shared UI is out of date" | The mirror drifted, usually from a hand-edit or a build that skipped the copy | `make copy-shared-ui`, and make the real change in `packages/ui/src/` |
 | The workspace shows stale UI after editing `packages/ui/` | The vendored mirror was not regenerated | `make copy-shared-ui` in each application |

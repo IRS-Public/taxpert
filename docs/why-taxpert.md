@@ -11,7 +11,7 @@ repository together with the Form Builder scaffold, the Fact Graph engine and th
 on them. The **`taxpert` package** is the optional npm workspace UI in `packages/ui/`. The rest of
 this document uses "the workspace UI" for the package.
 
-The applications quoted throughout — credit-assistant and the Tax Withholding Estimator — are the
+The applications quoted throughout, credit-assistant and the Tax Withholding Estimator, are the
 [example applications](https://github.com/IRS-Public/form-builder-example) and live in their own repository, as any
 Form Builder app does. Nothing in this repository depends on them.
 

@@ -1,17 +1,21 @@
-# HTML / Thymeleaf Style Guide — TWE Frontend
+# HTML and Thymeleaf style guide
 
-Conventions for the Thymeleaf templates and generated HTML behind the Tax Withholding
-Estimator (TWE) / credit-assistant frontend. Derived from `templates/` (`page.html`,
-`all-screens.html`, `fragments/`, `nodes/`, `nodes/inputs/`) and the decisions **ADR-001 (TWE 2.0
-Architecture)** and **ADR-004 (Internal Debugging Surfaces)** — both in the TWE repo under `docs/adr/`.
+Conventions for the Thymeleaf templates and generated HTML across the platform: the Form Builder
+scaffold's own templates and an application's overrides of them. They were written against the
+original Tax Withholding Estimator (TWE) frontend, before the scaffold split into its own
+repository, and the decisions still cited, **ADR-001 (TWE 2.0 Architecture)** and **ADR-004
+(Internal Debugging Surfaces)**, live with the Tax Withholding Estimator, in its repository's
+`docs/adr/`. The conventions still hold. See
+[the style guide index](README.md#which-code-each-guide-governs) for which directory each one
+applies to.
 
 ---
 
-## 1. Philosophy — Flow XML in, HTML out
+## 1. Philosophy: Flow XML in, HTML out
 
-TWE is a static-site generator. Tax-logic engineers write **Flow XML** ("questions"); the Scala
-generator transforms it into HTML using a small set of `fg-*` custom elements that bridge form
-inputs to the Fact Graph. Plain HTML passes through untouched (ADR-001):
+A Form Builder application is a static-site generator. Tax-logic engineers write **Flow XML**
+("questions"). The Scala generator transforms it into HTML using a small set of `fg-*` custom
+elements that bridge form inputs to the Fact Graph. Plain HTML passes through untouched (ADR-001):
 
 > The generated static HTML largely consists of `<fg-set>` custom elements, which enhance HTML
 > form inputs with the ability to set values in a fact graph … Everything else, the regular HTML
@@ -23,39 +27,49 @@ The implications for templates:
   templates. Templates are the reusable rendering layer.
 - **Do** add a `nodes/` template when you need a new custom element, or a `nodes/inputs/`
   template for a new input type.
-- **Don't** bake user-facing copy into a template — it belongs in a `#{...}` message key.
+- **Don't** bake user-facing copy into a template. It belongs in a `#{...}` message key.
 
 ---
 
-## 2. Template organization
+## 2. Template organization and app-first resolution
+
+The templates themselves live in the scaffold, under
+`form-builder/src/main/resources/form-builder/templates/`:
 
 ```
 templates/
-  page.html              ← main, user-facing flow layout
-  all-screens.html       ← dev-only review layout (renders every field)
-  errors.html            ← client error-message templates
-  fragments/             ← shared page chrome
-    head.html  usa-banner.html  usa-step-indicator.html
-    audit-panel.html  js-templates.html  lock.html
-  nodes/                 ← one template per custom element
+  page.html              main, user-facing flow layout
+  all-screens.html       the Browse All / Path Mode review layout (renders every field)
+  author-mode.html       the Author Mode editing shell
+  errors.html            client error-message templates
+  fragments/             shared page chrome, including the four workspace mount points
+    head.html  usa-banner.html  usa-step-indicator.html  js-templates.html  lock.html
+    app-head.html  audit-panel.html
+    workspace-head.html  workspace-enable.html  workspace-all-screens.html  taxpert-config.html
+  nodes/                 one template per custom element
     fg-set.html  fg-alert.html  fg-detail.html  fg-collection.html
-    fg-apply.html  modal-dialog.html  modal-link.html
+    fg-apply.html  fg-section-gate.html  modal-dialog.html  modal-link.html
     question-label.html  hint.html  section.html
-    inputs/              ← one template per input type
-      text.html  dollar.html  int.html  date.html  boolean.html
-      enum.html  multi-enum.html  select.html  single-checkbox.html
+    inputs/               one template per input type
+      text.html  dollar.html  int.html  date.html  boolean.html  enum.html  multi-enum.html  select.html
 ```
 
-- **Filenames are `kebab-case` and match the element/concept** they render (`fg-set.html`
-  → `<fg-set>`; `inputs/dollar.html` → `type="dollar"`).
-- **`fragments/`** holds page chrome reused across layouts; **`nodes/`** holds the building
+An application resolves its own `templates/` first and the scaffold's second, per file name, so it
+overrides exactly the templates it needs to and inherits the rest untouched. Tax Withholding
+Estimator's `nodes/inputs/date.html` override and its two `fg-withholding-adjustments-*.html`
+node templates are the working example. See
+[architecture.md](../architecture.md#5-the-five-extension-seams) for the resolver mechanics.
+
+- **Filenames are `kebab-case` and match the element or concept** they render (`fg-set.html`
+  renders `<fg-set>`, `inputs/dollar.html` renders `type="dollar"`).
+- **`fragments/`** holds page chrome reused across layouts. **`nodes/`** holds the building
   blocks the generator stitches together per Flow XML element.
 
 ---
 
 ## 3. Fragments and layouts
 
-Reuse chrome with `th:replace` / `th:insert`; pass data with fragment parameters.
+Reuse chrome with `th:replace` or `th:insert`. Pass data with fragment parameters.
 
 ```html
 <!-- simple include -->
@@ -73,12 +87,13 @@ Reuse chrome with `th:replace` / `th:insert`; pass data with fragment parameters
 <!-- a fragment can compose another by its computed name -->
 <th th:replace="~{'nodes/inputs/' + ${typeString}}"></th>
 ```
-*— pattern from `nodes/fg-set.html`, `nodes/fg-collection.html`*
 
-- **Do** keep two layouts distinct: `page.html` (progressive, user-facing) and `all-screens.html`
-  (dev-only, renders everything — see §9).
-- **Do** inject generator output with `th:utext="${pageHtml}"` (the HTML is trusted, generated
-  server-side — there is no user-generated content, so XSS surface is nil per ADR-001).
+*Pattern from `nodes/fg-set.html`, `nodes/fg-collection.html`.*
+
+- **Do** keep the layouts distinct: `page.html` (progressive, user-facing) and `all-screens.html`
+  (renders everything, for review, see section 9).
+- **Do** inject generator output with `th:utext="${pageHtml}"`. The HTML is trusted and generated
+  server-side. There is no user-generated content, so ADR-001 treats the XSS surface as nil.
 
 ---
 
@@ -86,11 +101,11 @@ Reuse chrome with `th:replace` / `th:insert`; pass data with fragment parameters
 
 | Need | Use | Example |
 | --- | --- | --- |
-| Localized text | `th:text` / `th:utext` (`#{...}`) | `th:text="#{layout.skip-to-main}"` |
+| Localized text | `th:text` or `th:utext` (`#{...}`) | `th:text="#{layout.skip-to-main}"` |
 | Dynamic value | `${...}` | `th:text="${languageCode}"` |
-| Conditional render | `th:if` / `th:unless` | `th:if="${flags.auditMode}"` |
-| Iterate | `th:each` (+ iter status) | `th:each="page, iterStat : ${pages}"` |
-| Local variables | `th:with` | scoped collection name/heading derivations |
+| Conditional render | `th:if` or `th:unless` | `th:if="${flags.auditMode}"` |
+| Iterate | `th:each`, with iteration status | `th:each="page, iterStat : ${pages}"` |
+| Local variables | `th:with` | scoped collection name or heading derivations |
 | Arbitrary attrs | `th:attr` | `th:attr="path=${path}, condition=${condition}"` |
 | Conditional class | `th:class` ternary | `th:class="${condition ? '' : 'hidden'}"` |
 | Strip wrapper tag | `th:remove="tag"` | unwrap a `<div>` used only to carry `th:utext` |
@@ -100,21 +115,27 @@ Reuse chrome with `th:replace` / `th:insert`; pass data with fragment parameters
 <fg-set th:attr="path=${path}, inputType=${typeString}, condition=${condition},
                  operator=${operator}, optional=${optional}">
 ```
-*— `nodes/fg-set.html`*
 
-> Note: templates sometimes use a throwaway `<th>` element purely to host a `th:replace` /
-> `th:unless` — it is replaced/removed during rendering and never reaches output.
+*`nodes/fg-set.html`.*
+
+Templates sometimes use a throwaway `<th>` element purely to host a `th:replace` or `th:unless`.
+It is replaced or removed during rendering and never reaches output.
 
 ---
 
 ## 5. Internationalization (i18n)
 
-Copy lives in YAML message bundles, never in templates:
+Copy lives in YAML message bundles, never in templates, resolved app-first over the scaffold's own
+chrome strings, over the generated flow content:
 
-- `locales/en.yaml`, `locales/es.yaml` — layout / component strings.
-- `locales/flow_en.yaml`, `locales/flow_es.yaml` — flow content (generated from Flow XML).
+- An application's own `locales/en.yaml`, `locales/es.yaml`, and so on: layout and component
+  strings for its own words.
+- The scaffold's `locales/{lang}.yaml`, on the classpath: chrome shared by every application
+  (`components.*`, `workspace.tools.*`).
+- The generated `locales/flow_{lang}.yaml`: flow content, produced from Flow XML. Never hand-edit
+  this file.
 
-Keys are nested namespaces and are **composed** from path/content variables:
+Keys are nested namespaces and are **composed** from path or content variables:
 
 ```html
 <!-- simple lookup -->
@@ -134,24 +155,25 @@ Keys are nested namespaces and are **composed** from path/content variables:
    th:utext="#{${contentKey} + .modalLink}"></p>
 ```
 
-- **Do** add both `en` and `es` keys for any new string.
+- **Do** add every locale an application ships for any new string.
 - **Do** use `#messages.msgOrNull(...)` before rendering an optional key.
 
 ---
 
 ## 6. Custom elements and Fact Graph wiring
 
-Markup declares intent through attributes; the JS (`fg-components.js`) does the wiring.
+Markup declares intent through attributes. The flow runtime's JavaScript
+(`form-builder/.../website-static/flow-runtime/js/`) does the wiring.
 
 | Element | Purpose | Key attributes |
 | --- | --- | --- |
-| `<fg-set>` | Wrap an input; write a fact | `path`, `inputType`, `condition`, `operator`, `optional` |
-| `<fg-show>` / `<fg-get>` | Display / read a fact value | `path` |
+| `<fg-set>` | Wrap an input, write a fact | `path`, `inputType`, `condition`, `operator`, `optional` |
+| `<fg-show>` / `<fg-get>` | Display or read a fact value | `path` |
 | `<fg-apply>` | Set a fact to a value | `path`, `value` |
 | `<fg-alert>` | Conditional alert | `alert-type`, `condition`, `operator`, `blocking` |
 | `<fg-detail>` | Collapsible section | `condition`, `operator`, `open` |
 | `<fg-collection>` | Repeating items | `path`, `condition`, `operator`, `disallowEmpty` |
-| `<modal-link>` / `<modal-dialog>` | Inline help → modal | `for` / `id` |
+| `<modal-link>` / `<modal-dialog>` | Inline help, opening a modal | `for` / `id` |
 
 ```html
 <!-- condition + operator drive visibility; the ternary hides it until JS evaluates -->
@@ -160,19 +182,19 @@ Markup declares intent through attributes; the JS (`fg-components.js`) does the 
           th:class="${condition ? '' : 'hidden'}">…</fg-alert>
 ```
 
-- **`condition` + `operator`** express Fact Graph visibility (`isTrue`, `isFalse`,
-  `isIncomplete`, `isBlank`, …). They are emitted as attributes and **also consumed by the
-  audit/all-screens debug surfaces** to visualize why content shows or hides — so keep them on
+- **`condition` and `operator`** express Fact Graph visibility (`isTrue`, `isFalse`,
+  `isIncomplete`, `isBlank`, and so on). They are emitted as attributes and are also read by the
+  taxpert workspace's Inspect and Display tools to show why content shows or hides. Keep them on
   the element even when also mirrored to a `hidden` class.
-- **Collection paths** use a `/*/` wildcard (`/jobs/*/isFilerAssignmentSelf`); the JS rewrites
-  `*` to a concrete id when an item is added.
+- **Collection paths** use a `/*/` wildcard (`/jobs/*/isFilerAssignmentSelf`). The flow runtime
+  rewrites `*` to a concrete id when an item is added.
 
 ---
 
 ## 7. Forms and accessibility
 
 The `<fg-set>` wrapper composes a labeled, hinted, validated input. Single-value inputs get a
-`<label>`; grouped inputs (radio/checkbox/date) get `<fieldset>` + `<legend>`.
+`<label>`. Grouped inputs (radio, checkbox, date) get `<fieldset>` and `<legend>`.
 
 ```html
 <fg-set th:attr="path=${path}, inputType=${typeString}, condition=${condition},
@@ -187,7 +209,8 @@ The `<fg-set>` wrapper composes a labeled, hinted, validated input. Single-value
   </div>
 </fg-set>
 ```
-*— `nodes/fg-set.html`*
+
+*`nodes/fg-set.html`.*
 
 ```html
 <!-- grouped input: fieldset + legend carry the question; (Required) is aria-hidden decoration -->
@@ -206,47 +229,52 @@ The `<fg-set>` wrapper composes a labeled, hinted, validated input. Single-value
   </div>
 </fieldset>
 ```
-*— `nodes/inputs/boolean.html`*
+
+*`nodes/inputs/boolean.html`.*
 
 Accessibility rules in markup:
 
-- **Semantic structure**: `<label>` for single inputs; `<fieldset>` + `<legend>` for groups;
-  proper `<h1>…<h5>` hierarchy; landmarks (`<header>`, `<main id="main-content">`, `<footer>`).
+- **Semantic structure.** `<label>` for single inputs, `<fieldset>` and `<legend>` for groups, a
+  proper `<h1>` through `<h5>` hierarchy, and landmarks (`<header>`, `<main id="main-content">`,
+  `<footer>`).
 - **A skip link** (`<a class="usa-skipnav" href="#main-content">`) is first in the body.
-- **Tie hints to inputs** with `aria-describedby=${hintId}`; start inputs `aria-invalid="false"`.
-- **`(Required)` is decorative** (`aria-hidden="true"`); actual requiredness is `th:required`.
+- **Tie hints to inputs** with `aria-describedby=${hintId}`. Start inputs `aria-invalid="false"`.
+- **`(Required)` is decorative** (`aria-hidden="true"`). Actual requiredness is `th:required`.
 - **USWDS sprite icons** are `aria-hidden="true" role="img" focusable="false"`.
-- **`aria-current="step"`** marks the current step indicator segment; `usa-sr-only` carries
+- **`aria-current="step"`** marks the current step indicator segment. `usa-sr-only` carries
   screen-reader-only text.
-- Use `html-validate-disable`/`-enable` comments when a USWDS pattern requires markup the linter
-  would otherwise flag — and **state the reason** in the comment.
+- Use `html-validate-disable` and `-enable` comments when a USWDS pattern requires markup the
+  linter would otherwise flag, and **state the reason** in the comment.
 
 ---
 
 ## 8. CSS classes in markup
 
 - Prefer **USWDS component classes** (`usa-button`, `usa-input`, `usa-alert usa-alert--error`,
-  `usa-table`, `usa-step-indicator`). Add a TWE class only for what USWDS doesn't cover
-  (`twe-question`, `fg-collection__item-template`, `form-actions`, `back-btn--mobile`).
-- Toggle visibility with the `hidden` utility class; the page reflows responsively via **container
-  queries** on `.app-container` (see the CSS guide §5), so you generally don't need
-  viewport-specific markup.
+  `usa-table`, `usa-step-indicator`). Add an application-specific class only for what USWDS
+  doesn't cover (`twe-question`, `fg-collection__item-template`, `form-actions`,
+  `back-btn--mobile`).
+- Toggle visibility with the `hidden` utility class. The page reflows responsively through
+  **container queries** on `.app-container` (see the [CSS guide](css.md), section 5), so
+  viewport-specific markup is rarely needed.
 
 ---
 
-## 9. The all-screens layout (dev-only, ADR-004)
+## 9. The all-screens layout (Browse All and Path Mode, ADR-004)
 
-`all-screens.html` is a **separate** layout — not the production flow — that renders every field
-regardless of conditions so reviewers can see the full form surface. It:
+`all-screens.html` is a **separate** layout, not the production flow, that renders every field
+regardless of conditions so reviewers can see the full form surface.
 
-- loops all pages: `<article th:each="page : ${pages}" class="screen">` and injects
-  `th:utext="${page.content}"`;
-- forces collections non-empty (`disallowempty`), opens every `.fg-detail`, and calls
-  `displayConditions()` to annotate conditional content;
-- adds an in-page nav (`<aside class="usa-in-page-nav" data-heading-elements="h2 h3">`);
-- is served only in local dev at `…/all-screens/index.html`.
+- It loops all pages, `<article th:each="page : ${pages}" class="screen">`, and injects
+  `th:utext="${page.content}"`.
+- It forces collections non-empty (`disallowempty`), opens every `.fg-detail`, and calls
+  `displayConditions()` to annotate conditional content.
+- It adds an in-page nav (`<aside class="usa-in-page-nav" data-heading-elements="h2 h3">`).
+- It is generated only under the `--allScreens` build flag, and is dressed by taxpert's
+  `<taxpert-screens-toolbar>` rather than by anything in the scaffold's own templates.
 
-Keep it a distinct file so production never accidentally renders all hidden fields (ADR-004).
+Keep it a distinct file so a production build never accidentally renders every hidden field
+(ADR-004).
 
 ---
 
@@ -272,33 +300,47 @@ Keep it a distinct file so production never accidentally renders all hidden fiel
       <template th:replace="fragments/js-templates"></template>
       <div th:replace="~{errors}"></div>
     </div>
-    <div th:replace="fragments/audit-panel"></div>      <!-- hidden until enabled -->
-    <script type="module" th:if="${flags.auditMode}">  <!-- dev/opt-in only -->
-      import { enable } from '…/audit-panel.js'; enable()
-    </script>
+    <div th:replace="fragments/audit-panel"></div>      <!-- an app-owned fragment, empty unless filled -->
+    <div th:replace="fragments/workspace-enable :: workspace-enable"></div>  <!-- calls enable(), under --auditMode -->
   </body>
 </html>
 ```
+
+`fragments/head.html` renders the workspace's `workspace-head` and `taxpert-config` fragments
+inside its own `${flags.auditMode}` block, ahead of this skeleton. See
+[architecture.md](../architecture.md#4-the-workspace-layer-and-its-contract) for what each of the
+four workspace fragments carries.
 
 ---
 
 ## 11. Anti-patterns
 
-- ❌ Hard-coded user-facing copy in templates instead of `#{...}` keys (and missing the `es` translation).
-- ❌ Per-question logic in templates that belongs in Flow XML / locale files.
-- ❌ Dropping `condition`/`operator` attributes once a `hidden` class is added — the debug surfaces need them.
-- ❌ Grouped inputs without `<fieldset>`/`<legend>`; required indicators that aren't `aria-hidden`; hints not tied via `aria-describedby`.
-- ❌ Putting all-screens/audit behavior into `page.html` instead of their isolated layout/fragment.
-- ❌ Suppressing an `html-validate` rule without a comment explaining why.
+- Hard-coded user-facing copy in templates instead of `#{...}` keys, and a missing translation for
+  a locale the application ships.
+- Per-question logic in templates that belongs in Flow XML or locale files.
+- Dropping `condition` or `operator` attributes once a `hidden` class is added. The workspace's
+  Inspect and Display tools need them.
+- Grouped inputs without `<fieldset>`/`<legend>`, required indicators that aren't `aria-hidden`,
+  or hints not tied through `aria-describedby`.
+- Putting all-screens or workspace behavior into `page.html` instead of their own layout or
+  fragment.
+- Suppressing an `html-validate` rule with no comment explaining why.
 
 ---
 
-## 12. Checklist for new templates / markup
+## 12. Checklist for new templates and markup
 
-- [ ] New element → `nodes/<name>.html`; new input type → `nodes/inputs/<type>.html`; kebab-case filename matches the element.
-- [ ] Shared chrome reused via `th:replace`/`th:insert`; parameterized fragments where data varies.
-- [ ] All copy via `#{...}` keys with `en` **and** `es` entries; optional keys guarded by `#messages.msgOrNull`.
-- [ ] `fg-*` elements carry `path` + `condition`/`operator`; collection paths use the `/*/` wildcard.
-- [ ] Labels/legends, `aria-describedby` hints, `aria-invalid="false"`, decorative `(Required)`, skip link, landmarks all present.
-- [ ] USWDS classes first; TWE classes only for gaps; visibility via `hidden` + container queries.
-- [ ] All-screens/audit concerns stay in their own layout/fragment; lint suppressions are commented.
+- [ ] A new element goes in `nodes/<name>.html`, a new input type in `nodes/inputs/<type>.html`.
+      The kebab-case filename matches the element.
+- [ ] Shared chrome is reused through `th:replace`/`th:insert`, with parameterized fragments where
+      data varies.
+- [ ] All copy goes through `#{...}` keys, with every locale the application ships. Optional keys
+      are guarded by `#messages.msgOrNull`.
+- [ ] `fg-*` elements carry `path` plus `condition`/`operator`. Collection paths use the `/*/`
+      wildcard.
+- [ ] Labels or legends, `aria-describedby` hints, `aria-invalid="false"`, decorative
+      `(Required)`, the skip link, and landmarks are all present.
+- [ ] USWDS classes come first. Application-specific classes cover only genuine gaps. Visibility
+      uses `hidden` plus container queries.
+- [ ] All-screens and workspace concerns stay in their own layout or fragment. Lint suppressions
+      are commented.

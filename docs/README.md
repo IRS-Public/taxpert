@@ -1,7 +1,7 @@
 # Documentation
 
 Project-level documentation for the Taxpert repository. These documents cover the platform as a
-whole, including the two example applications, which live in
+whole, including the example applications, which live in
 [their own repository](https://github.com/IRS-Public/form-builder-examples) and are described here as
 consumers of this code. Each component also has its own README with build commands and layout,
 linked from the root [README.md](../README.md).
@@ -68,7 +68,8 @@ ADR-004 is the origin of the audit panel and the all-screens page. Read it befor
 | New application template | [IRS-Public/form-builder-template](https://github.com/IRS-Public/form-builder-template#readme) |
 | Credit Assistant (EITC) | [form-builder-examples/credit-assistant](https://github.com/IRS-Public/form-builder-examples/blob/main/credit-assistant/README.md) |
 | Tax Withholding Estimator | [form-builder-examples/tax-withholding-estimator](https://github.com/IRS-Public/form-builder-examples/blob/main/tax-withholding-estimator/README.md) |
+| Benefits Enrollment | [form-builder-examples/benefits-enrollment](https://github.com/IRS-Public/form-builder-examples/blob/main/benefits-enrollment/README.md) |
 
-The bottom five rows are separate repositories. The last two are the example applications, carved
+The bottom six rows are separate repositories. The last three are the example applications, carved
 out so that nothing in this repository depends on an application. See
 [apps/README.md](../apps/README.md) for where to put them, or your own, so the tools can read them.

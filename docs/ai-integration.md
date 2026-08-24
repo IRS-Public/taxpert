@@ -352,7 +352,7 @@ backend endpoint, the orchestrator and their tests are unaffected either way.
 
 A related inconsistency, now resolved: `packages/fact-explorer/src/canvas/ChatPanel.jsx` used to
 hardcode `const CHAT_API_URL = 'http://localhost:8000/chat'` rather than read
-`config.endpoints.apiBase`. It now calls `chatApiUrl()`, which reads that config at call time —
+`config.endpoints.apiBase`. It now calls `chatApiUrl()`, which reads that config at call time, in
 the same order `packages/ui/src/audit-panel/js/chat.js` uses. The `apiBase` the Workspace settings
 modal offers therefore reaches both callers, and a deployment with the backend elsewhere works.
 
@@ -386,7 +386,8 @@ The intended posture is narrow and worth stating as rules.
 
 Everything in this section is a proposal. None of it has been built.
 
-One note on prior art. The typed-context idea below is not hypothetical — it has already landed. `packages/fact-explorer/src/model/explainContext.js`, the `context` field on
+One note on prior art. The typed-context idea below is not hypothetical. It has already landed:
+`packages/fact-explorer/src/model/explainContext.js`, the `context` field on
 `ChatRequest`, the "Explain Context" section of the system prompt, the `EXPLAIN_BADGE` token in
 `packages/fact-explorer/src/canvas/style.js` and `packages/fact-explorer/tests/explainContext.test.js` all exist. It
 is best read now as the pattern to copy: define a typed context payload, build it with pure and

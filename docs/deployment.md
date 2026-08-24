@@ -7,13 +7,13 @@ team deciding which artifact to put in front of users, and for whoever has to op
 Local development setup is out of scope. See [onboarding.md](./onboarding.md).
 
 Two names sit close together here. "Taxpert" or "the Taxpert platform" means this repository as a
-whole — the workspace UI plus its companion services — together with the Form Builder scaffold and
+whole, the workspace UI plus its companion services, together with the Form Builder scaffold and
 the applications it is laid over. "the `taxpert` package" means the optional npm workspace UI in
 `packages/ui/` (global nav, audit panel, tool panels). They are deployed very differently, so the
 distinction matters here.
 
 The applications are not in this repository: they live in their own, as any Form Builder app does.
-The two referred to throughout — `credit-assistant` and `tax-withholding-estimator` — are the
+The two referred to throughout, `credit-assistant` and `tax-withholding-estimator`, are the
 [example applications](https://github.com/IRS-Public/form-builder-example), and every path named for them below is
 relative to that repository.
 
@@ -288,7 +288,7 @@ automatically. Run `docker compose -f docker-compose.yml … up --build` to igno
 **No application is in this stack.** Every service here is a companion to an app that runs
 elsewhere, so all of them sit behind a profile and a bare `docker compose up` starts nothing:
 `--profile explorer` for Fact Explorer, `--profile ai` for the assistant and ChromaDB. Two variables
-connect the stack to your app — `TAXPERT_APPS_DIR` (the host directory holding the app repos,
+connect the stack to your app: `TAXPERT_APPS_DIR` (the host directory holding the app repos,
 mounted read-only at `/apps`) and `TAXPERT_APP_HOST` (how a container reaches the running app). The
 app's own image, if it has one, is that repository's business; the examples each ship a Dockerfile
 that generates the site with `sbt run` and serves `out/` from `nginx:1.27-alpine`.

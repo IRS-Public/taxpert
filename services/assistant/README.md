@@ -1,4 +1,4 @@
-# api - LLM backend for the Taxpert workspace
+# assistant - LLM backend for the Taxpert workspace
 
 A small FastAPI service that answers questions about a running EITC application. The workspace UI
 (**Taxpert**, the npm package in [`../../packages/ui/`](../../packages/ui/) that renders the audit panel over a
@@ -20,8 +20,8 @@ the service is down.
 | Piece | Role relative to this service |
 |---|---|
 | [`../../packages/ui/`](../../packages/ui/) | The main caller. `src/audit-panel/js/chat.js` posts to `/chat`, `src/audit-panel/js/fact-graph-io.js` posts to `/scenario/generate`. Both read the base URL from the panel's `api-base` attribute or `configure({ endpoints: { apiBase } })`, defaulting to `http://localhost:8000`. |
-| A Form Builder application, in its own repository — clone it into [`../../apps/`](../../apps/), e.g. [credit-assistant](https://github.com/IRS-Public/form-builder-examples/tree/main/credit-assistant) | The application under inspection. Serves `fact-dictionary.xml`, which this service fetches at startup, and owns the `scenarios/` and `flow/` directories the scenario generator reads. |
-| [`../../packages/fact-explorer/`](../../packages/fact-explorer/) | Loads the workspace UI, and also calls `/chat` directly from `src/canvas/ChatPanel.jsx` with a hardcoded `http://localhost:8000/chat`. On the CORS allow-list at `:5180`. |
+| A Form Builder application, in its own repository, cloned into [`../../apps/`](../../apps/), e.g. [credit-assistant](https://github.com/IRS-Public/form-builder-examples/tree/main/credit-assistant) | The application under inspection. Serves `fact-dictionary.xml`, which this service fetches at startup, and owns the `scenarios/` and `flow/` directories the scenario generator reads. |
+| [`../../packages/fact-explorer/`](../../packages/fact-explorer/) | Loads the workspace UI, and also calls `/chat` directly from `src/canvas/ChatPanel.jsx`, reading the base URL from the same `taxpert` config (`endpoints.apiBase`, defaulting to `http://localhost:8000`). On the CORS allow-list at `:5180`. |
 | Ollama | Runs natively on the host, never containerized. Used for chat inference (optional) and for embeddings (always). |
 | ChromaDB | Vector store for the indexed IRS publications. |
 
@@ -48,7 +48,7 @@ embeddings always come from Ollama.
 
 ## Quickstart
 
-All commands run from `api/`.
+All commands run from `services/assistant/`.
 
 ```bash
 make install                   # uv sync --extra dev
@@ -69,10 +69,12 @@ curl http://localhost:8000/health
 The credit-assistant dev server should be running at `http://localhost:3003` before you start
 `make dev`, because the fact dictionary is fetched over HTTP at startup. See the gotchas below.
 
-The whole stack (this service, both applications, Fact Explorer, ChromaDB) also runs from the repo
-root with `docker compose up --build`. In that mode ChromaDB is a container reached at
-`chromadb:8000` and published on host port 8001, and the api container reaches your host's Ollama at
-`host.docker.internal:11434`.
+This service also runs from the repo root, alongside ChromaDB and Fact Explorer, with
+`docker compose --profile ai --profile explorer up --build` (or `make up`). Every service in that
+stack sits behind a profile, so a bare `docker compose up` starts nothing. The application itself is
+not part of the stack: it runs from its own repository, and the containers reach it over the network.
+In that mode ChromaDB is a container reached at `chromadb:8000` and published on host port 8001, and
+the assistant container reaches your host's Ollama at `host.docker.internal:11434`.
 
 ## HTTP API
 
@@ -194,7 +196,7 @@ the code actually reads:
 | `CHROMA_COLLECTION` | `irs_publications` | Collection name. |
 | `FACT_DICTIONARY_PATH` | unset | Local path to `fact-dictionary.xml`. Takes precedence over the URL. |
 | `FACT_DICTIONARY_URL` | `.env.example` sets `http://localhost:3003/app/eitc/resources/fact-dictionary.xml`. With no `.env` at all the code falls back to the relative path `fact-dictionary.xml`, which will not exist. | Used when `FACT_DICTIONARY_PATH` is unset. Accepts `http`, `https`, or a local path. |
-| `SCENARIOS_DIR` | `../../apps/credit-assistant/src/main/resources/credit-assistant/scenarios` | Scenario generator, resolved relative to `services/assistant/`. The default assumes the application is checked out under the repo's `apps/` directory; set it for any other layout. |
+| `SCENARIOS_DIR` | `../../apps/credit-assistant/src/main/resources/credit-assistant/scenarios` | Scenario generator, resolved relative to `services/assistant/`. The default assumes the application is checked out under the repo's `apps/` directory. Set it for any other layout. |
 | `FLOW_DIR` | `../../apps/credit-assistant/src/main/resources/credit-assistant/flow` | Scenario generator's `search_flow`. Same default, same caveat. |
 | `FRONTEND_ORIGIN` | `http://localhost:3003,http://localhost:5180` | CORS allow-list, comma-separated. |
 | `PDF_DIR` | `data/irs_publications` | Indexer. |
@@ -258,11 +260,11 @@ inside that container is the container itself.
 ## Layout
 
 ```
-api/
+services/assistant/
   Makefile              # every command below
   pyproject.toml        # deps, black config, pytest testpaths
-  uv.lock               # committed; the Docker build installs --frozen from it
-  Dockerfile            # api image; entrypoint waits for Chroma and indexes on first run
+  uv.lock               # committed, the Docker build installs --frozen from it
+  Dockerfile            # this service's image, entrypoint waits for Chroma and indexes on first run
   docker-entrypoint.sh
   .env.example
   data/
@@ -308,8 +310,8 @@ api/
 | `make check-format` | `pre-commit run --all-files` (black plus isort) |
 | `make clean` | removes `.venv` and `.pytest_cache` |
 
-The repo root also has `make tidy`, which runs this project's `format` and `lint` only when `api/`
-has uncommitted changes.
+The repo root also has `make tidy`, which runs this project's `format` and `lint` only when
+`services/assistant/` has uncommitted changes.
 
 ## Tests
 

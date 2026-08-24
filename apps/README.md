@@ -9,6 +9,7 @@ into it so that every application's `fact-explorer.app.json` sits exactly one le
 apps/
   credit-assistant/fact-explorer.app.json
   tax-withholding-estimator/fact-explorer.app.json
+  benefits-enrollment/fact-explorer.app.json
 ```
 
 ```bash
@@ -34,7 +35,7 @@ FORM_BUILDER_APPS_DIR=~/code npm run build-registry --workspace packages/fact-ex
 ```
 
 The [example applications repository](https://github.com/IRS-Public/form-builder-examples) is already
-shaped like this directory: its two applications are its two immediate subdirectories, each with a
+shaped like this directory: its applications are its immediate subdirectories, each with a
 descriptor at its root. Cloning it anywhere and setting `TAXPERT_APPS_DIR` to point at it works with
 no symlinks at all.
 
@@ -57,7 +58,7 @@ An optional `form-builder-apps.json` in the apps directory overrides ordering an
 is the default. It is never required.
 
 ```json
-{ "defaultAppId": "credit-assistant", "order": ["credit-assistant", "twe"] }
+{ "defaultAppId": "credit-assistant", "order": ["credit-assistant", "twe", "benefits-enrollment"] }
 ```
 
 ## What an application has to declare

@@ -36,7 +36,7 @@ Five repositories make up the platform. This one is the fourth row.
 | [form-builder](https://github.com/IRS-Public/form-builder) | The scaffold. Flow XML plus a Fact Dictionary become a multi-language static site. Ships the browser theme, the flow runtime and the Author Mode backend inside its jar. | `gov.irs::form-builder` |
 | [form-builder-template](https://github.com/IRS-Public/form-builder-template) | Cookiecutter that emits a new Form Builder application. | `cookiecutter gh:IRS-Public/form-builder-template` |
 | **taxpert** (this one) | The optional workspace UI and its companion services. | `taxpert`, as a `file:` dependency on a checkout, plus container images |
-| [form-builder-examples](https://github.com/IRS-Public/form-builder-examples) | The two reference applications, Credit Assistant (EITC) and the Tax Withholding Estimator. Demonstration code, kept out of this repository so nothing here depends on an application. | Clone it beside this one |
+| [form-builder-examples](https://github.com/IRS-Public/form-builder-examples) | The reference applications: Credit Assistant (EITC), the Tax Withholding Estimator, and Benefits Enrollment. Demonstration code, kept out of this repository so nothing here depends on an application. | Clone it beside this one |
 
 The dependency runs one way. Form Builder is required for an application to exist. Taxpert is
 tooling laid over one, and neither package imports the other. The workspace reads the running flow
@@ -133,7 +133,7 @@ local Ollama, because the document index is embedded locally either way.
 ## Quickstart
 
 The services read a Form Builder application over the network and from disk, so you need one to
-point them at. The example repository holds two, and its two subdirectories each carry a
+point them at. The example repository holds three, and each of its subdirectories carries a
 `fact-explorer.app.json`, which makes the repository itself usable as the apps directory.
 
 ```bash
@@ -176,7 +176,7 @@ make dev                           # http://localhost:3003/app/eitc/
 directory. The build fails without it.
 
 That dependency is declared as `file:../taxpert/packages/ui`, so `npm install` needs a taxpert
-checkout at that path. To point it at this one instead of a second clone, name it — an edit here
+checkout at that path. To point it at this one instead of a second clone, name it. An edit here
 then reaches the application on its next `copy-shared-ui`:
 
 ```bash
