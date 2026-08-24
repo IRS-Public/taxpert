@@ -1,7 +1,7 @@
 /*
  * The Browse All / Path Mode page, below the toolbar.
  *
- * all-screens-toolbar.css styles the toolbar element itself; this styles the page it drives — the
+ * all-screens-toolbar.css styles the toolbar element itself. This styles the page it drives, the
  * section headers and screen cards the scaffold generates, the two layout modes the Display options
  * switch between, the `.hidden` rules that make a listing show every question at once, and the
  * `.off-path` rule path-cursor.js relies on. None of it names a single application: the markup is
@@ -9,11 +9,11 @@
  *
  * It was one application's `website-static/styles/all-screens.css` until the second application
  * needed the same page. That app's copy had never been updated and still styled a template two
- * rewrites old — no sections, no toolbar, no Path Mode — which is what "Browse All Screens renders
+ * rewrites old (no sections, no toolbar, no Path Mode), which is what "Browse All Screens renders
  * blank" looked like from the outside.
  *
  * An app imports this from its own `styles/all-screens.css`, the file all-screens.html links, and
- * adds whatever is genuinely its own after the import — the same shape as main.css over theme.css.
+ * adds whatever is genuinely its own after the import, the same shape as main.css over theme.css.
  */
 
 /* ── A listing shows everything ───────────────────────────────────────── */
@@ -75,7 +75,7 @@ body.path-mode .off-path {
    tool-panels' condition-detail.css already apply. */
 
 /* ── Horizontal layout mode ───────────────────────────────────────────── */
-/* The page template wraps a screen's flow nodes in <section class="flow"> —
+/* The page template wraps a screen's flow nodes in <section class="flow">,
    that is the actual parent of fg-set/fg-alert/fg-collection/fg-detail, not
    .screen__content directly. In horizontal mode we turn that inner section
    into a flex-wrap row so the fg-* siblings tile across the card. Headings

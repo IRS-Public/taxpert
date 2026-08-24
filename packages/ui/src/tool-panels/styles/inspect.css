@@ -31,7 +31,7 @@
   line-height: 1.5;
 }
 
-/* Sized in `em` so the illustration tracks the panel's text rather than its width — a floating
+/* Sized in `em` so the illustration tracks the panel's text rather than its width. A floating
    panel dragged wide should not get a billboard. */
 .ttp-inspect__empty-art {
   display: block;
@@ -302,7 +302,7 @@ body.inspect-rendered-units [data-inspect-unit] .usa-checkbox {
   transition: background-color 0.25s ease;
 }
 
-/* The fade is an affordance, not decoration — it says "this responds" as the pointer crosses a page
+/* The fade is an affordance rather than decoration. It says "this responds" as the pointer crosses a page
    of otherwise inert copy — but a quarter second of colour under the cursor is exactly what reduced
    motion is asked for. The states themselves are unchanged; only the travel between them goes.
 

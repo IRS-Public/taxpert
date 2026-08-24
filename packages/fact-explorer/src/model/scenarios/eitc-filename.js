@@ -1,4 +1,4 @@
-// Shared scenario-filename decoder — a verbatim port of parseScenarioFilename()
+// Shared scenario-filename decoder, a verbatim port of parseScenarioFilename()
 // from the credit-assistant audit panel (website-static/js/audit-panel.js), so
 // fact-explorer's scenario picker decodes the four dimensions exactly as the audit
 // panel does. Reused by scripts/make-static-fgm.mjs (to build the index) and by

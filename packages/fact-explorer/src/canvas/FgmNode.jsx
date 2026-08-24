@@ -24,7 +24,7 @@ import { ScenarioValueChip } from '../explain/scenarioValue.jsx'
 // render through FrameNode instead. fg-set nodes get an input-type badge.
 //
 // Carried-over behaviour: M2 +1-hop context dimming, M5 annotation badge, and
-// (new) M6 search highlight ring / dim — all driven off node.data flags, never
+// Search highlight ring and dim, all driven off node.data flags, never
 // off hard-coded colours.
 export default function FgmNode({ id, data, selected }) {
   const sty = CATEGORY_STYLE[data.category] ?? NODE_FALLBACK
@@ -47,7 +47,7 @@ export default function FgmNode({ id, data, selected }) {
   const badge = data.raw?.tag === 'fg-set' ? INPUT_TYPE_BADGE[data.raw?.inputType] : null
 
   // Scenario overlay (N4): an active knockout gets a red ring, an incomplete seen
-  // fact an amber ring — both from SCENARIO_STATUS, layered with the search ring.
+  // fact an amber ring, both from SCENARIO_STATUS, layered with the search ring.
   const scenarioTok = data.scenarioIncomplete
     ? SCENARIO_STATUS.incomplete
     : SCENARIO_STATUS[data.scenarioStatus]

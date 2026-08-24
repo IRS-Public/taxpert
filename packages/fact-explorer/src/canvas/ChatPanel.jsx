@@ -5,7 +5,7 @@
 // picks one or more facts to attach as context, types a prompt, and the same
 // FastAPI `/chat` endpoint is called with a `{ prompt, tracked_facts }` body.
 //
-// Unlike the audit panel — which reads live values out of `window.factGraph` — Fact
+// Unlike the audit panel, which reads live values out of `window.factGraph`, Fact
 // Explorer has no live graph, so tracked-fact values come from the active scenario
 // overlay (`scenarioValues`, keyed by fact path) and the dependency tree is walked
 // over the static FGM (`factByPath` → `dependencyPaths`).
@@ -18,7 +18,7 @@ import { getConfig } from 'taxpert/config'
 
 // Read at call time, not module-eval: registerFactExplorerHost() calls configure() after this
 // module is imported, and the Workspace settings modal can edit apiBase later still. Same order
-// taxpert's own chat.js uses — a second copy of the default URL is exactly what the two files
+// taxpert's own chat.js uses. A second copy of the default URL is exactly what the two files
 // used to disagree about.
 const chatApiUrl = () => `${getConfig().endpoints.apiBase}/chat`
 const CHAT_TIMEOUT_MS = 90_000
@@ -35,7 +35,7 @@ const CHAT_DEFAULT_H = 350 // initial dock height
 const CHAT_MAX_W_RATIO = 0.6
 const CHAT_TOP_MARGIN = 16 // min gap kept between the header and the dock's top edge
 
-// Launcher geometry — must match the button rendered below — so the dock can sit a
+// Launcher geometry, which must match the button rendered below, so the dock can sit a
 // fixed gap directly above it.
 const LAUNCHER_BOTTOM = 150 // launcher's distance from the canvas bottom
 const LAUNCHER_SIZE = 40
@@ -205,11 +205,11 @@ function ChatPanel(
   }
 
   // Edge-resize plumbing via the shared hook. The dock is bottom-anchored, so:
-  //  'top'    — keeps the bottom edge fixed, grows/shrinks height (capped so the
+  //  'top'      keeps the bottom edge fixed, grows and shrinks height (capped so the
   //             top edge can't slide under the header).
-  //  'bottom' — keeps the top edge fixed, moves the bottom edge (no closer to the
+  //  'bottom'   keeps the top edge fixed, moves the bottom edge (no closer to the
   //             canvas bottom than the launcher gap).
-  //  'right'  — changes width.
+  //  'right'    changes width.
   const { beginResize, resizeKeyDown } = useResizable({
     edges: ['top', 'bottom', 'right'],
     getState: () => boxRef.current,

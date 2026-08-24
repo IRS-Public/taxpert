@@ -1,5 +1,5 @@
 :root {
-  /* Colors — palette */
+  /* Colors: palette */
   --color-primary: #2b6cb0;
   --color-primary-hover: #2461a0; /* darker primary for active blue button states */
   --color-danger: #c0392b;
@@ -7,25 +7,25 @@
   --color-accent: #7b3fb5;
   --color-warning: #caa53a;
 
-  /* Colors — text */
+  /* Colors: text */
   --color-text: #1b1f23;
   --color-text-muted: #6b7785;
   --color-text-faint: #9aa3ab;
   --color-disabled: #b8c0c8;
 
-  /* Colors — surfaces / borders / dividers */
+  /* Colors: surfaces, borders, dividers */
   --color-border: #d6dbe0;
   --color-border-light: #eef1f4;
   --color-divider: #e6eaee;
   --color-surface: #fff;
   --color-surface-alt: #f6f8fa;
 
-  /* Colors — blue tints (chips, hovers) */
+  /* Colors: blue tints (chips, hovers) */
   --color-primary-tint: #eef4fb;
   --color-primary-tint-2: #eef5fc;
   --color-primary-border: #cfe0f2;
 
-  /* Colors — banner lavender */
+  /* Colors: banner lavender */
   --color-banner: #e6e6fa;
 
   /* Spacing */
@@ -53,7 +53,7 @@
      page and are meant to read as one system — at 10–11px the panel looked like a different, older
      application docked next to it. */
   --font-body: 1rem;
-  /* Source Sans Pro — the Taxpert type family, and the face USWDS sets on its own form controls, so
+  /* Source Sans Pro, the Taxpert type family and the face USWDS sets on its own form controls, so
      the panel's prose and the controls inside it stop rendering in two different fonts. "Source Sans
      Pro Web" is the @font-face USWDS emits here (public/uswds/fonts/source-sans-pro, vendored by
      `npm run copy-uswds-assets`); the rest of the stack is for a build served without it. */
@@ -67,6 +67,6 @@
   --z-header: 5;
   --z-chat: 7;
 
-  /* Legacy alias — referenced by base/explain ports. */
+  /* Legacy alias, referenced by the base and explain ports. */
   --fg: var(--color-text);
 }

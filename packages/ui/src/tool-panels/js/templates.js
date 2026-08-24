@@ -1,10 +1,8 @@
-// The tool-panels bundle's template files. Same shape as audit-panel/js/templates.js: one module so
-// each file is fetched exactly once and every element in the bundle awaits the same memoized
-// promise.
+// The tool-panels bundle's template files: one module, so each file is fetched exactly once and
+// every element in the bundle awaits the same memoized promise.
 //
-// `new URL('../templates/…', import.meta.url)` is the one form both consumers resolve: in
-// credit-assistant it lands on the vendored mirror's own templates/ dir (copy-shared-ui copies
-// bundle dirs recursively), and Vite rewrites it into an emitted asset for a bundled host.
+// `new URL('../templates/…', import.meta.url)` is the one form both a vendored copy and a Vite
+// build resolve. See ../../../../../docs/internals/tool-panels.md.
 
 import { loadTemplates, templateUrl } from '../../shared/js/templates.js'
 import { loadModalShell } from '../../shared/js/modal-shell.js'
@@ -43,17 +41,11 @@ export const loadToolsModalTemplates = (element) =>
 export const loadToolPanelTemplates = (element) =>
   loadBundleTemplates('tool-panel.html', element)
 
-/** The dock, its columns, splitters and drop indicator — plus the panel markup it fills them with. */
+/** The dock, its columns, splitters and drop indicator, plus the panel markup it fills them with. */
 export const loadToolDockTemplates = (element) =>
   Promise.all([loadBundleTemplates('tool-dock.html', element), loadToolPanelTemplates(element)])
 
-/**
- * The Inspect body: its empty state, accordion rows, the two detail shapes and the host-page cue.
- *
- * Called with no element by inspect-cues.js, which runs out in the flow DOM rather than from inside
- * a component — there is nothing there to carry a `templates-base` override, and the default URL is
- * the right one.
- */
+/** The Inspect body: its empty state, accordion rows and the two detail shapes. */
 export const loadInspectTemplates = (element) =>
   loadBundleTemplates('inspect.html', element)
 

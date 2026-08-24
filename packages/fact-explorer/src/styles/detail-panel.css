@@ -4,7 +4,7 @@
 .detail-panel {
   position: absolute;
   top: 0;
-  /* z above canvas but below chat (z-chat: 7) — no token for this rung. */
+  /* Above the canvas but below chat (z-chat: 7). There is no token for this rung. */
   z-index: 6;
   /* Sized by what is in it, not by the viewport. A flow element with four rows of metadata used to
      draw a full-height column of surface with the last three quarters of it empty. The cap is the

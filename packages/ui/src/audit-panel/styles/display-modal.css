@@ -1,4 +1,4 @@
-/* <taxpert-display-modal> — the "Display options" dialog opened from the global nav's Display
+/* <taxpert-display-modal>, the "Display options" dialog opened from the global nav's Display
    button. Loaded through audit-panel.css's @import chain, so it is gated by the same toggled
    <link id="audit-panel-styles"> as the rest of the workspace UI.
 
@@ -17,7 +17,7 @@
   --tdm-selected-bg: var(--color-primary-tint, var(--tap-primary-lighter, #d9e8f6));
   --tdm-font: var(--font-sans, 'Source Sans Pro Web', 'Source Sans Pro', 'Helvetica Neue', Helvetica, Roboto, Arial, sans-serif);
 
-  /* The dialog's own insets. Declared once because two things read them — the main block's padding
+  /* The dialog's own insets. Declared once because two things read them: the main block's padding
      and the close button's position — and the X sitting on the heading depends on the two agreeing. */
   --tdm-inset-x: 2rem;
   --tdm-inset-top: 1.5rem;
@@ -75,7 +75,7 @@ taxpert-display-modal {
 .tdm-dialog .tdm-main {
   position: relative;
   box-sizing: border-box;
-  /* Full width, explicitly — see the same rule in workspace-settings-modal.css. USWDS's
+  /* Full width, explicitly. See the same rule in workspace-settings-modal.css. USWDS's
      .usa-modal__content is a flex column and .usa-modal__main carries `margin: 0 auto`, whose auto
      cross-axis margins suppress the stretch and size this block to its widest child instead. */
   width: 100%;
@@ -106,7 +106,7 @@ taxpert-display-modal {
   color: var(--tdm-text);
 }
 
-/* No rule declared here: the first section's border-top supplies the line under the heading — the
+/* No rule declared here. The first section's border-top supplies the line under the heading, the
    scenario modal's arrangement.
    Selector is doubled up with .usa-modal__heading (the element carries both classes — see
    display-modal.js) so this wins on specificity over real USWDS's own .usa-modal__heading
@@ -160,7 +160,7 @@ taxpert-display-modal {
 }
 
 /* ── Option rows ─────────────────────────────────────────────────────────── */
-/* Each choice is its own bordered box — the workspace settings modal's option rows, the same
+/* Each choice is its own bordered box. The workspace settings modal's option rows use the same
    treatment. `.tdm-option` stays on each row as the "one choice" hook for the JS and its spec.
 
    The box is USWDS's own tile variant (`usa-checkbox__input--tile` / `usa-radio__input--tile` on
@@ -205,13 +205,13 @@ taxpert-display-modal {
 }
 
 /* ── Language ────────────────────────────────────────────────────────────── */
-/* Form controls inside the modal are full-width and left-aligned — the scenario modal's rules. */
+/* Form controls inside the modal are full-width and left-aligned, as in the scenario modal. */
 
 .tdm-section .usa-form-group {
   margin-top: 0.75rem;
 }
 
-/* `border-box` because USWDS adds its own padding and 1px border on top of this `width: 100%` —
+/* `border-box` because USWDS adds its own padding and 1px border on top of this `width: 100%`,
    .usa-select's padding-right is 2rem, for the chevron it paints — so under the UA's default
    content-box the control renders wider than the section holding it. See the same rule in
    workspace-settings-modal.css. */
@@ -283,7 +283,7 @@ body.display-modals-inline dialog[data-taxpert-modal-inline]:not([open]) {
   border: 1px dashed var(--tdm-border, #d6d7d9);
   border-radius: 0.25rem;
   background: #fff;
-  /* A host that hides its shut overlays with `opacity: 0` as well as `display: none` — the theme's
+  /* A host that hides its shut overlays with `opacity: 0` as well as `display: none`, as the theme's
      `.usa-modal--dialog:not([open])` does exactly that — leaves an inline copy transparent, since
      overriding `display` alone says nothing about opacity. It looks fine anyway wherever the theme's
      fade-in animation runs, because a `forwards` fill wins over any declaration; under
@@ -333,7 +333,7 @@ body.display-modals-inline:has(taxpert-screens-toolbar:not([mode="product"])):no
 /* ── Narrow viewports ────────────────────────────────────────────────────── */
 
 @media (max-width: 30em) {
-  /* Narrowing the inset takes the close button with it — that is what the property is for. An
+  /* Narrowing the inset takes the close button with it, which is what the property is for. An
      element selector beats the zero-specificity :where() the defaults are declared in. */
   taxpert-display-modal {
     --tdm-inset-x: 1.25rem;

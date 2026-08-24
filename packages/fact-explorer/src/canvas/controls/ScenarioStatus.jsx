@@ -1,9 +1,9 @@
 // What the control panel still says about the loaded scenario: that one is loading, that loading it
-// failed, and — with AI explanations on — the ✨ Explain button that summarizes its outcome.
+// failed, and with AI explanations on, the Explain button that summarizes its outcome.
 //
 // This is the remainder of a bigger control. Picking *which* scenario to load goes through the real
 // shared <taxpert-scenario-modal> (opened from the global nav's Scenario button), which also names
-// the loaded one — so the "Scenario: none" caption here was a second, staler copy of that. And
+// the loaded one, so the "Scenario: none" caption here was a second, staler copy of that. And
 // *how* it renders on the canvas is one checkbox now, "Reveal items skipped in scenarios", in the
 // Display options modal; the Off/Dim/Hide segmented buttons it replaced offered a third state that
 // only ever meant "no scenario loaded".

@@ -182,7 +182,7 @@
   gap: 6px;
 }
 
-/* Category swatch — bg/border arrive from CATEGORY_STYLE. */
+/* Category swatch. Background and border arrive from CATEGORY_STYLE. */
 .legend__swatch {
   width: 14px;
   height: 14px;
@@ -192,7 +192,7 @@
   flex: 0 0 auto;
 }
 
-/* Edge swatch — a horizontal rule; stroke colour/style from EDGE_STYLE. */
+/* Edge swatch, a horizontal rule. Stroke colour and style from EDGE_STYLE. */
 .legend__edge {
   width: 18px;
   height: 0;

@@ -25,6 +25,20 @@ New to the project, read in this order.
 | [deployment.md](deployment.md) | The static path with no backend, the full container stack, and the tradeoffs between them |
 | [style-guides/](style-guides/README.md) | Conventions for Thymeleaf templates, CSS, and browser JavaScript |
 
+## Internals
+
+Written for someone about to change the code, and referenced from the source files they describe.
+Each one holds the reasoning that would otherwise sit as long comment blocks in the modules.
+
+| Document | Covers |
+|---|---|
+| [internals/workspace-configuration.md](internals/workspace-configuration.md) | The three-layer config, the schema gate, and the four host ports the workspace reaches through |
+| [internals/global-nav.md](internals/global-nav.md) | `<taxpert-global-nav>`: attributes, events, the taxonomy, the tool strip, and the stylesheet's tokens |
+| [internals/audit-panel.md](internals/audit-panel.md) | The page-level mount, the three nav dialogs, display options, the screens toolbar, the path cursor, feature flags |
+| [internals/tool-panels.md](internals/tool-panels.md) | The dock, layout state, dragging, and the four tool bodies |
+| [internals/fact-explorer-internals.md](internals/fact-explorer-internals.md) | The Form Graph Model, the narrowing chain, the engine, the scenario overlay, layout, the live bridge |
+| [internals/assistant-service.md](internals/assistant-service.md) | The two agent loops, their tools, the RAG index, and the environment |
+
 A note on names that recur in all six documents. **Taxpert** with a capital T means this repository
 and the platform around it. The **`taxpert` package** means the optional npm workspace UI in
 [`packages/ui/`](../packages/ui/), which is one component inside it.

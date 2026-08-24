@@ -1,4 +1,4 @@
-// <taxpert-overrides> — the Overrides tool's body: set a fact directly, without walking the flow to
+// <taxpert-overrides>, the Overrides tool's body: set a fact directly, without walking the flow to
 // the screen that asks for it.
 //
 // This is the generic answer to a control every host grows its own version of. The Tax Withholding
@@ -9,14 +9,14 @@
 //   { id: 'overrides', label: 'Overrides', templateId: 'ttp-body-overrides',
 //     facts: ['/overrideDate'] }
 //
-// which means adding one is configuration — an entry in a host's config, a line in its
-// taxpert.config.json, or a row typed into Workspace settings — rather than a code change here.
+// so adding one is configuration (an entry in a host's config, a line in its taxpert.config.json,
+// or a row typed into Workspace settings) rather than a code change here.
 //
 // ── Why this tool is different from the other three ──────────────────────────────────────────
 //
 // Inspect, the Outcome tracker and the Watchlist only *read*. This one writes, which is why the
-// fact-graph port grew `set()` (see shared/js/graph-adapter.js). A host that supplies no writer —
-// fact-explorer, whose graph is a fixture — gets `set()` answering false, and this panel says so
+// fact-graph port grew `set()` (see shared/js/graph-adapter.js). A host that supplies no writer,
+// Fact Explorer being one, gets `set()` answering false, and this panel says so
 // on the row rather than appearing to accept a value it silently drops.
 //
 // It renders inside <taxpert-tool-panel>, which is created once and *moved* between columns rather
@@ -56,7 +56,7 @@ class TaxpertOverrides extends HTMLElement {
       this._bodyFailed = reject
     })
 
-    // A value can change from under this panel — the flow itself, a scenario load — so the status
+    // A value can change from under this panel, through the flow or a scenario load, so the status
     // line follows the graph even while the field is untouched.
     this._onFactChange = () => this._refresh()
     this._onConfigChange = () => {
@@ -118,7 +118,7 @@ class TaxpertOverrides extends HTMLElement {
     label.textContent = path
 
     // `change`, not `input`: a half-typed date is not a value, and writing on every keystroke would
-    // fire an fg-update per character — which every other tool re-reads on.
+    // fire an fg-update per character, which every other tool re-reads on.
     input.addEventListener('change', () => this._write(path, input))
     node.querySelector('.ttp-overrides__clear').addEventListener('click', () => {
       input.value = ''
@@ -131,7 +131,7 @@ class TaxpertOverrides extends HTMLElement {
     return node
   }
 
-  // Writing an empty value deletes the fact rather than setting it to zero or to the empty string —
+  // Writing an empty value deletes the fact rather than setting it to zero or the empty string,
   // the port's own rule, and the difference between "answered 0" and "not answered".
   _write (path, input) {
     const value = input.type === 'checkbox' ? String(input.checked) : input.value

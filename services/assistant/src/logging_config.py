@@ -1,4 +1,8 @@
-"""Structured JSON logging configuration for the api service."""
+"""One-line JSON logging for the whole service, configured from LOG_LEVEL.
+
+Fields passed as ``logger.info(..., extra={...})`` are merged into the record,
+which is how request_id reaches the log line.
+"""
 
 import json
 import logging
@@ -16,7 +20,6 @@ class JsonFormatter(logging.Formatter):
         }
         if record.exc_info:
             log_data["exc"] = self.formatException(record.exc_info)
-        # Include any extra fields set via logger.info(..., extra={...})
         for key, val in record.__dict__.items():
             if key not in (
                 "msg",

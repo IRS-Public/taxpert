@@ -1,9 +1,9 @@
-// <taxpert-watchlist> — the Watchlist tool's body: the facts you have pinned and what each one is
+// <taxpert-watchlist>, the Watchlist tool's body: the facts you have pinned and what each one is
 // currently worth.
 //
 // This is the Fact Inspector's job, done as a panel. The inspector printed a fact's whole serialized
 // XML definition into a <pre>; a watchlist row answers the two questions you actually stand there
-// asking — has this settled, and to what — and keeps the rest behind a <details>.
+// asking (has this settled, and to what) and keeps the rest behind a <details>.
 //
 // The element owns no state. watchlist-store.js holds the pinned facts, fact-values.js reads their
 // current values out of the host's graph, and this renders the two together:
@@ -31,7 +31,7 @@ import { loadWatchlistTemplates } from './templates.js'
 
 /**
  * Asked for by "Reveal in canvas". Stubbed on purpose: the canvas is fact-explorer's, and this
- * bundle has no handle on it — so the row says what it wants and leaves the host to answer.
+ * bundle has no handle on it, so the row says what it wants and leaves the host to answer.
  * detail: { path, collectionId, concretePath }
  */
 export const REVEAL_FACT_EVENT = 'taxpert:reveal-fact'
@@ -58,7 +58,7 @@ class TaxpertWatchlist extends HTMLElement {
 
     this._onWatchlistChange = () => this._syncRows()
     this._onFactChange = () => this._refreshRows()
-    // One menu open at a time, and a click anywhere else closes it — including a click on another
+    // One menu open at a time, and a click anywhere else closes it, including one on another
     // row's kebab, which is why this is a document listener rather than each menu's own blur.
     this._onDocumentPointerDown = (event) => {
       if (!this._openMenu || this._openMenu.contains(event.target)) return
@@ -97,7 +97,7 @@ class TaxpertWatchlist extends HTMLElement {
     this._list = this.querySelector('.ttp-watch__list')
     this._addButton = this.querySelector('.ttp-watch__add')
 
-    // The dialog is a page-level element, so it is mounted beside the panel rather than inside it —
+    // The dialog is a page-level element, mounted beside the panel rather than inside it,
     // a floating panel is `overflow: hidden`, and a dialog in there would be clipped by its own tool.
     if (!document.querySelector('taxpert-add-fact-modal')) {
       document.body.appendChild(document.createElement('taxpert-add-fact-modal'))
@@ -148,7 +148,7 @@ class TaxpertWatchlist extends HTMLElement {
     const menu = row.querySelector('.ttp-watch__menu-list')
     kebab.addEventListener('click', (event) => {
       // Without this the click reaches the <summary> and expands the row as a side effect of
-      // opening the menu — preventDefault on a summary's click is what cancels its toggle.
+      // opening the menu. preventDefault on a summary's click is what cancels its toggle.
       event.preventDefault()
       event.stopPropagation()
       if (menu.hidden) this._openMenuFor(row)

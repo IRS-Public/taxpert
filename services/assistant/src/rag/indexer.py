@@ -1,10 +1,11 @@
-"""Batch indexer.
+"""Builds the RAG index: chunk documents, embed with Ollama, upsert into ChromaDB.
 
-Walks data/irs_publications/*.pdf and data/html/*.html, chunks each document,
-embeds chunks with Ollama, and upserts into a ChromaDB collection.
+Run with ``uv run python -m src.rag.indexer`` (``make index``). Requires a
+reachable Ollama and a reachable Chroma server. The PDF branch of ``main`` is
+commented out, so a normal run indexes HTML_DIR only.
 
-Run with:
-    uv run python -m src.rag.indexer
+Chunking strategy and the IRS-HTML heuristics are explained in
+../../../../docs/internals/assistant-service.md
 """
 
 from __future__ import annotations
@@ -31,11 +32,8 @@ _MAX_TABLE_CELLS = 30  # skip data tables bigger than this (EIC lookup tables)
 _HEADING_TAGS = {"h1", "h2", "h3", "h4", "h5", "h6"}
 _BLOCK_TAGS = {"p", "li", "td", "th", "pre"}
 
-# IRS publications (Drupal "barrio" theme) encode the real outline depth in
-# heading role classes rather than the h-tag number — e.g. a Rule is an <h4>
-# with class role-hd1 while its sub-topic is also an <h4> but role-hd2. Mapping
-# the role class to a logical depth lets us nest sub-topics under their Rule
-# instead of treating same-level <h4>s as siblings.
+# IRS pages encode outline depth in heading role classes, not in the h-tag
+# number, so both a Rule and its sub-topic can be <h4>.
 _ROLE_DEPTH = {
     "role-chap": 1,  # "1. Rules for Everyone"
     "role-highlight": 1,  # intro Q&A ("What Is the EIC?")
@@ -46,24 +44,16 @@ _ROLE_DEPTH = {
 }
 
 
-# ---------------------------------------------------------------------------
-# Chunking
-# ---------------------------------------------------------------------------
-
-
 def _heading_level(line: str) -> int | None:
     """Infer a heading depth for a plain-text line, or None if it is body text.
 
-    Extracted PDF text carries no markup, so depth is inferred from case the way
-    the HTML extractor reads role classes: ALL-CAPS lines read as major headings
-    (depth 1), Title Case lines as sub-headings (depth 2).
+    Extracted PDF text has no markup, so depth comes from case: ALL-CAPS is
+    depth 1, Title Case is depth 2.
     """
     stripped = line.strip()
     if not stripped or len(stripped) >= 80:
         return None
-    # Table-of-contents entries ("Rule 15—Earned Income Limits . . . . 19") use
-    # dot leaders and are never section headings — skip them so they don't
-    # pollute the breadcrumb stack.
+    # Dot leaders mark a table-of-contents entry, never a section heading.
     if ". ." in stripped or "..." in stripped:
         return None
     if stripped.isupper():
@@ -113,16 +103,10 @@ def _split_into_chunks(text: str, chunk_words: int, overlap_words: int) -> list[
     return chunks
 
 
-# ---------------------------------------------------------------------------
-# Section splitting (shared by PDF and plain-text sources)
-# ---------------------------------------------------------------------------
-
-
 def _split_into_sections(text: str) -> list[tuple[str | None, str]]:
     """Split *text* into (breadcrumb_title, body) pairs on heading boundaries.
 
-    Detected headings are stacked by inferred depth so each section title is the
-    ``A > B`` trail of the headings scoping it, mirroring the HTML extractor.
+    Each title is the ``A > B`` trail of the headings scoping the body.
     """
     stack: list[tuple[int, str]] = []
     sections: list[tuple[str | None, str]] = []
@@ -149,19 +133,11 @@ def _split_into_sections(text: str) -> list[tuple[str | None, str]]:
     return sections or [(None, text)]
 
 
-# ---------------------------------------------------------------------------
-# PDF extraction
-# ---------------------------------------------------------------------------
-
-
 def extract_pdf_chunks(pdf_path: str) -> list[dict[str, Any]]:
     """Open a PDF and return section-aligned chunk dicts.
 
-    Extracts the full document text first, then splits on section headings so
-    chunks respect section boundaries rather than page boundaries. section_title
-    is the breadcrumb of headings scoping the chunk, and that breadcrumb is
-    prepended to the embedded content so the vector carries its topic — matching
-    the HTML extractor.
+    Chunks follow section boundaries rather than page boundaries, so
+    page_number is always None.
 
     Keys: content, page_number, section_title, chunk_index.
     """
@@ -190,17 +166,11 @@ def extract_pdf_chunks(pdf_path: str) -> list[dict[str, Any]]:
     return all_chunks
 
 
-# ---------------------------------------------------------------------------
-# HTML extraction
-# ---------------------------------------------------------------------------
-
-
 def _select_content_root(soup: BeautifulSoup) -> Any:
     """Pick the element holding the publication prose, skipping site chrome.
 
-    IRS pages wrap the article text in one or more ``field--name-body`` divs
-    alongside small 80-char stub copies; the real body is simply the largest.
-    Fall back to <article>/<main>/<body> for non-IRS HTML.
+    IRS pages carry several ``field--name-body`` divs, most of them short stubs,
+    so the largest one is the article. Other HTML falls back to article/main/body.
     """
     bodies = soup.find_all("div", class_="field--name-body")
     if bodies:
@@ -217,15 +187,10 @@ def _heading_depth(tag: Any) -> int:
 
 
 def _section_meta(stack: list[tuple[int, str]]) -> dict[str, Any] | None:
-    """Build a metadata dict from the current heading stack.
+    """Build a metadata dict from the current heading stack, or None if empty.
 
-    Returns None when the stack is empty (pre-heading content).
-
-    Keys:
-      section_title — full ``A > B > C`` breadcrumb (used for embedding prefix)
-      chapter       — depth-1 heading (IRS role-chap / role-highlight)
-      rule          — depth-2 heading (IRS role-hd1 / worksheet)
-      subsection    — deepest heading at depth 3+ (IRS role-hd2 / role-hd3)
+    Keys: section_title (the full ``A > B > C`` breadcrumb), chapter (depth 1),
+    rule (depth 2), subsection (deepest heading at depth 3 or more).
     """
     if not stack:
         return None
@@ -245,14 +210,9 @@ def _section_meta(stack: list[tuple[int, str]]) -> dict[str, Any] | None:
 def _extract_html_sections(root: Any) -> list[tuple[dict[str, Any] | None, str]]:
     """Walk *root* and group block text under a breadcrumb of ancestor headings.
 
-    Returns ``(meta, text)`` pairs where *meta* contains:
-      section_title — full ``A > B > C`` breadcrumb
-      chapter       — depth-1 heading (IRS chapter / rule group)
-      rule          — depth-2 heading (IRS numbered rule)
-      subsection    — deepest heading at depth 3+ (topic within a rule)
-
-    Content before the first heading (duplicated table of contents on IRS pages)
-    is dropped once any heading has been seen.
+    Returns ``(meta, text)`` pairs, *meta* as built by ``_section_meta``. Content
+    before the first heading is dropped, since on IRS pages it duplicates the
+    table of contents.
     """
     stack: list[tuple[int, str]] = []
     sections: list[tuple[dict[str, Any] | None, str]] = []
@@ -292,11 +252,8 @@ def _extract_html_sections(root: Any) -> list[tuple[dict[str, Any] | None, str]]
 def extract_html_chunks(html_path: str) -> list[dict[str, Any]]:
     """Parse an HTML file and return section-aligned chunk dicts.
 
-    HTML has no native pagination, so page_number is always None. section_title
-    is the breadcrumb of headings scoping the chunk (e.g.
-    ``1. Rules for Everyone > Rule 7—You Must Have Earned Income``); that
-    breadcrumb is also prepended to the embedded content so the vector carries
-    its topic.
+    HTML has no pagination, so page_number is always None. The chunk's
+    breadcrumb is prepended to its content before embedding.
     """
     with open(html_path, "r", encoding="utf-8") as fh:
         soup = BeautifulSoup(fh.read(), "html.parser")
@@ -306,8 +263,7 @@ def extract_html_chunks(html_path: str) -> list[dict[str, Any]]:
 
     root = _select_content_root(soup)
 
-    # Drop large data tables (e.g. the EIC income->credit lookup tables): they
-    # are thousands of numeric cells that add no retrievable prose, only noise.
+    # The EIC lookup tables are thousands of numeric cells with no prose.
     for table in root.find_all("table"):
         if len(table.find_all("td")) > _MAX_TABLE_CELLS:
             table.decompose()
@@ -319,8 +275,6 @@ def extract_html_chunks(html_path: str) -> list[dict[str, Any]]:
         for content in _split_into_chunks(section_text, _CHUNK_WORDS, _OVERLAP_WORDS):
             if len(content.split()) < _MIN_CHUNK_WORDS:
                 continue
-            # Lead each chunk with its breadcrumb so the embedding encodes the
-            # section topic, not just the body prose.
             embed_text = f"{section_title}\n\n{content}" if section_title else content
             all_chunks.append(
                 {
@@ -336,11 +290,6 @@ def extract_html_chunks(html_path: str) -> list[dict[str, Any]]:
             chunk_index += 1
 
     return all_chunks
-
-
-# ---------------------------------------------------------------------------
-# Embedding + upsert
-# ---------------------------------------------------------------------------
 
 
 def embed_chunks(chunks: list[dict[str, Any]], model: str) -> list[list[float]]:
@@ -362,7 +311,10 @@ def index_document(
     collection: Any,
     embedding_model: str,
 ) -> int:
-    """Embed and upsert all chunks for one document. Returns count inserted."""
+    """Embed and upsert all chunks for one document. Returns the count inserted.
+
+    Ids are ``<source_name>:<chunk_index>``, so re-running updates in place.
+    """
     if not chunks:
         return 0
 
@@ -391,11 +343,6 @@ def index_document(
         documents=documents,
     )
     return len(chunks)
-
-
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
 
 
 def _iter_pdfs(root: Path) -> Iterator[Path]:
@@ -429,6 +376,7 @@ def main() -> None:
     total_files = 0
     total_chunks = 0
 
+    # PDF indexing is off by default. Uncomment to index PDF_DIR as well.
     # for pdf_path in _iter_pdfs(pdf_dir):
     #     name = pdf_path.stem
     #     logger.info("Indexing PDF %s", pdf_path.name)

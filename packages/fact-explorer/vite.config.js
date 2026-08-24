@@ -7,7 +7,7 @@ import { appsDir } from './scripts/build-registry.mjs'
 
 const HERE = fileURLToPath(new URL('.', import.meta.url))
 
-// Applications live in their own repositories — this one vendors none. `appsDir()` is the single
+// Applications live in their own repositories, and this one vendors none. `appsDir()` is the single
 // definition of where they are: FORM_BUILDER_APPS_DIR, else <repo root>/apps (see apps/README.md),
 // shared with build-registry.mjs and make-static-fgm.mjs so the dev proxy and the registry can
 // never disagree about the app list.
@@ -27,7 +27,7 @@ function nodeModulesDir(pkg) {
 }
 
 // Every Form Builder app in the apps directory, read from the *committed* descriptors rather than the
-// generated public/data/apps.json — vite.config.js is evaluated before any build step has run, and
+// generated public/data/apps.json. vite.config.js is evaluated before any build step has run, and
 // apps.json is gitignored, so a fresh clone would have nothing to read.
 function discoveredApps() {
   const root = APPS_DIR
@@ -39,7 +39,7 @@ function discoveredApps() {
     )
     return []
   }
-  // Symlinks as well as directories — see discoverDescriptors in scripts/build-registry.mjs.
+  // Symlinks as well as directories. See discoverDescriptors in scripts/build-registry.mjs.
   const apps = readdirSync(root, { withFileTypes: true })
     .filter(
       (d) =>
@@ -60,7 +60,7 @@ function discoveredApps() {
 const envOrigin = (id) => process.env[`VITE_APP_ORIGIN_${id.toUpperCase().replace(/-/g, '_')}`]
 
 // Host every descriptor's dev origin is read against. `localhost` is right natively and wrong
-// inside a container, where it is the container itself — docker-compose.override.yml sets this to
+// inside a container, where it is the container itself. docker-compose.override.yml sets this to
 // host.docker.internal so the proxy reaches apps running on the host. It rewrites the host only:
 // the port still comes from the descriptor.
 const ORIGIN_HOST = process.env.VITE_APP_ORIGIN_HOST
@@ -82,7 +82,7 @@ export default defineConfig({
       scss: {
         // USWDS's Sass packages (see src/styles/uswds.scss) @use each other by bare package
         // name (e.g. `@use "usa-checkbox"`), which only resolves with this directory on the
-        // load path — it's the "packages" dir @uswds/uswds ships specifically for this a-la-carte
+        // load path. It is the "packages" dir @uswds/uswds ships specifically for this a-la-carte
         // (per-component) style of consumption, as opposed to `@use "uswds"` for the whole thing.
         loadPaths: [join(nodeModulesDir('@uswds/uswds'), 'packages')],
         // USWDS's Sass still uses the legacy if()/lighten()/darken() syntax Dart Sass is
@@ -98,7 +98,7 @@ export default defineConfig({
     host: true,
     watch: { usePolling: !!process.env.VITE_USE_POLLING },
     // taxpert is a `file:../taxpert` dep, so node_modules/taxpert is a symlink and
-    // its real path sits outside this project root — outside Vite's default fs allow-list.
+    // its real path sits outside this project root, and so outside Vite's default fs allow-list.
     // The shared bundles fetch their own `templates/*.html` at runtime, and the one written as
     // a static `new URL('../templates/shared.html', import.meta.url)` (shared/js/modal-shell.js)
     // is rewritten by Vite into an absolute `/@fs/…` URL, which the allow-list then rejected
@@ -110,7 +110,7 @@ export default defineConfig({
     // Scenario overlay (N1–N6): proxy each Form Builder app's dev server so its assets are
     // same-origin with fact-explorer. This lets the overlay fetch the Scala.js engine bundle, the
     // fact dictionary and the scenario JSONs with no CORS, and share sessionStorage with an
-    // embedded iframe. One entry per discovered app, keyed on its basePath — the table used to be the
+    // embedded iframe. One entry per discovered app, keyed on its basePath. The table used to be the
     // single literal '/app/eitc', which is why fact-explorer could only ever show one app.
     //
     // Each app must be running for its own overlay to work (`make dev` in that repo). Override a

@@ -1,8 +1,8 @@
-// Annotations + layout persistence store (M5) — framework-agnostic.
+// Annotations and layout persistence, framework-agnostic.
 //
 // One namespaced object in localStorage, mirroring the credit-assistant audit
 // panel's getAuditPanelStorage/setAuditPanelStorage idiom (a single keyed JSON
-// blob merged field-by-field) — but in localStorage (durable) rather than the
+// blob merged field-by-field), but in localStorage (durable) rather than the
 // audit panel's sessionStorage (ephemeral), because notes are meant to survive
 // reloads and be exported.
 //
@@ -10,7 +10,7 @@
 // under Node with a memory backend; the React bindings live in hooks.js.
 //
 // Shape: { version, annotations: { [nodeId]: {text,tag,updatedAt} }, layout: { [nodeId]: {x,y} } }
-// Keys are FGM node ids (fact:/path, fs:fg-set:…) — stable across slices.
+// Keys are FGM node ids (fact:/path, fs:fg-set:…), stable across slices.
 
 const KEY = 'fact-explorer:v1'
 const VERSION = 1
@@ -60,7 +60,7 @@ export function subscribe(fn) {
   return () => subs.delete(fn)
 }
 
-/** Stable snapshot reference — only changes on commit (useSyncExternalStore-safe). */
+/** Stable snapshot reference, changing only on commit, so useSyncExternalStore is safe. */
 export function getSnapshot() {
   return cache
 }

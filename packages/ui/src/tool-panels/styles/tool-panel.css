@@ -1,4 +1,4 @@
-/* <taxpert-tool-panel> — the chrome one workspace tool wears, docked or floating.
+/* <taxpert-tool-panel>, the chrome one workspace tool wears, docked or floating.
 
    The host element is the layout box; .ttp-panel inside it is the look. That split is what lets the
    same element be a flex child of a column one moment and an absolutely-positioned box in the float
@@ -46,7 +46,7 @@ taxpert-tool-panel[data-float] .ttp-panel {
 
 /* ── Being dragged ───────────────────────────────────────────────────────── */
 
-/* Click-through so the pointer keeps hitting the columns underneath — that is what lets the dock
+/* Click-through so the pointer keeps hitting the columns underneath, which is what lets the dock
    measure a drop target from the element the cursor is actually over. */
 taxpert-tool-panel[data-dragging] {
   pointer-events: none;
@@ -189,7 +189,7 @@ taxpert-tool-panel[data-dragging] .ttp-panel__grip {
 }
 
 /* ── Rows ────────────────────────────────────────────────────────────────── */
-/* A row is a <details>, so expanding it is browser behaviour — there is no click handler and no
+/* A row is a <details>, so expanding it is browser behaviour. There is no click handler and no
    aria-expanded to keep in step. The chevron turn follows from [open]. */
 
 .ttp-row {
@@ -285,7 +285,7 @@ taxpert-tool-panel:not([data-float]) .ttp-panel__grow {
   display: none;
 }
 
-/* Inset rather than straddling the border, because a floating panel clips to its 8px radius — a
+/* Inset rather than straddling the border, because a floating panel clips to its 8px radius. A
    handle hanging outside would be cut off exactly at the corner you most want to grab.
 
    All eight are present so a panel can be sized from wherever it happens to be sitting; before, only

@@ -9,21 +9,21 @@ import { embeddableViews } from '../model/apps.js'
 // BroadcastChannel with Fact Explorer (bridge.js), so a scenario loaded in Fact
 // Explorer reflects here, and answering a question here flows back to Fact Explorer.
 //
-// Which view opens — Browse All, the product experience, whichever destinations this
-// app actually has (embeddableViews prunes by capability) — is resolved automatically
+// Which view opens, out of whichever destinations this app actually has (embeddableViews prunes
+// by capability), is resolved automatically
 // when the panel docks; an app built without --allScreens simply has fewer to choose
 // from. The panel docks along the right edge with a draggable resizer on its left
 // boundary (mirroring the audit-panel resizer in a Form Builder app), so it never
 // collides with the canvas.
 //
 // What the frame shows is the *product*, not a second workspace over it: taxpert stands its own
-// chrome down inside another page's frame (shared/js/embedded.js — `html.taxpert-embedded`), so the
+// chrome down inside another page's frame (`html.taxpert-embedded`), so the
 // app's global nav, tool dock and screens toolbar are absent here. Nothing on this side has to ask
 // for that, and nothing is appended to the URL to get it, which matters because the flow navigates:
 // answering a question loads the next screen at an address Fact Explorer never wrote.
 //
 // Which view is docked is the host's state (FactExplorer): the Display modal's "Show product
-// experience side-by-side" is the only thing that opens it — there used to be a banner of manual
+// experience side-by-side" is the only thing that opens it. There used to be a banner of manual
 // tabs alongside that checkbox, which meant two surfaces disagreed about whose preference this was.
 
 const MIN_WIDTH = 320
@@ -64,7 +64,7 @@ export default function EmbeddedAppPanel({ app, onInsetChange, docked = false, o
   }
 
   // The Display modal's "Show product experience side-by-side": ticked, dock the product experience
-  // (an app without one — there is none today, but `embeddableViews` prunes by capability — docks
+  // (an app without one, none today, but `embeddableViews` prunes by capability, docks
   // whatever it does have); unticked, close whatever is docked. Only acts on a *change* of the prop,
   // so the panel's own close button is not immediately overruled by a prop that hasn't caught up yet.
   useEffect(() => {

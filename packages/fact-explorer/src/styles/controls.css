@@ -1,4 +1,4 @@
-/* The Fact Explorer control panel: the floating card on the canvas, and its three sections —
+/* The Fact Explorer control panel: the floating card on the canvas, and its three sections,
    Search, Filter, Layers — plus the scenario status row at its foot.
 
    It is USWDS markup now (`.usa-input`, `.usa-select`, `.usa-checkbox--tile`, `.usa-fieldset`),
@@ -45,7 +45,7 @@
   color: var(--color-text);
 }
 
-/* The whole header row is the toggle — the chevron is the affordance, not the hit target. */
+/* The whole header row is the toggle. The chevron is the affordance rather than the hit target. */
 .fe-panel__toggle {
   display: flex;
   align-items: center;
@@ -75,7 +75,7 @@
   border-top: 1px solid var(--color-divider);
 }
 
-/* Counts + data source, in the design's italic caption. Body copy like the section hints under it —
+/* Counts and data source, in the design's italic caption. Body copy like the section hints under it,
    it is a sentence about what is on the canvas, and it was the one line in the panel still set two
    steps below everything around it. */
 .fe-panel__counts {
@@ -230,7 +230,7 @@
   padding-left: 0;
 }
 
-/* A layer whose switch is off draws no kinds — see the comment in LayerControls.jsx. Said here
+/* A layer whose switch is off draws no kinds. See the comment in LayerControls.jsx. Said here
    because the rule above sets no `display`, so the UA's `[hidden] { display: none }` would already
    do it; this is the explicit version, and the place to change if the block ever gains a display of
    its own. */

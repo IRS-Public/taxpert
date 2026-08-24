@@ -1,18 +1,8 @@
-// sessionStorage-backed persistence for the audit panel's open/closed state, tracked
-// facts, width, and active tab. Ported from credit-assistant (no DOM access — host-agnostic
-// as-is). The former 'showConditions' field moved to display-options.js along with the control
-// itself, so it clears with the display options rather than with the panel.
+// sessionStorage-backed persistence for the audit panel's open/closed state, tracked facts, width
+// and active tab. No DOM access, so it is host-agnostic as it stands.
 //
-// The key is a *function*, not the exported const it used to be, and callers must invoke it at each
-// read and write: this module is imported before the host calls configure(), so a captured key
-// would pin the default 'taxpert:' prefix forever and a host's own namespace would silently never
-// take effect.
-//
-// Note this is the one key whose spelling changes for every host, including credit-assistant, which
-// sets no prefix: it was the unprefixed 'auditPanel' and is now 'taxpert:auditPanel'. Everyone
-// therefore reopens the panel and re-tracks their facts once, on the next load. That is accepted —
-// it is dev-tool state that costs seconds to recreate, and migration code for it would outlive its
-// usefulness by years.
+// The key is a function and callers must invoke it at each read and write. This module is imported
+// before the host calls configure(), so a captured key would pin the default prefix.
 
 import { storageKey } from '../../shared/js/storage-keys.js'
 

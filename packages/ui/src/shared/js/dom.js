@@ -1,27 +1,18 @@
-// The few DOM helpers that survive the move to templates.
-//
-// Markup that never varies belongs in a bundle's `templates/` file, cloned by the element that
-// owns it. What is left over is genuinely data-derived construction — one node per menu item, per
-// filter field, per tracked fact — and that is what `el()` is for. It was duplicated verbatim in
-// six modules before this file existed.
+// The DOM helpers shared across bundles. Markup that never varies lives in a bundle's templates/
+// file; what is left here is genuinely data-derived construction, one node per menu item or field.
 
 export const SVG_NS = 'http://www.w3.org/2000/svg'
 
 /**
- * The host page's own language selector — a `<select>` whose every `<option>` carries the route for
- * one locale, written by the server that knows which locales exist.
- *
- * Two bundles read it and neither owns it, which is why the selector is named here rather than in
- * either: <taxpert-display-modal> mirrors its options into the Display dialog, and
- * <taxpert-screens-toolbar> rewrites those routes to carry `?mode=`, since one generated page serves
- * both listing destinations and the server cannot see which one you are on. Declaring it in the
- * modal and importing it into the toolbar would drag the whole dialog — and its customElements
- * registration — into a page that only wants the bar.
+ * The host page's own language selector, a `<select>` whose every `<option>` carries the route for
+ * one locale. Named here because two bundles read it and neither owns it. <taxpert-display-modal>
+ * mirrors its options into the Display dialog, and <taxpert-screens-toolbar> rewrites those routes
+ * to carry `?mode=`.
  */
 export const HOST_LANGUAGE_SELECT = '#language-selector'
 
 /**
- * `document.createElement` with an optional class, the shape every bundle had its own copy of.
+ * `document.createElement` with an optional class.
  * @param {string} tag
  * @param {string} [className]
  * @returns {HTMLElement}
@@ -33,10 +24,9 @@ export function el (tag, className) {
 }
 
 /**
- * An inline 24×24 SVG icon from a path `d` string. Inlined rather than `<use href>` against the
- * host's sprite so a bundle stays self-contained: hosts without credit-assistant's vendored USWDS
- * icons still get icons. Templates that need a *fixed* icon carry the `<svg>` in their markup —
- * this is for icons chosen at runtime (the nav's per-tool icon).
+ * An inline 24x24 SVG icon from a path `d` string, for icons chosen at runtime such as the nav's
+ * per-tool icon. Inlined rather than `<use href>` against a host sprite, so a bundle stays
+ * self-contained. A template needing a fixed icon carries the `<svg>` in its own markup.
  * @param {string} d
  * @param {string} [className]
  * @returns {SVGElement}

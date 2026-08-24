@@ -1,8 +1,9 @@
-"""Synchronous agentic loop that generates an EITC Fact Graph scenario.
+"""The scenario tool-calling loop behind POST /scenario/generate.
 
-Mirrors AgentOrchestrator (same litellm loop, MAX_ITERATIONS, tool dispatch and
-compression), but its terminal tool is ``submit_scenario`` and it can read the
-existing scenarios and flow XML so the model can clone a known-good template.
+Same loop shape as AgentOrchestrator, with the scenarios/ and flow/ directories
+readable as tools and ``submit_scenario`` as the terminal tool. The model picks
+an existing scenario as a base and this module applies only its validated
+overrides on top. See ../../../../docs/internals/assistant-service.md
 """
 
 from __future__ import annotations
@@ -29,17 +30,16 @@ MAX_ITERATIONS = 12
 _COMPRESS_THRESHOLD = 8000
 _COMPRESS_KEEP = 6000
 
-# Hardened XML parser (matches src/facts/dictionary.py) for reading flow/*.xml.
+# Keep in step with the parser in src/facts/dictionary.py.
 _SAFE_XML_PARSER = etree.XMLParser(
     resolve_entities=False, no_network=True, load_dtd=False, dtd_validation=False, huge_tree=False
 )
 
 _FILENAME_RE = re.compile(r"^[A-Za-z0-9_.-]+$")
-# Replace a /#<uuid> collection segment with the abstract /* form used in the dictionary.
+# A /#<uuid> collection segment maps to the abstract /* form the dictionary uses.
 _COLLECTION_ID_RE = re.compile(r"/#[^/]+")
 
-# Allowed wrapper $types and the Python type their "item" must be. EnumWrapper and
-# CollectionWrapper carry an object item, validated separately.
+# Wrapper $types with a scalar item. The object wrappers are validated separately.
 _SCALAR_ITEM_TYPES: dict[str, type | tuple[type, ...]] = {
     "DollarWrapper": str,
     "StringWrapper": str,
@@ -74,10 +74,6 @@ class ScenarioOrchestrator:
         self._model = model or os.environ.get(
             "SCENARIO_LLM_MODEL", os.environ.get("LLM_MODEL", "ollama/llama3.1:8b")
         )
-
-    # ------------------------------------------------------------------
-    # Tool implementations
-    # ------------------------------------------------------------------
 
     def _list_scenarios(self) -> str:
         items: list[dict[str, Any]] = []
@@ -142,18 +138,12 @@ class ScenarioOrchestrator:
             f"…[{tool_name} result trimmed — showing {_COMPRESS_KEEP} of {len(result)} chars]"
         )
 
-    # ------------------------------------------------------------------
-    # Base resolution + override validation
-    # ------------------------------------------------------------------
-
     def _resolve_base(self, base_filename: str) -> Path | None:
-        """Resolve the model's chosen base to a real scenario file.
+        """Resolve the model's chosen base to a real scenario file, or None.
 
-        Weak models often invent a plausible-but-nonexistent filename (e.g.
-        ``dq_mfs_married_2024_1tp_3qcs_250000.json``). We accept an exact match, else
-        fall back to the existing file sharing the most underscore tokens (filing status,
-        ``Nqcs``, ``dq`` prefix, year) — the income number rarely matches and is ignored.
-        Returns None only when nothing overlaps at all.
+        An exact filename match wins. Otherwise the existing file sharing the most
+        underscore tokens wins, requiring at least two, which covers the common
+        case of an invented but plausible filename.
         """
         name = Path(str(base_filename)).name
         exact = self._scenarios_dir / name
@@ -172,9 +162,8 @@ class ScenarioOrchestrator:
     def _validate_wrapper(self, path: str, wrapper: Any) -> str | None:
         """Return an error string if ``wrapper`` is not a valid serialized fact wrapper.
 
-        This is the strict structural check the weak-model output failed: ``item`` must
-        match its ``$type`` (no arrays where an object/scalar is expected), and the path
-        must be a writable fact (or /meta/* or a collection member of one).
+        ``item`` must match its ``$type``, and ``path`` must name a writable fact
+        (or sit under /meta/). Returns None when the wrapper is valid.
         """
         if not isinstance(wrapper, dict) or "$type" not in wrapper or "item" not in wrapper:
             return f'{path}: must be a single {{"$type": ..., "item": ...}} wrapper.'
@@ -182,7 +171,7 @@ class ScenarioOrchestrator:
         item = wrapper["item"]
         if wtype in _SCALAR_ITEM_TYPES:
             expected = _SCALAR_ITEM_TYPES[wtype]
-            # bool is a subclass of int — guard IntWrapper against booleans explicitly.
+            # bool subclasses int, so IntWrapper needs an explicit guard.
             if not isinstance(item, expected) or (expected is int and isinstance(item, bool)):
                 return f"{path}: {wtype} item must be {getattr(expected, '__name__', expected)}."
         elif wtype == "EnumWrapper":
@@ -213,14 +202,9 @@ class ScenarioOrchestrator:
         name = Path(str(filename)).name.strip()
         if name and not name.endswith(".json"):
             name += ".json"
-        # Junk/empty/unsafe model filename → use the (always-valid) base name instead.
         if not name or not _FILENAME_RE.match(name):
             return fallback
         return name
-
-    # ------------------------------------------------------------------
-    # Loop
-    # ------------------------------------------------------------------
 
     def run(self, prompt: str) -> GeneratedScenario:
         messages: list[dict[str, Any]] = [
@@ -228,14 +212,13 @@ class ScenarioOrchestrator:
             {"role": "user", "content": f"Scenario request: {prompt}"},
         ]
         base_retries = 0
-        last_base: Path | None = None  # best base the model has looked at, for the fallback
+        last_base: Path | None = None  # best base seen so far, used by the fallback
         nudged = False
 
         for iteration in range(MAX_ITERATIONS):
             logger.info("Scenario agent iteration %d/%d", iteration + 1, MAX_ITERATIONS)
 
-            # A few iterations before the budget runs out, push a dithering weak model to
-            # commit — this is what turns "ran out of steps" 500s into real scenarios.
+            # Push the model to commit before the iteration budget runs out.
             if not nudged and iteration == MAX_ITERATIONS - 4:
                 nudged = True
                 messages.append(
@@ -255,8 +238,7 @@ class ScenarioOrchestrator:
             tool_calls = message.tool_calls
 
             if not tool_calls:
-                # The model answered in prose instead of calling submit_scenario; nudge once
-                # by re-appending the instruction, then continue.
+                # The model answered in prose. Restate the instruction and continue.
                 messages.append(message.model_dump())
                 messages.append(
                     {
@@ -286,8 +268,8 @@ class ScenarioOrchestrator:
                     result = self._build_from_submission(arguments)
                     if result is not None:
                         return result
-                    # base_filename was unresolvable — give the model one chance to repick,
-                    # then fall back to the closest base rather than 500.
+                    # Unresolvable base_filename: let the model repick twice, then
+                    # fall back rather than raising.
                     base_retries += 1
                     if base_retries > 2:
                         return self._fallback_scenario(prompt, last_base)
@@ -304,8 +286,6 @@ class ScenarioOrchestrator:
                     )
                     continue
 
-                # Remember the last base the model inspected — used as the fallback if it
-                # never manages a clean submit_scenario.
                 if tool_name == "read_scenario":
                     resolved = self._resolve_base(str(arguments.get("filename", "")))
                     if resolved is not None:
@@ -320,12 +300,14 @@ class ScenarioOrchestrator:
                     }
                 )
 
-        # The model dithered without a usable submit — fall back instead of 500ing.
+        # Iteration budget spent with no usable submission.
         return self._fallback_scenario(prompt, last_base)
 
     def _fallback_scenario(self, prompt: str, last_base: Path | None) -> GeneratedScenario:
-        """Return the closest existing scenario (a valid serialization the browser can
-        load), or raise if nothing plausibly matches the request."""
+        """Return the closest existing scenario, or raise if nothing matches.
+
+        The returned file is a known-good serialization, so the browser can load it.
+        """
         fallback = last_base or self._select_base_from_prompt(prompt)
         if fallback is not None:
             logger.warning("Falling back to closest base scenario %s", fallback.name)
@@ -340,10 +322,10 @@ class ScenarioOrchestrator:
         )
 
     def _select_base_from_prompt(self, prompt: str) -> Path | None:
-        """Pick the existing scenario whose filename best matches the prompt's intent.
+        """Pick the existing scenario whose filename best matches the prompt.
 
-        A deterministic last resort: map filing status / qualifying-child count / year /
-        disqualification words in the prompt to filename tokens and score the overlap.
+        Deterministic last resort: map filing status, qualifying-child count, year
+        and disqualification words to filename tokens, then score the overlap.
         """
         p = prompt.lower()
         wanted: set[str] = set()
@@ -377,8 +359,8 @@ class ScenarioOrchestrator:
             score = len(wanted & tokens)
             if not score:
                 continue
-            # Respect eligibility intent: a qualifying request shouldn't fall back to a dq_
-            # scenario (and vice versa) when an equally-matching one exists.
+            # Penalise a mismatch of eligibility intent, so a qualifying request
+            # prefers a non-dq file when both match equally well.
             if ("dq" in tokens) != wants_dq:
                 score -= 1
             if best is None or score > best[0]:
@@ -386,11 +368,11 @@ class ScenarioOrchestrator:
         return best[1] if best else None
 
     def _build_from_submission(self, arguments: dict[str, Any]) -> GeneratedScenario | None:
-        """Clone the resolved base scenario and apply validated overrides.
+        """Clone the resolved base scenario and apply the validated overrides.
 
-        Returns None when the base cannot be resolved (so the loop can re-prompt). The base
-        file is always a valid serialization, so the merged graph stays loadable even when
-        the model's overrides are partly dropped.
+        Returns None when the base cannot be resolved, so the loop can re-prompt.
+        Invalid overrides are dropped, and the base is always a valid
+        serialization, so the merged graph stays loadable either way.
         """
         base_path = self._resolve_base(str(arguments.get("base_filename", "")))
         if base_path is None:
@@ -428,10 +410,10 @@ class ScenarioOrchestrator:
 
 
 def _parse_scenario_filename(filename: str) -> dict[str, Any]:
-    """Decode the scenario-filename dimensions.
+    """Decode the dimensions encoded in a scenario filename.
 
-    Port of fact-explorer/src/model/scenarioFilename.js so the model sees the same
-    dimensions the audit panel and Fact Explorer decode.
+    Keep in step with packages/fact-explorer/src/model/scenarioFilename.js, which
+    decodes the same convention for the UI.
     """
     parts = filename.replace(".json", "").split("_")
     eligibility = "qualifying"

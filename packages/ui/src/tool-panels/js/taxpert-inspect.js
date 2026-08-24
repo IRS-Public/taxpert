@@ -1,11 +1,5 @@
-// <taxpert-inspect> — the Inspect tool's body: the objects behind the one rendered unit you have
+// <taxpert-inspect>, the Inspect tool's body: the objects behind the one rendered unit you have
 // selected, and what each of them is currently doing.
-//
-// This is the audit panel's Fact Inspector and its Flow Inspector, done as one panel and pointed at
-// a single question. Those two printed a fact's serialized XML into a <pre> and left the reader to
-// work out what it meant; a row here answers the questions you were reading it to answer — what is
-// this worth, what is it for, why is this on screen — and keeps the XML behind an Advanced
-// disclosure for when the answer isn't enough.
 //
 // The element owns no state. inspect-selection.js holds the selected unit, fact-definitions.js reads
 // the dictionary and fact-values.js the graph, and this renders the three together:
@@ -21,8 +15,8 @@
 // than rebuilt, so an expanded row survives docking, floating and dragging.
 //
 // Mounting *is* switching the Inspect tool on: <taxpert-tool-dock> creates this element only while
-// 'inspect' is in the layout's `on` set (taxpert-tool-dock.js's _syncLayout) and removes it — the
-// whole element, not just its content — the moment the tool goes off, whether that is the panel's
+// 'inspect' is in the layout's `on` set (taxpert-tool-dock.js's _syncLayout) and removes the whole
+// element, not just its content, the moment the tool goes off, whether that is the panel's
 // own [x] or the Tools modal's checkbox. So the host page's hover/click cues (inspect-cues.js) turn
 // on and off from this element's connected/disconnectedCallback rather than from a display option:
 // there is nothing to inspect with the palette closed, and no separate switch to leave mismatched
@@ -158,7 +152,7 @@ class TaxpertInspect extends HTMLElement {
       // The whole value stays reachable in the title even when an enum runs past the column.
       value.textContent = truncate(state.literal)
       value.title = state.literal
-      // Already the plain-English name — readFact runs the dictionary's node name through
+      // Already the plain-English name. readFact runs the dictionary's node name through
       // humanizeType, which is where 'IntNode' becomes 'Integer'.
       type.textContent = state.typeLabel || 'Unknown'
     })

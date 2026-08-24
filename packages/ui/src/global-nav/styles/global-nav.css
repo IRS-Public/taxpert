@@ -1,128 +1,63 @@
 /* Shared styles for <taxpert-global-nav>.
  *
- * All classes are prefixed .tgn-* and all tokens --tgn-* so the one stylesheet
- * renders identically in either app. Neutrals and metrics resolve against each
- * app's own design tokens with a hard-coded fallback, so neither app is a hard
- * dependency: credit-assistant uses --primary / --units-*, fact-explorer uses
- * --color-* / --space-*.
+ * Classes are prefixed .tgn-, tokens --tgn-, so the one stylesheet renders identically in either
+ * host. Neutrals and metrics chain to the host's own tokens with a hard-coded fallback, so neither
+ * host is a hard dependency. The brand colors deliberately do not chain.
  *
- * The nav's *brand* colors deliberately do not chain — see --tgn-accent. A host
- * that borrows this chrome should not be able to repaint it by accident, only on
- * purpose, by setting the --tgn-* token itself.
+ * :where() keeps the token rule at zero specificity, so a host can override on purpose.
  *
- * :where() keeps the token rule at zero specificity so apps can override. */
+ * Token rationale, the sticky rules and --tgn-bar-height:
+ * ../../../../../docs/internals/global-nav.md */
 
-/* Embedded mode stands the whole workspace chrome down — the nav included — inside another page's
-   frame. Imported here because this is the one stylesheet every workspace host loads
-   unconditionally; the audit panel's is behind a toggled <link disabled>. */
+/* This is the one stylesheet every workspace host loads unconditionally, so the two rules that must
+   always be present are imported here. The audit panel's is behind a toggled <link disabled>, and a
+   host can mount the nav on a page with no audit panel at all. */
 @import "../../shared/styles/embedded.css";
-
-/* A nav leaf's `ff` (nav-menu-data.js) gates it with the same data-ff/ff-<kebab> convention as the
-   audit panel's rail tabs. Imported here rather than assumed available: a host can mount the nav on
-   a page with no audit panel at all (author-mode.html is one), so this bundle needs the rule to
-   stand alone, the same reasoning audit-panel.css and scenario-modal.css each import it for. */
 @import "../../shared/styles/feature-flags.css";
 
-/* The height of the bar, published on :root rather than on the element, because the thing that
-   needs it is not the nav: <taxpert-screens-toolbar> sticks *underneath* the pinned nav and has to
-   know how far down "underneath" is, and the two are siblings — a token scoped to the nav would
-   never reach it. Declared as a real length rather than measured in JS because the bar's height is
-   fixed by its own metrics (12px padding × 2 + the 32px waffle + the 1px bottom border), the same
-   arithmetic `min-height` below already states; a ResizeObserver here would be a subscription to a
-   number that does not change. A host with no nav on the page gets the fallback each reader
-   supplies, so the toolbar pins to the top rather than to a gap. */
+/* On :root, not on the element: <taxpert-screens-toolbar> is a sibling and pins itself below the
+   bar. Keep in step with the min-height below. */
 :root {
   --tgn-bar-height: 57px;
 }
 
 :where(taxpert-global-nav) {
-  /* The nav's own brand purple — the waffle glyph and its active-state fill, the workspace-settings
-     gear, the active leaf's check, and (via --tgn-on below) the workspace toggle and the focus
-     rings. The selected menu row is a tint of it rather than it; see --tgn-menu-active. Fixed
-     rather than chained through
-     a host's generic --color-accent/--primary: those are each host's *own* brand token for its
-     buttons and links, not Taxpert's, and chaining through them made this nav pick up whatever
-     color a host happened to theme itself with — USWDS blue in the Form Builder apps (--primary:
-     #005ea2), a different purple in fact-explorer (--color-accent: #7b3fb5) — instead of rendering
-     the same Taxpert purple everywhere. Named --tgn-* and declared inside this zero-specificity
-     :where() rule for the same reason as every other token here: a host that wants to theme it on
-     purpose still can, by setting --tgn-accent itself with any real specificity. */
+  /* Taxpert purple. Fixed rather than chained: a host's --color-accent/--primary is that host's own
+     brand, and chaining made the nav render a different color in each one. */
   --tgn-accent: #5e10a6;
   --tgn-surface: var(--color-surface, #ffffff);
   --tgn-text: var(--color-text, #1b1f23);
-  /* Pure black, for the three places the design asks for it by name: the bar's wordmark row
-     (wordmark, divider and workspace label) and the dropdown's group and leaf rows. Separate from
-     --tgn-text — which still chains to a host's body-text token and still carries the tool
-     buttons' border, the workspace label and the chevron — because these particular surfaces are
-     the nav's own typography rather than borrowed body copy, and because the two rows they used to
-     sit on were *dimmed* (--tgn-border on the divider, --tgn-muted on the context label): the
-     design wants them at full strength, not at whatever the host's ink happens to be. */
+  /* The wordmark row and the dropdown's group and leaf rows. Separate from --tgn-text, which still
+     chains to the host's body copy, because these surfaces are the nav's own typography. */
   --tgn-ink: #000000;
   --tgn-muted: var(--color-text-muted, #6b7785);
   --tgn-border: var(--color-border, #e2e2ec);
-  /* The rule under the bar, separate from --tgn-border. The bar sits on --tgn-bar (a pale
-     lavender) with the destination's own white band directly beneath it, and the generic border
-     token — a near-lavender #e2e2ec — disappeared between the two, so the workspace chrome ran
-     into the page with no edge. This is the neutral USWDS --base-light the rest of the workspace
-     draws its hairlines in (all-screens-toolbar.css's rule under the sub-nav is the same one), so
-     the two bars now close with the same line. Chained through the host's token with the USWDS
-     value as the fallback, like every other --tgn-* here, so a host with no USWDS palette still
-     gets the grey rather than an invalid declaration. */
+  /* The rule under the bar. --tgn-border is a near-lavender and vanished between the bar and the
+     white band beneath it. This is the neutral the rest of the workspace draws hairlines in. */
   --tgn-bar-border: var(--base-light, #a9aeb1);
   --tgn-hover: var(--color-surface-alt, #f3f2f9);
-  /* The dropdown's two states, straight from the nav-interactions design. Fixed rather than
-     token-chained: they are the nav's own selection language, and a host's generic surface tokens
-     would wash the pair out into each other.
-
-     --tgn-menu-active is a *tint* of the brand purple, not the brand purple itself. The written
-     spec gives the selected-menu color as #5E10A6, but the reference screenshots show the selected
-     group as this pale lavender carrying near-black 600-weight labels and a purple check — and
-     taking the spec literally is unreadable: #000 on #5E10A6 is ~1.4:1, far under the 4.5:1 floor,
-     and the check (--tgn-accent) would vanish into its own background. The tint keeps the
-     design's reading — "this region is selected" — at 17:1 for the label and 8:1 for the check.
-     It is also the fill <taxpert-workspace-settings-modal> pins its section accordions to
-     (--twsm-section-bg), by a comment that names this token; the two are meant to be one surface,
-     so if this ever moves, move that with it. */
+  /* The dropdown's two states. A tint of the brand purple rather than the purple itself: black on
+     #5e10a6 is about 1.4:1, and the purple check would vanish into its own background.
+     <taxpert-workspace-settings-modal> pins --twsm-section-bg to this same fill. Move them
+     together. */
   --tgn-menu-hover: #f3f5ff;
   --tgn-menu-active: #e6e6fa;
-  /* The bar itself. The same pale lavender as --tgn-menu-active above, written out rather than
-     chained to it: they are one *design* — the workspace's own tint — but two surfaces, and a
-     retint of the selected menu row should not silently repaint the whole nav. The bar was
-     --tgn-surface (the host's white) until the sub-nav beneath it took that white; the pair reads
-     as "workspace chrome, then the destination you are on", which is exactly the order they sit in.
-     Anything drawn on this — the wordmark, the tool buttons' 1px border, the waffle — is
-     --tgn-ink/--tgn-text on a 16:1 background, so nothing else had to move with it. */
+  /* The bar. The same lavender as --tgn-menu-active, written out rather than chained: one design,
+     two surfaces, and a retint of the selected row should not repaint the whole nav. */
   --tgn-bar: #e6e6fa;
-  /* "On" — the workspace toggle's checked fill and the focus ring on the bar's buttons. Taxpert
-     purple rather than a host's --color-primary for the same reason --tgn-accent stopped chaining:
-     the workspace being on is this package's own state, and the toggle sits 12px from the purple
-     settings gear in the same row, so a host-blue pill there read as two brands in one control.
-     (The old fallback was #2b6cb0, a blue belonging to neither host: credit-assistant names its
-     brand token --primary, not --color-primary, so the chain never resolved there at all.) */
   --tgn-on: var(--tgn-accent);
   --tgn-gap: var(--space-1, var(--units-1, 8px));
   --tgn-radius: 8px;
-  --tgn-z: 1000; /* below CA modals (1050), above fact-explorer overlays (--z-chat: 7) */
-  /* Source Sans Pro is the Taxpert type family. --font-sans is credit-assistant's token
-     (which resolves to the vendored "Source Sans Pro Web" webfont); the fallbacks name the
-     family directly so a host that doesn't vendor it still lands on the same design. */
+  --tgn-z: 1000; /* below credit-assistant's modals (1050), above fact-explorer's overlays */
+  /* The fallbacks name Source Sans Pro directly, so a host that does not vendor it still lands on
+     the same design. */
   --tgn-font: var(--font-sans, 'Source Sans Pro Web', 'Source Sans Pro', 'Helvetica Neue', Helvetica, Roboto, Arial, sans-serif);
 }
 
-/* Pinned to the top of the scroll, so the workspace's own chrome stays reachable however far down a
-   flow you are — a long Browse All listing is thousands of pixels of product with no way back to the
-   nav otherwise.
-
-   Sticky on the *host* element rather than on `.tgn-bar` inside it: a sticky box is bounded by its
-   parent's, and `.tgn-bar` fills this element exactly, so sticking it here would give it nothing to
-   travel through. For the same reason the scaffold's page templates mount this element as a direct
-   child of the scrolling container rather than inside the product's <header> — inside one it would
-   unstick the moment the banner below it scrolled past.
-
-   z-index at --tgn-z (rather than `auto`) is what keeps the product's own stacking from drawing over
-   a bar that no longer scrolls away with it. It makes this element a stacking context, so `.tgn-menu`
-   below can no longer out-stack anything outside it — which is why the tool dock's float layer sits
-   above --tgn-z (tool-dock.css) rather than between the bar and its dropdown. */
+/* Sticky on the host element, not on `.tgn-bar` inside it: a sticky box is bounded by its parent's,
+   and `.tgn-bar` fills this element exactly. The z-index also makes this a stacking context, which
+   is why the tool dock's float layer sits above --tgn-z rather than between the bar and its
+   dropdown. */
 taxpert-global-nav {
   display: block;
   position: sticky;
@@ -130,18 +65,14 @@ taxpert-global-nav {
   z-index: var(--tgn-z);
   font-family: var(--tgn-font);
   color: var(--tgn-text);
-  /* The bar's height, reserved. The nav's markup is fetched (templates/global-nav.html) and this
-     is the first thing on the page in production, so without a reserved box the content below it
-     would jump when the bar lands. Same number as --tgn-bar-height, which is what the sub-nav pins
-     itself below; keep the two together. */
+  /* Reserved, because the markup is fetched and this is the first thing on the page. */
   min-height: var(--tgn-bar-height);
 }
 
-/* ── What the workspace being on means ─────────────────────────────────────
-   One attribute on the host, set by _syncWorkspace(). The tool strip and the mode/nav taxonomy are
-   workspace features: with it off the nav reverts to its starting state — the waffle, the "Taxpert"
-   root, and a dropdown holding just the toggle. They stay in the DOM and are hidden here, so
-   turning the workspace on and off moves one attribute rather than rebuilding the menu. */
+/* What the workspace being on means. One attribute on the host, set by _syncWorkspace(). The tool
+   strip and the taxonomy are workspace features, so with it off the nav reverts to the waffle, the
+   brand root, and a dropdown holding just the toggle. They stay in the DOM and are hidden here, so
+   the switch moves one attribute rather than rebuilding the menu. */
 
 taxpert-global-nav:not([data-workspace-on]) .tgn-tools,
 taxpert-global-nav:not([data-workspace-on]) .tgn-menu > .tgn-group,
@@ -197,7 +128,7 @@ taxpert-global-nav:not([data-workspace-on]) .tgn-menu > .tgn-item {
   background: currentColor;
 }
 
-/* The <use href> sprite: in the document (so the references resolve) but drawn nowhere. */
+/* In the document, so the <use href> references resolve, but drawn nowhere. */
 .tgn-sprite {
   position: absolute;
   width: 0;
@@ -205,12 +136,10 @@ taxpert-global-nav:not([data-workspace-on]) .tgn-menu > .tgn-item {
   overflow: hidden;
 }
 
-/* Breadcrumb — the bar's title: "Taxpert", the divider, and the workspace you are in.
-   Set as one 24px black run rather than three separately coloured spans: the divider used to be
-   --tgn-border and the context --tgn-muted, which drew the eye to the wordmark and let the part
-   that actually changes as you navigate recede. The design wants all three at full ink, with only
-   weight separating the constant part from the variable one. 24px still clears the reserved bar
-   height — the 32px waffle governs it, not this. */
+/* The bar's title: the wordmark, the divider, and the workspace you are in. One 24px black run
+   rather than three separately coloured spans, so the part that changes as you navigate does not
+   recede. Only weight separates the constant half from the variable one. The 32px waffle governs
+   the bar's height, not this. */
 .tgn-breadcrumb {
   display: inline-flex;
   align-items: center;
@@ -223,7 +152,7 @@ taxpert-global-nav:not([data-workspace-on]) .tgn-menu > .tgn-item {
   font-weight: 700;
 }
 
-/* Workspace tool strip (Scenario / Display / Tools) — pinned to the far end of the bar */
+/* The tool strip, pinned to the far end of the bar. */
 .tgn-tools {
   display: flex;
   align-items: center;
@@ -262,12 +191,12 @@ taxpert-global-nav:not([data-workspace-on]) .tgn-menu > .tgn-item {
   flex: 0 0 auto;
 }
 
-/* A tool that doesn't apply where you are is hidden rather than absent; when that's all of them,
-   the strip goes too, so it can't leave its `margin-left: auto` gap behind.
+/* A tool that does not apply where you are is hidden rather than absent, and the strip goes with
+   the last of them so it cannot leave its `margin-left: auto` gap behind.
 
-   `.tgn-tool` sets an explicit `display`, which outranks the UA stylesheet's `[hidden] { display: none }`
-   — so _syncActive()'s `button.hidden = …` needs this rule to actually take effect. Without it every
-   tool showed on every destination, `hidden` attribute and all. */
+   `.tgn-tool` sets an explicit `display`, which outranks the UA stylesheet's
+   `[hidden] { display: none }`. Without this rule _syncActive()'s `button.hidden` has no effect and
+   every tool shows on every destination. */
 .tgn-tool[hidden] {
   display: none;
 }
@@ -276,7 +205,7 @@ taxpert-global-nav:not([data-workspace-on]) .tgn-menu > .tgn-item {
   display: none;
 }
 
-/* Dropdown — always in the DOM, shown by the waffle's own expanded state. */
+/* Always in the DOM, shown by the waffle's own expanded state. */
 .tgn-menu {
   display: none;
   position: absolute;
@@ -296,9 +225,9 @@ taxpert-global-nav:not([data-workspace-on]) .tgn-menu > .tgn-item {
   display: block;
 }
 
-/* Every top-level entry in the menu is divided from the one above it — the workspace header
-   included, which is what puts the rule under "TAXPERT WORKSPACE". Declared once here rather than
-   as a border on each row so a hidden or reordered entry can't leave a doubled or orphaned line. */
+/* Every top-level entry is divided from the one above it, the workspace header included. Declared
+   once here rather than as a border on each row, so a hidden or reordered entry cannot leave a
+   doubled or orphaned line. */
 .tgn-menu > * + * {
   border-top: 1px solid var(--tgn-border);
 }
@@ -327,7 +256,7 @@ taxpert-global-nav:not([data-workspace-on]) .tgn-menu > .tgn-item {
   gap: 12px;
 }
 
-/* Workspace settings gear — opens <taxpert-workspace-settings-modal> via nav-tool-select. */
+/* Opens <taxpert-workspace-settings-modal> through nav-tool-select. */
 .workplace-settings {
   display: inline-flex;
   align-items: center;
@@ -403,11 +332,9 @@ taxpert-global-nav:not([data-workspace-on]) .tgn-menu > .tgn-item {
   padding: 14px 20px;
   font-family: inherit; /* a <button> would otherwise fall back to the UA's system font */
   font-size: 17px;
-  /* Regular, so that bold means one thing in this menu: the destination you are on. The rows were
-     all semibold once, on the reasoning that they are the nav's own labels rather than body copy —
-     but that left the 700 below one step off a whole column of 600, which is not a difference you
-     can see without something to compare against, and the menu read as uniformly heavy. The tint
-     and the ✓ still carry "you are here"; the weight now carries it too instead of nearly. */
+  /* Regular, so bold means one thing in this menu: the destination you are on. With every row at
+     600, the active row's 700 was one step off a whole column of it, which is not a difference you
+     can see without something to compare against. */
   font-weight: 400;
   line-height: 1.3;
   color: var(--tgn-ink);
@@ -449,10 +376,10 @@ taxpert-global-nav:not([data-workspace-on]) .tgn-menu > .tgn-item {
   background: var(--tgn-menu-hover);
 }
 
-/* The active top-level entry is tinted whole. For a group that means the block its children sit
-   in, so the run from header to last child reads as one selected region — which is why the tint
-   is on the group rather than on its header alone. It holds when the group is collapsed too: the
-   class comes from _renderGroup(), not from whether an active child is currently rendered. */
+/* The active top-level entry is tinted whole. For a group that is the block its children sit in,
+   so the run from header to last child reads as one selected region, which is why the tint is on
+   the group rather than on its header alone. It holds while the group is collapsed, because the
+   children are in the DOM either way. */
 .tgn-menu > .tgn-item[aria-current],
 .tgn-group:has(.tgn-item[aria-current]) {
   background: var(--tgn-menu-active);
@@ -474,9 +401,8 @@ taxpert-global-nav:not([data-workspace-on]) .tgn-menu > .tgn-item {
   background: transparent;
 }
 
-/* A collapsed group's children are built and hidden, not left unbuilt — which is what lets
-   `.tgn-group:has(.tgn-item[aria-current])` above see the active child and tint the group even
-   while it is shut. */
+/* Built and hidden rather than left unbuilt, which is what lets the `:has()` rule above see the
+   active child and tint the group even while it is shut. */
 .tgn-group__header[aria-expanded='false'] + .tgn-group__items {
   display: none;
 }
@@ -502,9 +428,8 @@ taxpert-global-nav:not([data-workspace-on]) .tgn-menu > .tgn-item {
   cursor: pointer;
 }
 
-/* ── Secondary level: a group's children ───────────────────────────────────
-   Sub-items sit inside a tinted block, so a hover background has nothing to say here — the
-   underline carries the affordance instead. */
+/* Secondary level: a group's children. They sit inside a tinted block, so a hover background has
+   nothing to say here and the underline carries the affordance instead. */
 
 .tgn-group__items > .tgn-item {
   padding-left: 32px;

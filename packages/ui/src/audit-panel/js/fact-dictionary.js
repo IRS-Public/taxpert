@@ -6,7 +6,7 @@ import { makeCollectionIdPath } from '../../shared/js/collection-utils.js'
 export { makeCollectionIdPath }
 
 // Both are created on first use rather than at import time. A module that touches DOM globals as a
-// side effect of being imported can only be loaded once a document exists — which is not true of
+// side effect of being imported can only be loaded once a document exists, which is not true of
 // this one any more, now that the tool panels read the dictionary through it too.
 let serializer = null
 
@@ -27,7 +27,7 @@ let factDictionaryXmlPromise = null
 
 /**
  * Lazily fetch + parse the fact dictionary XML exactly once (memoized: concurrent and repeat
- * calls share the same fetch). Invoked from enable() so that — per ADR-004 — production page
+ * calls share the same fetch). Invoked from enable() so that, per ADR-004, production page
  * loads with audit mode OFF never fetch the dictionary.
  * @param {string} url the fact-dictionary.xml URL (from the panel's fact-dictionary-url attribute)
  * @returns {Promise<Document>} the parsed fact-dictionary XML document

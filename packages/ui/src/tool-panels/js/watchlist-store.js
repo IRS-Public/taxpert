@@ -1,6 +1,6 @@
 // The Watchlist's state: which facts the user has pinned, in the order they pinned them.
 //
-// Same split as tool-layout.js — this module owns the value and its persistence, and
+// Same split as tool-layout.js: this module owns the value and its persistence, and
 // <taxpert-watchlist> is a view over it. Every mutator dispatches WATCHLIST_CHANGE_EVENT on
 // `document`, so a second watchlist panel (or a host that adds a fact from its own UI) stays in
 // step without either surface knowing about the other.
@@ -9,7 +9,7 @@
 // the scenario you are working through, the way audit-panel/js/storage.js scopes its trackedFacts,
 // whereas a panel arrangement is something you set up once and keep.
 //
-// An entry is { path, collectionId } — the abstract path (which may carry a `*` wildcard) and the
+// An entry is { path, collectionId }: the abstract path, which may carry a `*` wildcard, and the
 // collection item id that resolves it, '' for a plain fact. The pair is the identity: the same
 // abstract path pinned for two household members is two entries.
 
@@ -23,7 +23,7 @@ export const WATCHLIST_CHANGE_EVENT = 'taxpert:watchlist-changed'
 // default 'taxpert:' prefix forever and the host's namespace would silently never take effect.
 //
 // A host that adopts a storagePrefix therefore loses its pinned facts once, on the next load. That
-// is accepted — re-pinning a fact takes a second, and migration code for it would outlive its
+// is accepted. Re-pinning a fact takes a second, and migration code for it would outlive its
 // usefulness by years.
 
 let entries = null
@@ -40,7 +40,7 @@ export function watchPath (entry) {
     : entry.path
 }
 
-// Anything unrecognised is dropped rather than trusted — the stored value outlives the fact
+// Anything unrecognised is dropped rather than trusted, the stored value outliving the fact
 // dictionary, so a renamed path must not come back as a row that can never resolve.
 function revive (raw) {
   if (!Array.isArray(raw)) return []
@@ -89,7 +89,7 @@ export function isWatched (path, collectionId = '') {
 // ── Writes ────────────────────────────────────────────────────────────────────
 
 /**
- * Pin a fact. Returns false if it was already pinned — which is what tells the caller to point at
+ * Pin a fact. Returns false if it was already pinned, which tells the caller to point at
  * the existing row rather than report an addition.
  * @param {string} path abstract fact path, `*` wildcard and all
  * @param {string} [collectionId] collection item id resolving that wildcard, '' for a plain fact

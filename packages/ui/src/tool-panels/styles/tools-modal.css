@@ -1,4 +1,4 @@
-/* <taxpert-tools-modal> — the "Tools" dialog opened from the global nav's Tools button.
+/* <taxpert-tools-modal>, the "Tools" dialog opened from the global nav's Tools button.
 
    Self-contained, like the audit-panel bundle's modals: the base <dialog> chrome is declared here
    rather than inherited from a host's own modal CSS, so it looks the same in any host, while the
@@ -20,7 +20,7 @@
   --ttm-selected-bg: var(--color-primary-tint, var(--ttp-primary-lighter, #d9e8f6));
   --ttm-font: var(--font-sans, 'Source Sans Pro Web', 'Source Sans Pro', 'Helvetica Neue', Helvetica, Roboto, Arial, sans-serif);
 
-  /* The dialog's own insets. Declared once because two things read them — the main block's padding
+  /* The dialog's own insets. Declared once because two things read them: the main block's padding
      and the close button's position — and the X sitting on the heading depends on the two agreeing. */
   --ttm-inset-x: 2rem;
   --ttm-inset-top: 1.5rem;
@@ -80,7 +80,7 @@ taxpert-tools-modal {
 .ttm-dialog .ttm-main {
   position: relative;
   box-sizing: border-box;
-  /* Full width, explicitly — see the same rule in workspace-settings-modal.css. USWDS's
+  /* Full width, explicitly. See the same rule in workspace-settings-modal.css. USWDS's
      .usa-modal__content is a flex column and .usa-modal__main carries `margin: 0 auto`, whose auto
      cross-axis margins suppress the stretch and size this block to its widest child instead. */
   width: 100%;
@@ -140,7 +140,7 @@ taxpert-tools-modal {
 }
 
 /* ── Option rows ─────────────────────────────────────────────────────────── */
-/* A tool row is USWDS's *tile* checkbox — the same treatment the Workspace settings modal's option
+/* A tool row is USWDS's tile checkbox, the same treatment the Workspace settings modal's option
    rows use, so the two surfaces that both list tools look like one component. USWDS owns the box,
    the control art, and both the checked and focus treatments; `.ttm-option` stays on each row as the
    "one tool" hook for the JS and its spec.
@@ -168,7 +168,7 @@ taxpert-tools-modal {
   background: transparent;
 }
 
-/* Inside the tile now, so it needs no indent of its own — USWDS's label padding already clears the
+/* Inside the tile now, so it needs no indent of its own. USWDS's label padding already clears the
    control art. Full body contrast rather than a muted grey: in the design the description carries
    the same weight of meaning as the label, and only the weight separates them. */
 .ttm-option .ttm-option__hint {
@@ -187,7 +187,7 @@ taxpert-tools-modal {
 /* ── Narrow viewports ────────────────────────────────────────────────────── */
 
 @media (max-width: 30em) {
-  /* Narrowing the inset takes the close button with it — that is what the property is for. An
+  /* Narrowing the inset takes the close button with it, which is what the property is for. An
      element selector beats the zero-specificity :where() the defaults are declared in. */
   taxpert-tools-modal {
     --ttm-inset-x: 1.25rem;

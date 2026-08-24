@@ -1,10 +1,9 @@
-// Form Graph Model (FGM) — the central data structure.
+// Form Graph Model (FGM): the contract every data source must satisfy and every
+// component reads against. JSDoc typedefs for editor hints, plus a runtime
+// validate() that fails loudly on a malformed graph.
 //
-// This file is the *contract* that every data source (mock fixture, node-gen,
-// scala-synced) must satisfy, and that every UI component reads against. It uses
-// JSDoc typedefs (for editor hints) plus a runtime validate() that catches
-// fixture/schema mistakes early — the single most useful guardrail while the
-// data is still hand-authored.
+// React-free and fetch-free, so it runs under plain Node in tests. load.js fetches.
+// Model and invariants: ../../../../docs/internals/fact-explorer-internals.md
 
 /**
  * @typedef {Object} FlowPage
@@ -67,10 +66,7 @@
  * @property {string} [version]
  * @property {string} [generatedAt]
  * @property {number} [taxYear]
- * @property {string[]} [flowTags]  tags this app registers beyond the built-in FLOW_TAGS — a
- *   FormBuilderApp may add its own node types (TWE's `fg-withholding-adjustments`), and a graph
- *   declares them here so validate() accepts them. Declared, never open: an undeclared tag is
- *   still an error, because catching a typo'd tag is what this allow-list is for.
+ * @property {string[]} [flowTags]  flow tags this app registers beyond the built-in FLOW_TAGS
  * @property {FlowPage[]} flowPages
  * @property {FlowElement[]} flowElements
  * @property {Fact[]} facts
@@ -101,12 +97,6 @@ const SLICES = ['flowPages', 'flowElements', 'facts', 'edges']
 
 /**
  * Every flow tag this graph may legally use: the built-ins plus whatever the app declared.
- *
- * One function rather than three readings of `FLOW_TAGS`, because the tag universe is now a
- * property of the graph and not of this module — see the note on `FormBuilderGraph.flowTags`.
- * `facets.js` derives the *default selection* from the elements actually present; this is the
- * wider set of what is allowed.
- *
  * @param {{flowTags?: string[]}} [graph]
  * @returns {string[]}
  */

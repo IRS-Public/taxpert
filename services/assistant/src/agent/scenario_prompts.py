@@ -1,4 +1,8 @@
-"""System prompt for the scenario-generation agent (base-clone + overrides)."""
+"""System prompt for the scenario loop.
+
+Teaches the clone-a-base-then-override strategy, the wrapper shapes an override
+may use, and the filename convention.
+"""
 
 from __future__ import annotations
 

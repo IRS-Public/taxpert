@@ -1,24 +1,17 @@
-// <taxpert-tool-panel tool="inspect"> — the chrome one workspace tool wears.
+// <taxpert-tool-panel tool="inspect">: the chrome one workspace tool wears.
 //
-// Deliberately thin. It clones its markup, names itself from the tool registry, and turns its two
-// buttons into intent: [x] switches the tool off in tool-layout.js, and the grip is left for
-// <taxpert-tool-dock> to pick up (the dock owns dragging, because a drag is a question about where
-// a panel sits relative to the others — which only the dock knows).
-//
-// It stores no layout state of its own. Whether it is docked or floating, and how big it is, are
-// read off tool-layout.js by the dock and pushed here as an attribute (`data-float`) and custom
-// properties (`--ttp-flex`, `--ttp-x/y/w/h`). tool-panel.css turns those into a layout; there is no
-// second copy of the geometry in this file.
+// It clones its markup, names itself from the tool registry, switches the tool off from its [x], and
+// leaves the grip for <taxpert-tool-dock> to bind. It stores no layout state; `data-float` and the
+// `--ttp-*` custom properties are pushed onto it by the dock. See ../../../../../docs/internals/tool-panels.md.
 //
 // Public API
-//   ready    — Promise resolved once the chrome exists
-//   tool     — the tool id (reflects the `tool` attribute)
-//   grip     — the drag handle, for the dock to bind
-//   growHandles — the floating-only resize handles (four edges + four corners), likewise
+//   ready        Promise resolved once the chrome exists
+//   tool         the tool id, reflecting the `tool` attribute
+//   grip         the drag handle, for the dock to bind
+//   growHandles  the floating-only resize handles, four edges plus four corners
 
-// Every tool body is a custom element rather than static markup. Registering them here rather than
-// in the dock keeps them beside the thing that clones them: the panel is what appends
-// `tool.templateId`'s fragment, so the panel is what has to have defined their tags first.
+// The panel is what appends `tool.templateId`'s fragment, so it is what must have defined the tool
+// body tags first.
 import './taxpert-inspect.js' //         side effect: defines <taxpert-inspect>
 import './taxpert-outcome-tracker.js' // side effect: defines <taxpert-outcome-tracker>
 import './taxpert-watchlist.js' //       side effect: defines <taxpert-watchlist>
@@ -33,11 +26,9 @@ class TaxpertToolPanel extends HTMLElement {
     super()
     this._connected = false
     this._rendered = false
-    // Created once here and never replaced. <taxpert-tool-dock> takes this promise the moment it
-    // calls createElement — before the panel is in the document, so before connectedCallback could
-    // hand out a second one. Swapping in a fresh promise on connect would leave the dock holding the
-    // original, which resolved immediately, and it would go looking for a grip on chrome that had
-    // not been built yet: the drag handle then silently bound to nothing.
+    // Created once here and never replaced: the dock takes this promise the moment it calls
+    // createElement, before the panel is in the document. A fresh promise on connect would leave the
+    // dock holding one that resolves before the chrome exists, and the grip would bind to nothing.
     this.ready = new Promise((resolve, reject) => {
       this._chromeReady = resolve
       this._chromeFailed = reject
@@ -71,15 +62,14 @@ class TaxpertToolPanel extends HTMLElement {
 
     this.replaceChildren(getTemplate('ttp-panel'))
 
-    // Both buttons are icon-only, so each carries its name in a visually hidden span rather than an
-    // aria-label — the label names the tool, which is what tells two open panels apart in a screen
-    // reader's list of controls.
+    // Both buttons are icon-only and carry their name in a visually hidden span, which is what tells
+    // two open panels apart in a screen reader's list of controls.
     this.querySelector('.ttp-panel__title').textContent = tool.label
     this.querySelector('.ttp-panel__grip-label').textContent = `Move ${tool.label}`
     this.querySelector('.ttp-panel__close-label').textContent = `Close ${tool.label}`
 
-    // A tool with no body template registered still gets its chrome — an empty panel is a clearer
-    // failure than no panel, and a host may register the template later.
+    // A tool with no body template registered still gets its chrome: a host may register the
+    // template later.
     const body = this.querySelector('.ttp-panel__body')
     try {
       body.appendChild(getTemplate(tool.templateId))

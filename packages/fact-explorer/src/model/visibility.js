@@ -1,15 +1,10 @@
-// Pure scenario-visibility computation (N3).
+// What a taxpayer who loaded a given scenario would and would not see: which flow
+// elements show, which knockouts are active, which facts their answers touch.
 //
-// Given an FGM and two *injected* evaluators (so this module is node-testable
-// with a fake engine — see engine.js for the real ones), compute what a user who
-// loaded a given scenario would and wouldn't see. This is the graph-form of the
-// audit panel's showOrHideAllElements() (fg-conditions.js) plus the FGM edge
-// model: which flow elements are shown/hidden, which knockouts are active, and
-// which facts the user's answers actually touch.
-//
-// Like slice/filter/facets, this is pure — no React, no engine import. The
-// caller folds the returned status onto node.data (the same idiom as
-// match/searchDim/__context) and, in "hide" mode, runs scenarioFilter().
+// The two evaluators are injected rather than imported, so this stays node-testable
+// with a fake engine (engine.js builds the real ones). Callers fold the returned
+// status onto node.data, and in hide mode run scenarioFilter().
+// The scenario overlay end to end: ../../../../docs/internals/fact-explorer-internals.md
 
 /** Flow-element statuses. */
 export const FLOW_STATUS = {
@@ -29,16 +24,14 @@ const SEEN_SEED_KINDS = new Set(['binds', 'shows', 'displays', 'gates', 'knocks-
  * @param {import('./fgm.js').FormBuilderGraph} fgm
  * @param {{ evalCond:(path:string,op:string)=>boolean, factState:(path:string)=>{hasValue:boolean,value:any,complete:boolean} }} evaluators
  * @returns {{ status: Map<string,string>, values: Map<string,object> }}
- *   status — keyed by node id (flow element ids AND fact ids).
- *   values — keyed by fact path, for every "seen" fact.
+ *   status  keyed by node id, both flow element ids and fact ids.
+ *   values  keyed by fact path, for every "seen" fact.
  */
 export function computeVisibility(fgm, { evalCond, factState }) {
   const elById = new Map(fgm.flowElements.map((e) => [e.id, e]))
 
-  // ── 1. Effective visibility of each flow element ────────────────────────────
-  // An element with a [condition][operator] is shown iff the condition holds
-  // (default-to-true lives in evalCond). An element nested under a hidden
-  // container is hidden too — the parent→child hide showOrHideAllElements() does.
+  // An element with a condition/operator shows iff the condition holds (evalCond
+  // defaults to true), and an element under a hidden container is hidden too.
   const ownVisibleCache = new Map()
   const ownVisible = (el) => {
     if (ownVisibleCache.has(el.id)) return ownVisibleCache.get(el.id)
@@ -51,7 +44,7 @@ export function computeVisibility(fgm, { evalCond, factState }) {
   const effVisibleCache = new Map()
   const effVisible = (el, seen = new Set()) => {
     if (effVisibleCache.has(el.id)) return effVisibleCache.get(el.id)
-    if (seen.has(el.id)) return true // defensive: cycle in parentId, don't loop
+    if (seen.has(el.id)) return true // a cycle in parentId must not loop
     seen.add(el.id)
     const parent = el.parentId ? elById.get(el.parentId) : null
     const v = ownVisible(el) && (parent ? effVisible(parent, seen) : true)
@@ -69,10 +62,8 @@ export function computeVisibility(fgm, { evalCond, factState }) {
     }
   }
 
-  // ── 2. Which facts are "seen" ───────────────────────────────────────────────
-  // Seed: a visible flow element binds/shows/displays/gates/knocks-out the fact.
-  // Then propagate transitively over `depends` edges (a seen derived fact pulls
-  // in the facts it depends on).
+  // Seed from visible flow elements, then propagate transitively over `depends`:
+  // a seen derived fact pulls in the facts it depends on.
   const factPathById = new Map(fgm.facts.map((f) => [f.id, f.path]))
   const dependsBySource = new Map() // factId -> [dependency factId]
   for (const e of fgm.edges) {
@@ -100,7 +91,6 @@ export function computeVisibility(fgm, { evalCond, factState }) {
     }
   }
 
-  // ── 3. Fact statuses + live values for seen facts ───────────────────────────
   const values = new Map()
   for (const f of fgm.facts) {
     const seen = seenFactIds.has(f.id)

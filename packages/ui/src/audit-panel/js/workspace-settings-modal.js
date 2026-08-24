@@ -1,35 +1,20 @@
-// <taxpert-workspace-settings-modal> — "Workspace settings", the alpha-feature explorer opened
-// from the global nav's settings gear (next to the workspace toggle).
+// <taxpert-workspace-settings-modal>, "Workspace settings", opened from the global nav's settings
+// gear. It began as the audit panel's Flags rail tab and has since grown sections for tools,
+// outcomes, applications and endpoints.
 //
-// This is the new home for what used to be the audit panel's "Flags" rail tab
-// (audit-panel-flags-section in sections.js): runtime feature-flag overrides, stored in
-// localStorage, that let someone opt into alpha features ahead of the build-time default.
+// The element self-wires on the nav's `nav-tool-select` event, opening on
+// detail.id === 'workspace-settings'. <taxpert-audit-panel> creates it, so a host only mounts the
+// panel.
 //
-// Like <taxpert-scenario-modal> and <taxpert-display-modal>, the element self-wires: it listens
-// on the document for the nav's `nav-tool-select` event and opens on
-// detail.id === 'workspace-settings'. It is created and owned by <taxpert-audit-panel> (see
-// taxpert-audit-panel.js), so a host only has to mount the panel.
+// "Applications" is not a setting in the same sense: it switches which application the workspace is
+// laid over. It lives here because the gear is the one control on every page of every host. See
+// shared/js/apps.js for the switch itself.
 //
-// The markup lives in templates/workspace-settings-modal.html and the <dialog> chrome in the
-// shared shell (shared/templates/shared.html); building it is cloning both and wiring the
-// checkboxes.
+// THE ROWS COME FROM THE HOST. One clone per entry in config.featureFlags, each supplying its own
+// label, so a new flag is an entry in the host's config and nothing else. The list is read late and
+// re-read on CONFIG_CHANGE_EVENT.
 //
-// It has since grown three more sections, and one of them is not a setting in the same sense:
-// "Applications" (last but one, above Advanced) switches which application the workspace is laid
-// over. It lives here because the gear is the one control on every page of every host — the
-// landing-page cards and fact-explorer's header <select> that it replaced were each reachable
-// from exactly one surface. See shared/js/apps.js for the switch itself, and why it keeps the
-// destination you are on.
-//
-// THE ROWS COME FROM THE HOST. One `twsm-option` clone per entry in config.featureFlags, each
-// entry supplying its own `label` — so a new flag is an entry in the host's config and nothing
-// else, and a host that declares none gets the empty state rather than another application's
-// features. The list is read late and re-read on CONFIG_CHANGE_EVENT, like everything else that
-// renders from configuration.
-//
-// Public API
-//   ready — Promise resolved once the dialog has been built
-//   open() / close()
+// Public API: ready, open(), close(). See ../../../../../docs/internals/audit-panel.md
 
 import { flags, getFlag, setFlag, applyFlags } from './feature-flags.js'
 import {
@@ -65,10 +50,8 @@ class TaxpertWorkspaceSettingsModal extends HTMLElement {
     this._onNavTool = (event) => {
       if (event.detail?.id === 'workspace-settings') this.open()
     }
-    // A host may configure after this dialog has been built — credit-assistant loads the element
-    // modules and the config fragment as separate <script type="module"> tags, and fact-explorer
-    // re-configures at runtime. Rebuilding the rows is safe: a checkbox's state lives in
-    // localStorage, not in the DOM.
+    // A host may configure after this dialog has been built. Rebuilding the rows is safe, a
+    // checkbox's state living in localStorage rather than in the DOM.
     this._onConfigChange = () => {
       if (this._rendered) this._renderFromConfig()
     }
@@ -96,8 +79,8 @@ class TaxpertWorkspaceSettingsModal extends HTMLElement {
   // ── Public API ───────────────────────────────────────────────────────────────
 
   open () {
-    // The nav's settings gear can be pressed before this modal's markup has landed (the two
-    // bundles' templates are separate fetches). Remember the ask and honour it on render.
+    // The gear can be pressed before this modal's markup lands, the two bundles' templates being
+    // separate fetches. Remember the ask and honour it on render.
     if (!this._rendered) {
       this._openWhenReady = true
       return
@@ -112,10 +95,9 @@ class TaxpertWorkspaceSettingsModal extends HTMLElement {
   /**
    * Every section shut, every time the modal opens.
    *
-   * The markup ships them shut, but a <details> keeps whatever state it was left in — this element
-   * is built once and reopened, so the second open showed whichever sections the last visit had
-   * unfolded, and a fresh page showed none. Same modal, two shapes, depending on history nobody can
-   * see. The whole point of the disclosures is that the modal opens as a readable list of titles.
+   * The markup ships them shut, but a <details> keeps whatever state it was left in, and this
+   * element is built once and reopened. Without this the second open shows whichever sections the
+   * last visit unfolded, so the modal has two shapes depending on history nobody can see.
    */
   _collapseSections () {
     for (const section of this.querySelectorAll('.twsm-section, .twsm-outcome')) {
@@ -149,8 +131,8 @@ class TaxpertWorkspaceSettingsModal extends HTMLElement {
       button.addEventListener('click', () => resetConfigOverride(button.dataset.reset))
     }
 
-    // Its own module: a determination is a nested form, and this element's job is to mount
-    // sections rather than to know that shape. See outcomes-editor.js.
+    // Its own module, a determination being a nested form and this element's job being to mount
+    // sections rather than to know that shape.
     this._outcomes = createOutcomesEditor(this)
     this._wireAdvanced()
 
@@ -175,7 +157,7 @@ class TaxpertWorkspaceSettingsModal extends HTMLElement {
   }
 
   // Both fields are re-filled from the stored config, so anything typed and not applied is
-  // discarded — which is what makes "Discard edits" a re-render and nothing else.
+  // discarded. That is what makes "Discard edits" a re-render and nothing else.
   _renderAdvanced () {
     this._endpoints.value = formatSettings(getConfig().endpoints)
     this._overridesJson.value = JSON.stringify(getConfigOverrides(), null, 2)
@@ -190,8 +172,8 @@ class TaxpertWorkspaceSettingsModal extends HTMLElement {
   /**
    * Replace the whole override record with what was pasted.
    *
-   * Two failure modes, and they read differently to whoever typed them: JSON that will not parse,
-   * and JSON that parses into a configuration the schema refuses. Both leave what is stored alone.
+   * Two failure modes read differently to whoever typed them: JSON that will not parse, and JSON
+   * that parses into a configuration the schema refuses. Both leave what is stored alone.
    */
   _import () {
     let parsed
@@ -205,8 +187,8 @@ class TaxpertWorkspaceSettingsModal extends HTMLElement {
     this._showImportError(null)
   }
 
-  // Everything the configuration decides, in one call — so a configure() or an override after the
-  // dialog was built lands through the same path the first render took.
+  // Everything the configuration decides, so a late configure() or override lands through the
+  // same path the first render took.
   _renderFromConfig () {
     this._renderApps()
     this._renderFlags()
@@ -216,8 +198,7 @@ class TaxpertWorkspaceSettingsModal extends HTMLElement {
     this._syncOverrideControls()
   }
 
-  // The container and empty-state for one section, looked up by name rather than held as two more
-  // fields per section.
+  // Looked up by name rather than held as two more fields per section.
   _section (name) {
     return {
       options: this.querySelector(`[data-options="${name}"]`),
@@ -228,13 +209,12 @@ class TaxpertWorkspaceSettingsModal extends HTMLElement {
   /**
    * One row per application the host declared, with that application's modes under its name.
    *
-   * The section removes itself when there is nothing to choose between — a single-application host
-   * would otherwise get a radio group of one, which says only that it is what it is.
+   * The section removes itself when there is nothing to choose between, a single-application host
+   * otherwise getting a radio group of one.
    *
-   * Selecting does not *do* the navigation: it announces it, cancelably, and navigates only if
-   * nobody objected. fact-explorer is the host that objects — it swaps the graph on its canvas
-   * in place rather than reloading itself — and every other host gets the plain link behaviour by
-   * doing nothing at all.
+   * Selecting does not perform the navigation. It announces it, cancelably, and navigates only if
+   * nobody objected. Fact Explorer is the host that objects, swapping the graph on its canvas in
+   * place. Every other host gets the plain link behaviour by doing nothing.
    */
   _renderApps () {
     const apps = getConfig().apps
@@ -259,8 +239,8 @@ class TaxpertWorkspaceSettingsModal extends HTMLElement {
       const label = fragment.querySelector('label')
       label.htmlFor = input.id
       fragment.querySelector('.twsm-app__name').textContent = app.label ?? app.id
-      // The modes, in the host's own words. An application that declared none says so rather than
-      // showing an empty line — that is a host with a bare id, and worth seeing.
+      // An application that declared no modes says so rather than showing an empty line. That is
+      // a host with a bare id, and worth seeing.
       const modes = destinationsOf(app).map((d) => d.label ?? d.id)
       fragment.querySelector('.twsm-app__modes').textContent =
         modes.length ? modes.join(' · ') : 'No modes declared'
@@ -284,14 +264,13 @@ class TaxpertWorkspaceSettingsModal extends HTMLElement {
     globalThis.location?.assign?.(target.destination.href)
   }
 
-  // Build one `twsm-option` row. `onToggle` gets the checkbox, so a caller decides what a tick means
-  // without this having to know whether it is writing a flag or a config override.
+  // `onToggle` gets the checkbox, so a caller decides what a tick means without this knowing
+  // whether it is writing a flag or a config override.
   //
-  // Every `idFor` here must carry this modal's `twsm-` prefix. The id is document-global and this is
-  // a shared package dropped into a host page: the Tools modal renders its own row per tool, both
-  // modals are mounted at once, and a USWDS checkbox is invisible — the click lands on the <label>
-  // and is routed by `for`. Two elements answering to `tool-inspect` therefore doesn't look wrong,
-  // it makes one of the two dialogs' checkboxes silently unclickable. Guarded by unique-ids.test.mjs.
+  // EVERY `idFor` MUST CARRY THIS MODAL'S `twsm-` PREFIX. Ids are document-global, both this and
+  // the Tools modal are mounted at once, and a USWDS checkbox is invisible: the click lands on the
+  // <label> and is routed by `for`. Two elements answering to one id makes one dialog's checkbox
+  // silently unclickable. Guarded by unique-ids.test.mjs.
   _renderOptions (name, entries, { idFor, labelFor, checkedFor, onToggle }) {
     const { options, empty } = this._section(name)
     options.replaceChildren()
@@ -318,13 +297,12 @@ class TaxpertWorkspaceSettingsModal extends HTMLElement {
     return rows
   }
 
-  // One row per flag the host declares. Rebuilt from scratch on a re-configure — there is no state
-  // in these nodes to preserve, since a checkbox's value comes from getFlag() on every sync.
+  // Rebuilt from scratch on a re-configure. There is no state in these nodes to preserve, a
+  // checkbox's value coming from getFlag() on every sync.
   _renderFlags () {
     const rows = this._renderOptions('flags', flags(), {
       idFor: (flag) => `twsm-ff-${flag.kebab}`,
-      // A flag with no label is a host oversight rather than a reason to render a blank box; its
-      // name is at least something a developer recognizes.
+      // A flag with no label is a host oversight rather than a reason to render a blank box.
       labelFor: (flag) => flag.label ?? flag.name,
       checkedFor: (flag) => getFlag(flag.name),
       onToggle: (flag, input) => {
@@ -340,9 +318,9 @@ class TaxpertWorkspaceSettingsModal extends HTMLElement {
   /**
    * One row per tool *the build offers*, ticked when it is in the effective list.
    *
-   * The rows come from getBuildConfig() rather than getConfig(): a tool switched off is absent from
-   * the effective `config.tools`, and reading the effective list would take its own row away with
-   * it, leaving no way to switch it back on.
+   * The rows come from getBuildConfig() rather than getConfig(). A tool switched off is absent
+   * from the effective `config.tools`, so reading the effective list would take its own row away
+   * with it, leaving no way to switch it back on.
    */
   _renderTools () {
     const buildTools = getBuildConfig().tools ?? []
@@ -356,8 +334,8 @@ class TaxpertWorkspaceSettingsModal extends HTMLElement {
         const next = new Set(enabled)
         if (input.checked) next.add(tool.id)
         else next.delete(tool.id)
-        // Written as the filtered build list, so the canonical dock order is preserved however the
-        // boxes were ticked — the same rule tool-registry.js's canonicalIndex() enforces.
+        // Written as the filtered build list, so canonical dock order survives whatever order the
+        // boxes were ticked in. Same rule as tool-registry.js's canonicalIndex().
         const kept = buildTools.filter((candidate) => next.has(candidate.id))
         const result = setConfigOverride('tools', kept)
         if (!result.ok) {
@@ -368,16 +346,16 @@ class TaxpertWorkspaceSettingsModal extends HTMLElement {
     })
   }
 
-  // Each row's selected treatment follows from the checkbox's own `:checked` (USWDS's tile
-  // variant, recolored in the stylesheet), so its state is the only thing to keep in step.
+  // Each row's selected treatment follows from the checkbox's own `:checked`, so its state is the
+  // only thing to keep in step.
   _syncCheckboxes () {
     for (const checkbox of this._checkboxes ?? []) {
       checkbox.checked = getFlag(checkbox.dataset.flag)
     }
   }
 
-  // Which sections are showing a value that did not come from the build. One `hidden` per marker,
-  // and the footer appears only when there is something for it to undo.
+  // Which sections show a value that did not come from the build. The footer appears only when
+  // there is something for it to undo.
   _syncOverrideControls () {
     let any = false
     for (const marker of this.querySelectorAll('[data-override]')) {
@@ -396,8 +374,8 @@ export { TaxpertWorkspaceSettingsModal }
 // ── "name = value" lines ──────────────────────────────────────────────────────
 //
 // The shape the Advanced fields use for a flat object, and the same one the Outcomes editor uses
-// for a `map`'s options. A JSON object would be more precise and much worse to type: every value
-// here is a string, and a person editing an endpoint should not have to balance braces to do it.
+// for a `map`'s options. Every value here is a string, and a person editing an endpoint should not
+// have to balance braces to do it.
 
 function formatSettings (object) {
   return Object.entries(object ?? {}).map(([key, value]) => `${key} = ${value}`).join('\n')

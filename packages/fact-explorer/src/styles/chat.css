@@ -1,10 +1,10 @@
-/* Chat dock — Fact Explorer analogue of the credit-assistant audit panel's
+/* Chat dock, the Fact Explorer analogue of the credit-assistant audit panel's
    "Explain & Analyze" tab. A floating launcher (bottom-left, above the React
    Flow controls) toggles a bottom-anchored, resizable dock. The dock's dynamic
    geometry (bottom/width/height) is driven inline from component state; only
    static styling lives here. */
 
-/* Floating launcher button — fixed position above the bottom-left controls.
+/* Floating launcher button, fixed above the bottom-left controls.
    The 40px circle radius is derived from the button size, not a token. */
 .chat-launcher {
   position: absolute;
@@ -213,7 +213,7 @@
   cursor: pointer;
 }
 
-/* Send button — solid primary fill, stretches the composer height. Its disabled
+/* Send button, a solid primary fill stretching the composer height. Its disabled
    state swaps to a flat grey: #cbd2d9 has no exact token (closest
    --color-disabled is #b8c0c8); kept as a literal to stay pixel-identical. */
 .chat-send-btn {

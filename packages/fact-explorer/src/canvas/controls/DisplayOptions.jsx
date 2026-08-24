@@ -1,4 +1,4 @@
-// Fact Explorer's "Display options" — the shared <taxpert-display-modal>, filled with this host's
+// Fact Explorer's "Display options": the shared <taxpert-display-modal>, filled with this host's
 // own choices and opened from the same global-nav Display button every other Taxpert destination
 // uses (taxpertHost.js adds 'fact-explorer' to that tool's destinations).
 //
@@ -10,7 +10,7 @@
 //     modal in every other destination too.
 //   · "Reset layout" was a button in the annotation toolbar, beside Export/Import.
 //   · "Show product experience side-by-side" opens the embedded app panel, which had no control of
-//     its own — you docked it from a banner of manual tabs and nothing said it was a display
+//     its own. You docked it from a banner of manual tabs and nothing said it was a display
 //     preference. That banner is gone now; this checkbox is the only way to dock it.
 //
 // The state stays in FactExplorer: these descriptors carry the current value and the callback, and

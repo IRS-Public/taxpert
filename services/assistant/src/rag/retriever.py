@@ -1,4 +1,10 @@
-"""Synchronous RAG retriever backed by ChromaDB (HTTP server mode)."""
+"""Synchronous RAG retriever: embed a query with Ollama, cosine-query ChromaDB.
+
+Backs the ``query_rag`` tool. Embeddings go through the ``ollama`` client
+directly rather than LiteLLM, so a running Ollama is required even when
+LLM_MODEL names a hosted provider. See
+../../../../docs/internals/assistant-service.md
+"""
 
 from __future__ import annotations
 

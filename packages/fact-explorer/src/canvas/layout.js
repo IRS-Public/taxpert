@@ -1,31 +1,21 @@
-// Deterministic banded graph layout (M6 / 6c). Replaces the dagre fact pass with
-// a fully deterministic, swimlane-style placement that the user can read in two
-// orientations.
+// Deterministic banded graph layout: a swimlane-style placement, readable in two orientations.
 //
-//   The flow spine        fg-set questions plus the flow structure that frames
-//                         them (fg-collection / fg-detail / fg-section-gate /
-//                         conditional-block) stack in document order down (or
-//                         across) the centre. Container elements become frames
-//                         whose children stack inside them, indented.
-//   Writable-fact band    every `writable` fact sits in its own band on one side
-//                         of the spine, aligned with the question that binds it.
-//   Derived-fact band     every `derived` fact sits in its own band on the other
-//                         side, aligned with the fact/question it derives from.
-//   Alert / knockout band  fg-alert + fg-alert-knockout are grouped in a single
-//                         band, each aligned with the step whose answer triggers
-//                         it (via the `exits` edge).
+//   The flow spine       questions plus the structure framing them, in document order down or
+//                        across the centre. Containers become frames, children indented inside.
+//   Writable-fact band   each aligned with the question that binds it.
+//   Derived-fact band    each aligned with the fact or question it derives from.
+//   Alert band           alerts and knockouts together, each aligned with the step whose answer
+//                        triggers it, through the `exits` edge.
 //
-// Bands never overlap (a fixed BAND_GAP separates them) and nodes within a band
-// never overlap (packBand enforces a minimum stride). Facts and alerts are
-// anchored to the *main-axis* coordinate of the flow element they relate to, so a
-// reviewer can scan one row (vertical) or one column (horizontal) and see a
-// question together with the writable it binds, the deriveds it feeds, and the
-// alert it can trip — all related FGM components grouped, no messy crossings.
+// Bands never overlap (BAND_GAP) and nodes within a band never overlap (packBand's minimum stride).
+// Facts and alerts anchor to the MAIN-AXIS coordinate of the flow element they relate to, so one
+// row or column shows a question with the writable it binds, the deriveds it feeds and the alert it
+// can trip.
 //
-// Two orientations share the same core; only the (main, cross) -> (x, y) mapping
-// and the strides differ:
-//   vertical    flow runs top→bottom (main = y); bands sit left→right (cross = x)
-//   horizontal  flow runs left→right (main = x); bands sit top→bottom (cross = y)
+// Both orientations share the same core, differing only in the (main, cross) to (x, y) mapping and
+// the strides.
+//
+// See ../../../../docs/internals/fact-explorer-internals.md
 //
 // Pure function: takes React Flow nodes/edges (built by transform.js), the sliced
 // FGM (for flowPages order + raw edges), a saved-layout map (M5), and an

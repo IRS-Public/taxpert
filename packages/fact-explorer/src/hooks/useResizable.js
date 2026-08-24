@@ -1,4 +1,4 @@
-// useResizable — shared pointer-drag + arrow-key edge-resize logic for the
+// useResizable: shared pointer-drag and arrow-key edge-resize logic for the
 // fact-explorer's three resizable surfaces (ChatPanel, DetailPanel, EmbeddedAppPanel).
 //
 // It owns NO geometry state of its own: callers keep their own state (a width

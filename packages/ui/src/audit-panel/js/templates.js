@@ -1,7 +1,7 @@
 // The audit-panel bundle's template files.
 //
-// One module so the fetches are kicked off exactly once, at import time — before the first element
-// upgrades — and so every element in the bundle awaits the same memoized promises.
+// One module so the fetches are kicked off exactly once at import time, before the first element
+// upgrades, and so every element in the bundle awaits the same memoized promises.
 //
 // `new URL('../templates/…', import.meta.url)` is the one form both consumers resolve: in
 // credit-assistant it lands on the vendored mirror's own templates/ dir (copy-shared-ui copies
@@ -28,8 +28,8 @@ const DEFAULT_URLS = new Map(
 /**
  * Fetch (once) one of the bundle's template files, honouring a `templates-base` override on
  * `element`. Called from connectedCallback, which follows module evaluation closely enough that a
- * separate eager kickoff buys nothing — unlike the global nav, which ships in production and
- * preloads its one file from the host's <head>.
+ * separate eager kickoff buys nothing. The global nav differs: it ships in production and preloads
+ * its one file from the host's <head>.
  * @param {string} file basename from FILES
  * @param {Element} [element] the custom element asking, if it may carry templates-base
  */

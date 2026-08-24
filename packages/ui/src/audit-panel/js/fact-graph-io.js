@@ -1,19 +1,12 @@
-// Graph Inspector + Scenarios I/O: copy/load/reset the fact graph, load a scenario JSON, and
-// AI scenario generation. Ported from credit-assistant. The application-specific scenario-filename
-// parsing (parseScenarioFilename) and filterScenarios stay in the host and are injected via the
-// panel's registerScenarioFilters().
+// Fact-graph I/O: copy, load and reset the graph, load a scenario JSON, and AI scenario generation.
+// The application-specific filename parsing and scenario filtering stay in the host and arrive
+// through the panel's registerScenarioFilters().
 //
-// ── Where the two bases come from ─────────────────────────────────────────────────────────────
+// Both endpoint bases resolve panel attribute first, then config.endpoints. The attribute is the
+// page's own answer and credit-assistant server-renders it per build. The graph goes through
+// config.graph rather than window.factGraph, which is what used to pin this file to one host.
 //
-// panel attribute → config.endpoints → nothing.
-//
-// The attribute is first because it is the *page's* answer, and credit-assistant server-renders it
-// per build. Config is the answer for a host with no panel element to hang attributes on. The
-// order matters more than it looks: reading only the attribute meant fact-explorer had to mount
-// a decoy <taxpert-audit-panel> carrying credit-assistant's URLs just to make scenarios load.
-//
-// The graph itself goes through config.graph — see graph-adapter.js — rather than window.factGraph
-// and window.loadFactGraph, which is what pinned this file to one host.
+// See ../../../../../docs/internals/audit-panel.md
 
 import { getConfig } from '../../shared/js/config.js'
 import { storageKey } from '../../shared/js/storage-keys.js'
@@ -26,8 +19,8 @@ function _apiBase () {
   return _panel()?.getAttribute('api-base') || getConfig().endpoints.apiBase
 }
 
+/** The directory a host serves its scenario JSONs from, e.g. /resources/scenarios. */
 function _scenariosBase () {
-  // e.g. /resources/scenarios — the directory a host serves its scenario JSONs from.
   return _panel()?.getAttribute('scenarios-base') || getConfig().endpoints.scenariosBase
 }
 
@@ -112,7 +105,7 @@ const SCENARIO_TIMEOUT_MS = 90_000
 //
 // A function, and invoked at each use: this module is imported before the host calls configure(),
 // so a captured key would pin the default prefix. It was the unprefixed 'generatedScenario' and is
-// now '<prefix>:generatedScenario' — a scenario mid-generation at upgrade time is dropped, which is
+// now '<prefix>:generatedScenario'. A scenario mid-generation at upgrade time is dropped, which is
 // the accepted one-time reset described in storage-keys.js.
 const generatedScenarioKey = () => storageKey('generatedScenario')
 
@@ -252,14 +245,14 @@ function clearGeneratedScenario () {
  * Unload whatever scenario the page is holding: throw the facts away, put the library <select>
  * back to its placeholder, and forget any AI-generated scenario.
  *
- * This is what "Clear scenario" always meant and never did — the button was wired to
+ * This is what "Clear scenario" always meant and never did. The button was wired to
  * clearGeneratedScenario(), which only hides the AI section's result, so pressing it left every
  * loaded fact in place.
  *
  * Clearing goes through the port's load() with an empty graph rather than deleting the host's
  * storage key: taxpert namespaces its own keys and deliberately does not know the flow runtime's
  * prefix (see storage-keys.js), so removing '<prefix>:factGraph' from here would clear nothing. An
- * empty JSON object is a graph with no facts, and load() persists it and reloads the page — the
+ * empty JSON object is a graph with no facts, and load() persists it and reloads the page, the
  * same path a loaded scenario takes.
  */
 function clearScenario () {

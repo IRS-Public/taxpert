@@ -1,4 +1,4 @@
-/* Embedded mode — see shared/js/embedded.js, which is the only writer of `html.taxpert-embedded`.
+/* Embedded mode. See shared/js/embedded.js, the only writer of `html.taxpert-embedded`.
 
    A Form Builder app rendered inside another page's frame (Fact Explorer's side-by-side view) shows
    the product and not the workspace over it: the embedder already has a nav, a Display button and a
@@ -18,7 +18,7 @@ html.taxpert-embedded .audit-panel {
   display: none;
 }
 
-/* `.audit-panel` above is the rail — the only part of <taxpert-audit-panel> with a box, and one a
+/* `.audit-panel` above is the rail, the only part of <taxpert-audit-panel> with a box, and one a
    host can still bring back with the legacyAuditPanel flag. The element itself stays mounted: it
    owns the three workspace modals, which are body-level dialogs and cost nothing while shut. The
    page container is a flex child of `.audit-mode`, so the row closes up on its own. */

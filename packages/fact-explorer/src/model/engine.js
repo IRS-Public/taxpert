@@ -1,24 +1,13 @@
-// In-browser fact-graph engine wrapper (N2).
+// Runs the app's real Scala.js fact-graph engine in the browser, so Fact Explorer
+// never re-derives an app's logic. Browser-only: the ESM bundle and the fact
+// dictionary are fetched from the app's origin through the Vite proxy, so that
+// app's dev server must be running.
 //
-// A thin, memoized port of the flow runtime's fg-fact-graph.js + the
-// checkCondition() switch from fg-conditions.js. It runs the *real* Scala.js
-// fact-graph engine in the browser so fact-explorer never re-derives an app's logic — it
-// asks the same engine the questionnaire uses.
-//
-// Everything here is browser-only: the Scala.js ESM bundle and the fact
-// dictionary are fetched from the app's own origin through the Vite proxy (see
-// vite.config.js, whose proxy table is derived from the same registry), so that
-// app's dev server must be running. There is no Node unit test for the loader;
-// the pure visibility logic that consumes its evaluators lives in visibility.js
-// and is tested with a fake evaluator.
-//
-// The memo is keyed by app, and an engine must never be crossed with another
-// app's graph: a Graph built against one FactDictionary is meaningless to
-// another. Everything downstream already takes the opaque {fg, dict} pair as a
-// parameter (buildScenarioGraph, emptyGraph, makeEvaluators), so that stays true
-// by construction — keep it that way.
+// A Graph built against one app's FactDictionary is meaningless to another, so every
+// export here takes the opaque {fg, dict} pair as a parameter. Keep it that way.
+// Live-app features and their failure modes: ../../../../docs/internals/fact-explorer-internals.md
 
-/** app.id → Promise<{fg, dict}>. Each entry is ~7.7 MB of Scala.js, so evict on switch. */
+/** app.id -> Promise<{fg, dict}>. Each entry is several MB of Scala.js, so evict on switch. */
 const engines = new Map()
 
 /**
@@ -50,10 +39,7 @@ export function loadEngine(app) {
 }
 
 /**
- * Drop every cached engine except the given app's.
- *
- * Called on app switch. Two engines is two Scala.js bundles resident at once, and nothing needs
- * the one belonging to an app that is no longer on screen.
+ * Drop every cached engine except the given app's. Called on app switch.
  * @param {string} keepAppId
  */
 export function evictEnginesExcept(keepAppId) {
@@ -76,18 +62,16 @@ export function emptyGraph(engine) {
 }
 
 /**
- * Build the two evaluators that visibility.js needs, bound to one graph.
- * `evalCond` is a verbatim port of checkCondition() in fg-conditions.js — same
- * operator switch, same default-to-true when graph.get() throws (so fact-explorer's
- * visibility matches the real questionnaire exactly).
+ * Build the two evaluators visibility.js needs, bound to one graph. `evalCond` mirrors
+ * checkCondition() in the flow runtime's fg-conditions.js: same operator switch, same
+ * default-to-true on a throw, so computed visibility matches the questionnaire exactly.
  * @param {any} graph a graph from buildScenarioGraph/emptyGraph
  * @returns {{ evalCond:(path:string,operator:string)=>boolean, factState:(path:string)=>{hasValue:boolean,value:any,complete:boolean} }}
  */
 export function makeEvaluators(graph) {
   const evalCond = (condition, operator) => {
     let value
-    // Defaults to true: having to answer an unnecessary question is preferable to
-    // not being presented a necessary one (matches checkCondition()).
+    // Defaults to true, so a lookup failure shows a question rather than skipping one.
     try {
       value = graph.get(condition)
     } catch (e) {

@@ -1,4 +1,8 @@
-"""Sync HTTP routes for the chat API."""
+"""The two POST routes, plus the setters app.py uses to inject the orchestrators.
+
+Handlers are synchronous, so the caller holds one request open for the whole
+agent loop. See ../../../../docs/internals/assistant-service.md
+"""
 
 from __future__ import annotations
 

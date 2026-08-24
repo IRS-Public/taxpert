@@ -1,4 +1,8 @@
-"""Ollama tool-calling schema definitions for the EITC diagnostic agent."""
+"""Tool schemas the chat loop passes to litellm.completion.
+
+Descriptions here are prompt text: the model reads them, so edit them with the
+same care as prompts.py. Dispatch lives in orchestrator.py.
+"""
 
 from __future__ import annotations
 

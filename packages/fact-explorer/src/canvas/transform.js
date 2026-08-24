@@ -38,7 +38,7 @@ function toRfNodes(graph, search) {
       id: n.id,
       type: frame ? 'fgmFrame' : 'fgm',
       // __context (set by sliceGraph) marks +1-hop neighbors; match/searchDim
-      // (M6) mark search hits / the rest under an active query — both dim/emphasise
+      // Mark search hits and the rest under an active query. Both dim and emphasise
       // without changing the graph.
       data: {
         title,
@@ -48,7 +48,7 @@ function toRfNodes(graph, search) {
         context: !!n.__context,
         // __focal (drillGraph/coneGraph) marks the focus node; __hub (coneGraph)
         // marks a railed high-fan-in shared input. Both emphasise via node.data,
-        // same as match/__context — they never change the graph.
+        // same as match and __context. They never change the graph.
         focal: !!n.__focal,
         hub: !!n.__hub,
         match,

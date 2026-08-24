@@ -1,4 +1,4 @@
-/* <taxpert-scenario-modal> — the "Manage scenario" dialog opened from the global nav's
+/* <taxpert-scenario-modal>, the "Manage scenario" dialog opened from the global nav's
    Scenario button. Loaded through audit-panel.css's @import chain, so it is gated by the
    same toggled <link id="audit-panel-styles"> as the rest of the workspace UI.
 
@@ -17,7 +17,7 @@
   --tsm-hint: var(--tap-base-dark, #565c65);
   --tsm-font: var(--font-sans, 'Source Sans Pro Web', 'Source Sans Pro', 'Helvetica Neue', Helvetica, Roboto, Arial, sans-serif);
 
-  /* The dialog's own insets. Declared once because two things read them — the main block's padding
+  /* The dialog's own insets. Declared once because two things read them: the main block's padding
      and the close button's position — and the X sitting on the heading depends on the two agreeing. */
   --tsm-inset-x: 2rem;
   --tsm-inset-top: 1.5rem;
@@ -75,7 +75,7 @@ taxpert-scenario-modal {
 .tsm-dialog .tsm-main {
   position: relative;
   box-sizing: border-box;
-  /* Full width, explicitly — see the same rule in workspace-settings-modal.css. USWDS's
+  /* Full width, explicitly. See the same rule in workspace-settings-modal.css. USWDS's
      .usa-modal__content is a flex column and .usa-modal__main carries `margin: 0 auto`, whose auto
      cross-axis margins suppress the stretch and size this block to its widest child instead. */
   width: 100%;
@@ -106,7 +106,7 @@ taxpert-scenario-modal {
   color: var(--tsm-text);
 }
 
-/* Doubled up with .usa-modal__heading (the element carries both classes — see
+/* Doubled up with .usa-modal__heading (the element carries both classes, see
    scenario-modal.js) so this wins on specificity over real USWDS's own .usa-modal__heading
    rule, which sets font-family to its "heading" role (serif by default) — a single-class
    rule here would only win by accident of stylesheet load order, and does in some hosts but
@@ -228,7 +228,7 @@ taxpert-scenario-modal {
   margin-top: 0.75rem;
 }
 
-/* Every label in the scenario library — the host's filter dropdowns and the scenario <select> —
+/* Every label in the scenario library, meaning the host's filter dropdowns and the scenario <select>,
    reads as the name of the thing you are choosing, so they all take the same weight rather than
    USWDS's lighter default. The wording itself (sentence case) is the host's: see
    credit-assistant's website-static/js/scenario-filters.js and fact-explorer's
@@ -238,7 +238,7 @@ taxpert-scenario-modal {
   font-weight: 700;
 }
 
-/* `border-box` because USWDS adds its own padding and 1px border on top of this `width: 100%` —
+/* `border-box` because USWDS adds its own padding and 1px border on top of this `width: 100%`,
    .usa-select's padding-right is 2rem, for the chevron it paints — so under the UA's default
    content-box the control renders wider than the section holding it. See the same rule in
    workspace-settings-modal.css. */
@@ -249,7 +249,7 @@ taxpert-scenario-modal {
   width: 100%;
 }
 
-/* "Copied to clipboard!" — invisible until copyFactGraphToClipboard() flashes it. */
+/* "Copied to clipboard!", invisible until copyFactGraphToClipboard() flashes it. */
 #copy-fg-status {
   display: block;
   opacity: 0;
@@ -270,7 +270,7 @@ taxpert-scenario-modal {
 
 /* Narrow viewports: stack each row rather than squeezing the control. */
 @media (max-width: 30em) {
-  /* Narrowing the inset takes the close button with it — that is what the property is for. An
+  /* Narrowing the inset takes the close button with it, which is what the property is for. An
      element selector beats the zero-specificity :where() the defaults are declared in. */
   taxpert-scenario-modal {
     --tsm-inset-x: 1.25rem;

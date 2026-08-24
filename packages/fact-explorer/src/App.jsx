@@ -16,7 +16,7 @@ const FACT_EXPLORER_PATH = '/fact-explorer'
  * Read the route: '/' → home, '/fact-explorer' → the default app, '/fact-explorer/<id>' → that app.
  *
  * The app id is a path segment rather than a query parameter so there is one router, not two, and
- * so the URL reads as what it is — a place, not a filter on a place.
+ * so the URL reads as what it is: a place rather than a filter on a place.
  */
 function routeFor(pathname) {
   if (pathname !== FACT_EXPLORER_PATH && !pathname.startsWith(`${FACT_EXPLORER_PATH}/`))
@@ -28,7 +28,7 @@ function routeFor(pathname) {
 const factExplorerPath = (appId) => `${FACT_EXPLORER_PATH}/${appId}`
 
 // Main App component manages the view state, backed by the URL (via the History API) so the Fact
-// Explorer has a real entrypoint — /fact-explorer/<app> — that's bookmarkable and reachable from other
+// Explorer has a real entrypoint, /fact-explorer/<app>, that is bookmarkable and reachable from other
 // Form Builder apps' nav links, not just reachable in-app after landing on the homepage.
 //
 // The registry is loaded here, above the router, because both surfaces need it: the Homepage lists
@@ -53,7 +53,7 @@ export default function App() {
   }, [route.view])
 
   // Which app the URL names. `null` when the segment is absent (fall back to the default) but
-  // `undefined`-as-missing when it names something unknown — those are different situations and
+  // `undefined`-as-missing when it names something unknown. Those are different situations, and
   // only the first should silently choose for the user. See the unknown-app branch below.
   const app = useMemo(() => {
     if (!registry || route.view !== 'fact-explorer') return null
@@ -61,16 +61,16 @@ export default function App() {
   }, [registry, route])
 
   // Which app the workspace is configured for. On /fact-explorer/<id> that is the represented app; on the
-  // Homepage — and on an unknown-app URL — there is no represented app, so the default one stands in.
+  // On the Homepage, and on an unknown-app URL, there is no represented app, so the default stands in.
   //
   // It has to stand in rather than be skipped: taxpert ships no menu of its own, so a host that does
   // not call configure() gets a nav with no destinations at all. The Homepage renders that same nav,
-  // and this is what put it there empty — no Product Experience, no Browse All, no Author Mode, and
+  // and this is what put it there empty: no Product Experience, no Browse All, no Author Mode, and
   // no feature-flag rows in Workspace settings.
   const hostApp = app ?? (registry ? defaultApp(registry) : null)
 
   // Re-register the workspace whenever that app changes. configure() replaces arrays and announces,
-  // and the global nav re-renders from that event, so this is all an app switch needs — and it lives
+  // and the global nav re-renders from that event, so this is all an app switch needs. It lives
   // above the router because the nav is on the Homepage too.
   useEffect(() => {
     if (!hostApp) return
@@ -87,7 +87,7 @@ export default function App() {
   //
   // taxpert announces the switch and navigates to the chosen destination unless someone cancels.
   // Fact Explorer cancels when the destination is Fact Explorer's own: it is one SPA over every
-  // app, so that is a route change, not a page load — the same interception the nav's Fact
+  // app, so that is a route change rather than a page load, the same interception the nav's Fact
   // Explorer entry gets. Any other destination (Product Experience, Browse All, an app's
   // Authoring Suite) is a real navigation out of Fact Explorer and is left to proceed.
   useEffect(() => {

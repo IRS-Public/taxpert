@@ -1,4 +1,4 @@
-// <taxpert-add-fact-modal> — "Add fact", the dialog the Watchlist's + button opens.
+// <taxpert-add-fact-modal>, "Add fact": the dialog the Watchlist's + button opens.
 //
 // The Fact Inspector asked for the same two values through a `<datalist>` and a free-text box: you
 // had to know a collection item's uuid by heart to watch a fact inside a collection. Both fields
@@ -10,10 +10,10 @@
 //
 // It writes to watchlist-store.js and nothing else. The panel's rows come back from that store's
 // change event, so the dialog never touches a row and there is no path between the two to keep in
-// step — the same arrangement the Tools modal has with the dock.
+// step, the same arrangement the Tools modal has with the dock.
 //
 // Public API
-//   ready — Promise resolved once the dialog has been built
+//   ready  Promise resolved once the dialog has been built
 //   open() / close()
 
 import { addToWatchlist, isWatched } from './watchlist-store.js'

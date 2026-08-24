@@ -1,4 +1,4 @@
-/* <taxpert-tool-dock> — the right-side panel area and the floating layer above it.
+/* <taxpert-tool-dock>, the right-side panel area and the floating layer above it.
 
    The dock is an ordinary flex child of the host's page layout, the way `.audit-panel` already is
    in credit-assistant (`.audit-mode` makes <body> a flex row). That means the host's content
@@ -36,7 +36,7 @@ taxpert-tool-dock[data-docked] {
   min-width: var(--ttp-min-width);
 }
 
-/* A host with a workspace-off state marks the dock `hidden` — credit-assistant does it from the
+/* A host with a workspace-off state marks the dock `hidden`. credit-assistant does it from the
    nav's workspace-toggle, since the Tools button that opens these panels is itself only there while
    the workspace is on. The two rules above set an explicit `display`, which outranks the UA
    stylesheet's `[hidden] { display: none }`, so the attribute needs saying here to mean anything —
@@ -132,7 +132,7 @@ taxpert-tool-dock[hidden] {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  /* Above the pinned workspace chrome — the global nav (1000) and the sub-nav under it (990) — and
+  /* Above the pinned workspace chrome, the global nav (1000) and the sub-nav under it (990), and
      below every modal (1050). It used to sit at 900, under both, which was fine while the chrome
      scrolled away with the page: a panel dragged to the top of the viewport simply covered whatever
      was there. Now that the two bars stay put, that same panel slid underneath them and lost its own

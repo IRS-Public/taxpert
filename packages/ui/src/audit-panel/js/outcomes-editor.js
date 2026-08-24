@@ -1,24 +1,17 @@
-// The Outcomes section of Workspace settings: editing `config.determinations` in the browser.
+// The Outcomes section of Workspace settings: editing `config.determinations` in the browser. This
+// is what making `outcome` declarative bought (shared/js/outcome-kinds.js).
 //
-// This is the pay-off for making `outcome` declarative (shared/js/outcome-kinds.js). A determination
-// used to carry a function, which meant the Outcome tracker's content could only be changed by
-// editing a host's JavaScript and rebuilding. It is JSON now, so it can be edited here, stored as an
-// override, and shared as text.
+// Its own module rather than more methods on the modal, because this is a small form builder with
+// nested lists, a kind-dependent field set and reordering, and the modal's job is to mount sections.
 //
-// Its own module rather than more methods on <taxpert-workspace-settings-modal>: this is a small
-// form-builder — nested lists, a kind-dependent field set, reordering — and the modal's job is to
-// mount sections, not to know the shape of a determination.
+// There is no draft state. Every control writes the whole array back through
+// setConfigOverride('determinations', …) on `change`, and the section re-renders from what it just
+// wrote, so there is exactly one copy of the truth.
 //
-// ── How editing works ────────────────────────────────────────────────────────────────────────
+// `change` rather than `input`, so a half-typed fact path never reaches the config and the tracker
+// does not flicker through every keystroke.
 //
-// There is no draft state. Every control writes the *whole* determinations array back through
-// setConfigOverride('determinations', …) on `change`, and the section re-renders from the config it
-// just wrote. That is affordable — the array is small and the tracker rebuilds on the same event
-// anyway — and it means there is exactly one copy of the truth. A draft layer would need saving,
-// discarding, and a story for what happens when the host re-configures mid-edit.
-//
-// `change` rather than `input`: a text field fires `change` on blur, so a half-typed fact path never
-// reaches the config and the tracker doesn't flicker through every keystroke of "/withholdingGap".
+// See ../../../../../docs/internals/audit-panel.md
 
 import { getConfig, setConfigOverride } from '../../shared/js/config.js'
 import { OUTCOME_KINDS, setDescriptorKey } from '../../shared/js/outcome-kinds.js'
@@ -26,7 +19,7 @@ import { getTemplate } from '../../shared/js/templates.js'
 
 /**
  * The editable properties of each outcome kind: the descriptor key, and the words on its field.
- * `value` has none — it means "show the fact's own formatted value", which needs no wording.
+ * `value` has none, meaning "show the fact's own formatted value", which needs no wording.
  *
  * `{abs}` is spelled out in the signed labels because a template without it silently drops the
  * amount, and this is the only place a person would find that out.
@@ -96,7 +89,7 @@ export function createOutcomesEditor (host) {
   const paths = host.querySelector('#twsm-fact-paths')
 
   // Writing the whole array is what keeps this stateless. A rejected write leaves the stored config
-  // alone and says why — the only way that happens from this form is a path or heading emptied out.
+  // alone and says why. The only way that happens from this form is a path or heading emptied out.
   function commit (determinations) {
     const result = setConfigOverride('determinations', determinations)
     if (!result.ok) {

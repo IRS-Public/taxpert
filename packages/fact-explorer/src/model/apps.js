@@ -1,16 +1,9 @@
-// The app registry — the one place that knows which Form Builder apps exist.
+// The app registry: which Form Builder apps this instance knows, and every `/app/…`
+// URL derived from one. Entries come from discovery (scripts/build-registry.mjs
+// globs each app repo's own fact-explorer.app.json), never from a list edited here.
 //
-// Fact Explorer used to *be* the credit-assistant's viewer: the EITC app's base path was spelled
-// out in the Vite proxy, the nav menu, the embedded iframe and the engine loader. This module is
-// what replaced all of those literals. Every `/app/…` URL in the SPA is now derived from an entry
-// here.
-//
-// The entries come from discovery, not registration: each app repo owns a `fact-explorer.app.json`,
-// and scripts/build-registry.mjs merges every one it finds in the apps directory
-// (FORM_BUILDER_APPS_DIR, else <repo root>/apps) into public/data/apps.json.
-//
-// React-free and fetch-free on purpose, so it is node-testable (Fact Explorer's agent rule 8) —
-// load.js does the fetching, this does the validating and deriving. Same split as load.js / fgm.js.
+// React-free and fetch-free, so it runs under plain Node in tests. load.js fetches.
+// Discovery and the descriptor contract: ../../../../docs/internals/fact-explorer-internals.md
 
 /**
  * @typedef {Object} FactExplorerAppEngine
@@ -29,7 +22,7 @@
  * @typedef {Object} FactExplorerApp
  * @property {string} id              the URL segment in /fact-explorer/:id, and the registry key
  * @property {string} label
- * @property {string} appId           FormBuilderApp.appId — the resources directory
+ * @property {string} appId           FormBuilderApp.appId, the resources directory
  * @property {string} basePath        FormBuilderApp.basePath, no trailing slash
  * @property {string} storagePrefix   namespaces the bridge's sessionStorage key
  * @property {number} [taxYear]
@@ -69,13 +62,7 @@ export function appUrl(app, suffix = '') {
 }
 
 /**
- * The nav destinations this app actually has.
- *
- * Derived from `capabilities` rather than listed, because an app built without `--allScreens` has
- * no Browse All page: offering the link anyway means a 404, and a shorter menu is a legitimate
- * taxonomy — the workspace's nav is the host's to define. Same reasoning the cookiecutter's
- * post-gen hook already applies when it prunes those two ids from `taxpert-config.html`.
- *
+ * The nav destinations this app actually has, pruned by its declared capabilities.
  * @param {FactExplorerApp} app
  * @returns {FactExplorerAppView[]}
  */
@@ -94,11 +81,6 @@ const isNonEmptyString = (x) => typeof x === 'string' && x.length > 0
 
 /**
  * Validate a registry. Returns it on success; throws with a precise message on the first problem.
- *
- * Deliberately shaped like fgm.js's validate(): the registry is as much a contract between the
- * generator and the SPA as the graph is, and a malformed entry should fail loudly at boot rather
- * than surface later as a 404 on a URL nobody can explain.
- *
  * @param {any} registry
  * @returns {FactExplorerRegistry}
  */
@@ -137,13 +119,8 @@ export function validateRegistry(registry) {
 }
 
 /**
- * Resolve an app id against the registry.
- *
- * Returns `null` for an id that is not there, rather than falling back to the default: a typo'd or
- * stale bookmark that silently shows a *different* app is the worst outcome available here. Callers
- * render an "unknown app" state. An absent id (no segment in the URL) is a different question —
- * that is what `defaultApp` is for.
- *
+ * Resolve an app id against the registry. Returns null for an unknown id (callers render an
+ * "unknown app" state) rather than falling back to the default; an absent id is `defaultApp`.
  * @param {FactExplorerRegistry} registry
  * @param {string|null|undefined} id
  * @returns {FactExplorerApp|null}

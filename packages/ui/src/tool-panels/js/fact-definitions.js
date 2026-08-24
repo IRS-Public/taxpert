@@ -1,18 +1,11 @@
-// Everything the Inspect tool needs to read out of the *fact dictionary* — as opposed to
-// fact-values.js, which reads out of the fact *graph*. The dictionary says what a fact is for and
-// how it is computed; the graph says what it is currently worth.
+// What the Inspect tool reads out of the fact *dictionary*, as opposed to fact-values.js, which
+// reads out of the fact *graph*.
 //
-// The dictionary XML itself is the audit panel's (it fetches it once, from the panel's
-// `fact-dictionary-url`, and exports the parsed Document as a live binding), so this module reads it
-// rather than fetching a second copy. Every read is defensive: the document is `null` until that
-// fetch resolves, and a path the dictionary has since dropped must produce an empty section rather
-// than an exception inside a render loop that runs on every `fg-update`.
-//
-// The interesting part is describeCondition(): the <Derived> tree of a flow or text condition,
-// flattened into plain-language clauses. It answers as *data* — an array of {text, strong} parts —
-// rather than an HTML string, so <taxpert-inspect> can build real <strong> nodes and stay inside
-// this package's no-innerHTML rule. That is the difference from condition-detail.js's popover, which
-// renders the same trees as escaped markup.
+// The dictionary XML is the audit panel's: it fetches it once and exports the parsed Document as a
+// live binding, so this module reads that rather than fetching a second copy. Every read is
+// defensive, since the document is null until that fetch resolves. describeCondition() answers as
+// data ({text, strong} parts) rather than markup, which keeps callers inside the no-innerHTML rule.
+// See ../../../../../docs/internals/tool-panels.md.
 
 import { factDictionaryXml, serializeXml } from '../../audit-panel/js/fact-dictionary.js'
 import { formatLiteral, graphPort } from './fact-values.js'
@@ -28,18 +21,16 @@ export function collectionIdOf (path) {
   return found ? found[1] : ''
 }
 
-/** The <Fact> element for an abstract path, or null — including when the dictionary hasn't landed. */
+/** The <Fact> element for an abstract path, or null, including before the dictionary lands. */
 export function getFactDefinition (abstractPath) {
   if (!factDictionaryXml || !abstractPath) return null
-  // A fact path is a dictionary-authored string of segments; it never contains a quote, so this is
-  // the same lookup condition-detail.js has always done.
+  // A fact path is a dictionary-authored string of segments and never contains a quote.
   return factDictionaryXml.querySelector(`Fact[path="${abstractPath}"]`)
 }
 
 /**
- * How the dictionary produces the fact: 'Writable' (the taxpayer answers it), 'Derived' (computed
- * from other facts), 'Constant', or '' when it is unknown. This is the "Fact type:" line under
- * Advanced.
+ * How the dictionary produces the fact: 'Writable' (a person answers it), 'Derived' (computed from
+ * other facts), 'Constant', or '' when unknown. The "Fact type:" line under Advanced.
  */
 export function factTypeLabel (definition) {
   if (!definition) return ''
@@ -56,8 +47,7 @@ export function factPurpose (definition) {
 
 /**
  * A fact's human name: its <Name> when the dictionary gives one, otherwise its last path segment
- * un-camel-cased ('hasLivedInUSMore6Months' → 'has lived in u s more6 months'). The same fallback
- * condition-detail.js uses, so the two surfaces name a fact identically.
+ * un-camel-cased. The same fallback condition-detail.js uses, so the two surfaces agree.
  */
 export function factLabel (abstractPath) {
   const name = getFactDefinition(abstractPath)?.querySelector(':scope > Name')?.textContent?.trim()
@@ -76,10 +66,8 @@ export function resolveDependencyPath (rawPath, abstractPath) {
 }
 
 /**
- * Every fact the definition depends on, as abstract paths in document order and deduped — the
- * Dependencies table. Abstract rather than concrete because that is what both the table's Fact
- * column shows and what readFact() wants; the collection id that resolves a wildcard travels
- * alongside it, not spliced in here.
+ * Every fact the definition depends on, as abstract paths in document order and deduped. The
+ * collection id that resolves a wildcard travels alongside these, and is not spliced in here.
  * @returns {string[]}
  */
 export function dependenciesOf (abstractPath) {
@@ -94,16 +82,13 @@ export function dependenciesOf (abstractPath) {
   return [...seen]
 }
 
-// ── Plain language ────────────────────────────────────────────────────────────
-
 const CONNECTIVE = new Map([
   ['All', 'all of the following are true'],
   ['Any', 'any of the following are true'],
   ['', 'the following is true'],
 ])
 
-// The subject each kind of condition is spoken about as. A flow condition gates a question; a
-// condition inside the copy gates a phrase.
+// The subject each kind of condition is spoken about as.
 const SUBJECT = new Map([
   ['flow', 'This question'],
   ['text', 'This text'],
@@ -120,11 +105,9 @@ export function dependsOnLead (kind) {
 }
 
 /**
- * A flow or text condition, said in plain language.
- *
- * The lead sentence names what the condition gates and under what circumstance; the clauses unfold
- * the fact's own <Derived> tree one bullet at a time. A condition on a <Writable> fact has no tree,
- * so it gets a lead and no clauses — which is the whole truth about it.
+ * A flow or text condition, said in plain language. The lead names what the condition gates and
+ * under what circumstance; the clauses unfold the fact's <Derived> tree one bullet at a time. A
+ * condition on a <Writable> fact has no tree, so it gets a lead and no clauses.
  *
  * @param {{path: string, operator: string, kind: string}} condition as read off the flow element
  * @returns {{lead: string, clauses: {text: string, strong: boolean}[][]}}
@@ -136,8 +119,8 @@ export function describeCondition ({ path, operator, kind }) {
   const definition = getFactDefinition(abstractPath)
   const { connective, clauses } = unfold(definition?.querySelector(':scope > Derived'), abstractPath)
 
-  // `isFalse` inverts the gate, so the fact's own tree is no longer a description of when the item
-  // shows — it describes when the fact is true, which is when the item is *hidden*. Say both.
+  // `isFalse` inverts the gate: the fact's own tree describes when the fact is true, which is when
+  // the item is hidden. Say both.
   if (operator === 'isFalse') {
     const lead = `${subject} is shown when ${label} is not true.`
     if (!clauses.length) return { lead, clauses }
@@ -150,8 +133,7 @@ export function describeCondition ({ path, operator, kind }) {
 
 /**
  * Flatten a <Derived> tree one level: an All/Any becomes its connective plus a clause per child,
- * anything else becomes a single clause. Deliberately shallow — a bullet list is the design, and a
- * nested tree rendered as nested bullets is the popover's job, not the panel's.
+ * anything else becomes a single clause. Deliberately shallow.
  */
 function unfold (derived, abstractPath) {
   const root = derived?.firstElementChild
@@ -166,7 +148,7 @@ function unfold (derived, abstractPath) {
   return { connective: '', clauses: [clauseFor(root, abstractPath)] }
 }
 
-/** One bullet, as the parts that make it: plain text, and the words the designs set in bold. */
+/** One bullet, as the parts that make it: plain text, and the words set in bold. */
 function clauseFor (node, abstractPath) {
   if (!node) return [{ text: 'an unnamed condition', strong: false }]
 
@@ -208,8 +190,8 @@ function clauseFor (node, abstractPath) {
       return [{ text: 'always true', strong: false }]
 
     default:
-      // A Switch, an Equal, a comparison — shapes a bullet can't carry honestly. Name it and leave
-      // the reader to the XML under Advanced, which is right there.
+      // A Switch, an Equal, a comparison: shapes a bullet cannot carry. Name it and leave the reader
+      // to the XML under Advanced.
       return [
         { text: `a ${node.tagName} expression — see the XML below`, strong: false },
       ]
@@ -223,14 +205,10 @@ function named (node, abstractPath) {
   return [{ text: factLabel(resolved), strong: false }]
 }
 
-// ── The raw definition ────────────────────────────────────────────────────────
-
 /**
- * The fact's dictionary XML, with every resolvable <Dependency> annotated with its current value —
- * the readable form of what `factGraph.debugFact('/chosenTaxYear')` prints to the console.
- *
- * Returned as plain text, not markup: <taxpert-inspect> writes it with textContent into a <pre>, so
- * there is nothing here to escape and no way for a dictionary <Description> to become HTML.
+ * The fact's dictionary XML with every resolvable <Dependency> annotated with its current value.
+ * Returned as plain text, so <taxpert-inspect> can write it into a <pre> with textContent and there
+ * is no way for a dictionary <Description> to become HTML.
  */
 export function factXml (abstractPath, collectionId = '') {
   const definition = getFactDefinition(abstractPath)
@@ -241,7 +219,7 @@ export function factXml (abstractPath, collectionId = '') {
   }
 
   // The serializer indents relative to the document, so every line after the first carries four
-  // spaces of the <FactDictionaryModule> nesting the reader doesn't care about.
+  // spaces of <FactDictionaryModule> nesting.
   let xml = serializeXml(definition)
     .split('\n')
     .map((line, index) => (index === 0 ? line : line.replace(/^ {4}/, '')))
@@ -259,15 +237,14 @@ export function factXml (abstractPath, collectionId = '') {
     const annotation = annotate(graph, concrete)
     if (!annotation) continue
     // String.replace with a string pattern replaces the first occurrence, which is the attribute
-    // this dependency was read from — the same splice condition-detail.js makes.
+    // this dependency was read from.
     xml = xml.replace(`path="${rawPath}"`, `path="${rawPath}"${annotation}`)
   }
   return xml
 }
 
-// A path the port has no opinion about — no graph yet, or a path the dictionary has dropped — comes
-// back null and is left unannotated; only `fact.get`, which is the host's own accessor, can still
-// throw here.
+// A path the port has no opinion about comes back null and is left unannotated. Only `fact.get`,
+// the host's own accessor, can still throw here.
 function annotate (graph, concretePath) {
   const fact = graph.get(concretePath)
   if (!fact) return ''

@@ -2,7 +2,7 @@
 // on-canvas vs. whole-graph hits, and ‹ › step through the on-canvas matches.
 //
 // "Find:" with the input beside it became a titled section with a hint above a full-width USWDS
-// input — the panel's three sections (Search / Filter / Layers) are one shape, and this is the
+// input. The panel's three sections are one shape, and this is the
 // first of them.
 import PropTypes from 'prop-types'
 

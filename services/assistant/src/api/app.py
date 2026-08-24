@@ -1,3 +1,10 @@
+"""FastAPI application: CORS, /health, and the two orchestrators.
+
+Both orchestrators are constructed once at import time. If that fails the
+routes answer 503 until the process is restarted, so the startup log is the
+first place to look. See ../../../../docs/internals/assistant-service.md
+"""
+
 from __future__ import annotations
 
 import logging
@@ -13,29 +20,28 @@ from src.logging_config import configure_logging
 load_dotenv()
 configure_logging(os.environ.get("LOG_LEVEL", "INFO"))
 
-# Suppress LiteLLM's noisy startup warnings about optional AWS providers (botocore not installed).
+# Silence LiteLLM's startup warnings about optional providers it cannot import.
 logging.getLogger("LiteLLM").setLevel(logging.ERROR)
 
-# LiteLLM reads OLLAMA_API_BASE for Ollama models; support the legacy OLLAMA_HOST name too.
+# LiteLLM reads OLLAMA_API_BASE, the ollama client reads OLLAMA_HOST. Copy one way
+# only, so setting OLLAMA_HOST alone configures both.
 if "OLLAMA_API_BASE" not in os.environ and "OLLAMA_HOST" in os.environ:
     os.environ["OLLAMA_API_BASE"] = os.environ["OLLAMA_HOST"]
 
 logger = logging.getLogger(__name__)
 
 
-# Default scenario/flow directories. The application lives in its own repository, checked out under
-# the taxpert repo's apps/ directory by convention (see apps/README.md). `make dev` runs uvicorn from
-# services/assistant/, so these resolve relative to that cwd; both are overridable via env, and the
-# scenario orchestrator is simply unavailable when they do not exist.
+# Relative to services/assistant/, which is where `make dev` runs uvicorn. Assumes
+# the application repo is checked out under apps/ (see apps/README.md).
 _DEFAULT_SCENARIOS_DIR = "../../apps/credit-assistant/src/main/resources/credit-assistant/scenarios"
 _DEFAULT_FLOW_DIR = "../../apps/credit-assistant/src/main/resources/credit-assistant/flow"
 
 
 def _build_orchestrators():
-    """Construct both orchestrators sharing the fact dictionary + RAG retriever.
+    """Construct both orchestrators, sharing the fact dictionary and RAG retriever.
 
-    Returns ``(chat, scenario)``; either may be None if its dependencies are
-    unreachable (Ollama/Chroma) or, for the scenario one, the directories are missing.
+    Returns ``(chat, scenario)``. Both are None when any dependency is
+    unreachable, which the routes surface as a 503.
     """
     try:
         from src.agent.orchestrator import AgentOrchestrator
@@ -89,10 +95,8 @@ def _build_orchestrators():
 
 app = FastAPI(title="EITC Chat Backend", version="0.1.0")
 
-# FRONTEND_ORIGIN is a comma-separated allow-list so the same backend can serve both
-# the credit-assistant audit panel (:3003) and Fact Explorer (:5180). Each browser
-# preflight (OPTIONS) carries an Origin header that must match one of these, or the
-# CORS middleware refuses the request and it falls through to a 400.
+# Comma-separated allow-list, so one backend can serve an application's audit
+# panel and Fact Explorer at once. Constrains browsers only.
 _frontend_origins = [
     origin.strip()
     for origin in os.getenv("FRONTEND_ORIGIN", "http://localhost:3003,http://localhost:5180").split(

@@ -1,4 +1,4 @@
-/* The Overrides tool — a form over the writable facts a host named in config.tools.
+/* The Overrides tool: a form over the writable facts a host named in config.tools.
    The only tool that writes, so it is the only one with inputs; everything else here follows the
    same --ttp-* token layer the other three panels use. */
 
@@ -19,7 +19,7 @@
   gap: 0.25rem;
 }
 
-/* A fact path, read as a path — the same mono face the Inspect panel's XML uses, for the same
+/* A fact path, read as a path, in the same mono face the Inspect panel's XML uses, for the same
    reason: two similar paths are hard to tell apart in a proportional font. */
 .ttp-overrides .ttp-overrides__label {
   margin: 0;

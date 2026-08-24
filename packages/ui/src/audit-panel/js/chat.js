@@ -1,18 +1,14 @@
-// Explain & Analyze chat. Ported from credit-assistant. Initialization is exported (initChat) so
-// the panel can call it once its DOM is built rather than running at module-eval time.
+// Explain and Analyze chat. Initialization is exported so the panel can call it once its DOM is
+// built, rather than running at module-eval time.
 //
-// The backend base follows the same order fact-graph-io.js documents — panel attribute, then
-// config.endpoints.apiBase — rather than a second copy of the default URL, which is what the two
-// files used to disagree about the day one of them changed.
+// The backend base resolves in the same order fact-graph-io.js uses, panel attribute then
+// config.endpoints.apiBase, rather than keeping a second copy of the default URL.
 import { factDictionaryXml, makeCollectionIdPath } from './fact-dictionary.js'
 import { getAuditPanelStorage } from './storage.js'
 import { getConfig } from '../../shared/js/config.js'
 import { storageKey } from '../../shared/js/storage-keys.js'
 
-// Where the transcript is kept across page loads. A function, and invoked at each use: this module
-// is imported before the host calls configure(), so a captured key would pin the default prefix.
-// It was the unprefixed 'auditPanelChat' and is now '<prefix>:auditPanelChat' — one conversation is
-// dropped on upgrade, the accepted one-time reset described in storage-keys.js.
+// Invoked at each use, never captured: this module is imported before the host calls configure().
 const chatStorageKey = () => storageKey('auditPanelChat')
 
 // ── Chat HTTP ─────────────────────────────────────────────────────────────────
@@ -216,7 +212,7 @@ function _appendChatMessage (role, content) {
   if (!container) return
   const msg = document.createElement('div')
   msg.className = `chat-message chat-message--${role}`
-  // A markdown renderer over LLM response text — output depends entirely on the response, so
+  // A markdown renderer over LLM response text. Output depends entirely on the response, so
   // there is no fixed markup to put in a template.
   // eslint-disable-next-line no-restricted-syntax
   msg.innerHTML = _renderMarkdown(content)

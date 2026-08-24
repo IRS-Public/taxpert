@@ -1,41 +1,18 @@
-// How a determination's rollup fact is spoken — as data rather than as a function.
+// How a determination's rollup fact is spoken, as a JSON descriptor rather than a function, so a
+// determination can be edited in Workspace settings, shipped in a taxpert.config.json, or pasted
+// between browsers. A function is still accepted and passes through untouched, but cannot be
+// stored or edited.
 //
-// A determination used to carry `outcome: (raw, value) => string`. Everything else about it — its
-// label, its rollup path, its sections and their fact paths — was already JSON, so that one
-// function was the only thing standing between `config.determinations` and a list a person could
-// edit in the Workspace settings UI, ship in a `taxpert.config.json`, or paste between browsers.
+// This lives in shared/ because two surfaces speak a rollup and have to say the same words.
 //
-// So `outcome` is now a *descriptor* over a closed registry of kinds:
-//
-//   { kind: 'boolean', true: 'At risk', false: 'Not at risk' }
-//   { kind: 'map', values: { single: 'Single', headOfHousehold: 'Head of household' } }
-//   { kind: 'signed', positive: 'Balance due of {abs}', negative: 'Refund of {abs}',
-//                     zero: 'On target' }
-//   { kind: 'value' }
-//
-// WHY THESE FOUR AND NO MORE. They cover every determination that exists today across both hosts:
-// credit-assistant's filing-status enum (`map`) and its three inverted booleans, and the
-// tax-withholding-estimator's dollar rollup (`signed`) and its two booleans. The registry is sized
-// to what ships, not to what might — a fifth kind should be added the day a host needs it and can
-// point at the determination that does.
-//
-// A FUNCTION IS STILL ACCEPTED, and passes through untouched. A host with a genuinely bespoke
-// rollup keeps it; it simply cannot be edited from the UI or expressed in JSON, and the editor says
-// so rather than silently dropping it.
-//
-// resolveOutcome() is in shared/ rather than in the Outcome tracker because two surfaces speak a
-// rollup: the tracker's summary line and credit-assistant's eligibility dashboard badge. They read
-// the same determination and must say the same words.
+// See ../../../../../docs/internals/workspace-configuration.md
 
-/** Every `kind` a descriptor may name. Anything else is invalid — see config-schema.js. */
+/** Every `kind` a descriptor may name. config-schema.js refuses to store any other. */
 export const OUTCOME_KINDS = ['boolean', 'map', 'signed', 'value']
 
 /**
- * Set `key` on `target` without a computed member access.
- *
- * Every writer of a descriptor — this file's callers, and the Workspace settings editor — is
- * writing a key that came from typed-in data, so none of them may use `target[key] = value`.
- * Exported so there is one such helper rather than one per module.
+ * Set `key` on `target` without a computed member access. Descriptor keys come from typed-in data,
+ * so every writer of one goes through this rather than `target[key] = value`.
  */
 export function setDescriptorKey (target, key, value) {
   Object.defineProperty(target, key, {
@@ -47,13 +24,12 @@ export function setDescriptorKey (target, key, value) {
 /** The token `signed`'s three templates may contain: the formatted value with its sign stripped. */
 const ABS_TOKEN = '{abs}'
 
-// `raw` is whatever the host's graph holds; `value` is the same fact already run through the
-// tracker's formatter (a Dollar arrives as "$1,240" / "-$1,240", an enum as its option name).
-// Every kind below may fall back to `value`, which is why it is passed to all of them.
+// Throughout: `raw` is whatever the host's graph holds, and `value` is the same fact already run
+// through the tracker's formatter, so a Dollar arrives as "$1,240" and an enum as its option name.
+// Every kind may fall back to `value`, which is why all of them receive it.
 
 function booleanOutcome (descriptor) {
-  // Strictly `=== true`, matching the hosts' own `raw === true ? … : …`. A fact that is incomplete
-  // never reaches here — the tracker only speaks a rollup once it has settled.
+  // Strictly `=== true`. An incomplete fact never reaches here; the tracker waits for it to settle.
   return (raw, value) => {
     const spoken = raw === true ? descriptor.true : descriptor.false
     return spoken ?? value
@@ -61,11 +37,9 @@ function booleanOutcome (descriptor) {
 }
 
 function mapOutcome (descriptor) {
-  // Built once per resolve, and a Map rather than the plain object it came from: the lookup key is
-  // a fact value, and `values[raw]` would be a computed member access on host data.
+  // A Map rather than the plain object it came from: the lookup key is host data.
   const values = new Map(Object.entries(descriptor.values ?? {}))
-  // A value the map has no entry for falls through to the graph's own formatting rather than being
-  // swallowed — an enum option a dictionary grows later shows up as itself, not as blank.
+  // An unmapped value falls through to the graph's own formatting rather than rendering blank.
   return (raw, value) => values.get(String(raw)) ?? value
 }
 
@@ -77,8 +51,8 @@ function signedOutcome (descriptor) {
 
     const template = amount > 0 ? descriptor.positive : descriptor.negative
     if (!template) return value
-    // The formatted value carries the sign as well as the magnitude, and the templates already say
-    // which direction they mean ("Refund of …"), so a leading minus would say it twice.
+    // The templates already name the direction ("Refund of ..."), and the formatted value carries
+    // the sign, so a leading minus would say it twice.
     return template.replaceAll(ABS_TOKEN, String(value).replace(/^-/, ''))
   }
 }
@@ -105,8 +79,6 @@ export function resolveOutcome (outcome) {
   if (typeof outcome === 'function') return outcome
   if (!outcome || typeof outcome !== 'object') return null
   const build = KINDS.get(outcome.kind)
-  // An unknown kind is a host error, and answering `null` degrades to the raw formatted value
-  // rather than blanking the summary. config-schema.js is what refuses to store one.
   if (!build) {
     console.warn(`taxpert: unknown outcome kind "${outcome.kind}"`)
     return null
@@ -114,10 +86,7 @@ export function resolveOutcome (outcome) {
   return build(outcome)
 }
 
-/**
- * What a determination says once its rollup has settled — the one line both the Outcome tracker and
- * credit-assistant's eligibility dashboard render, so neither has to remember the fallback.
- */
+/** What a determination says once its rollup has settled, with the fallback applied. */
 export function outcomeText (outcome, raw, value) {
   return resolveOutcome(outcome)?.(raw, value) ?? value
 }

@@ -1,4 +1,7 @@
-"""LiteLLM tool-calling schema definitions for the scenario-generation agent."""
+"""Tool schemas the scenario loop passes to litellm.completion.
+
+Descriptions here are prompt text. Dispatch lives in scenario_orchestrator.py.
+"""
 
 from __future__ import annotations
 

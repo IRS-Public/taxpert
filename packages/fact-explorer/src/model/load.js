@@ -1,19 +1,16 @@
-// The single seam between data and UI.
+// The only place the SPA fetches a graph, a registry or a scenario index. Every
+// component reads through loadGraph(), so changing data source is never a component
+// change. Mode comes from VITE_FGM_SOURCE (see .env.example).
 //
-// Every component reads the graph ONLY through loadGraph(). Swapping mock data
-// for real data is therefore never a component change — it's a source change
-// behind this function. See .env.example for VITE_FGM_SOURCE.
-//
-// This module fetches; apps.js and fgm.js validate. Same split on both sides, and it is what keeps
-// both of those node-testable without a Vite server or a fetch polyfill.
+// This module fetches; apps.js and fgm.js validate.
+// Source precedence and the overlay merge: ../../../../docs/internals/fact-explorer-internals.md
 import { validate } from './fgm.js'
 import { validateRegistry } from './apps.js'
 
-/** The app-agnostic S0 fixture. Not per-app: it is one hand-authored graph that exercises every
- *  node category and edge kind, and its job is to make fact-explorer render with no build at all. */
+/** Hand-authored, app-agnostic fixture exercising every node category and edge kind. */
 const MOCK = '/data/form-builder-graph.mock.json'
 
-/** The registry, written by scripts/build-registry.mjs from the apps' own fact-explorer.app.json files. */
+/** Written by scripts/build-registry.mjs from the apps' own fact-explorer.app.json files. */
 const REGISTRY = '/data/apps.json'
 
 async function fetchJson(url) {
@@ -51,15 +48,7 @@ export function loadRegistry() {
   return registryPromise
 }
 
-/**
- * Fetch one app's generated graph, preferring the app's own build output.
- *
- * `remote` is the Scala generator's `{basePath}/resources/form-builder-graph.json`, served by the
- * running app and reached through the dev proxy — authoritative, because it comes from the same
- * parser that generated the site. `local` is the Node generator's copy under fact-explorer's public/ —
- * the offline fallback for when the app is not running. Trying them in that order is what lets an
- * app adopt `--formBuilderGraph` with no registry change.
- */
+/** Fetch one app's generated graph: `remote` (served by the running app) first, then `local`. */
 async function fetchAppGraph(app) {
   for (const url of [app.fgm?.remote, app.fgm?.local].filter(Boolean)) {
     try {
@@ -91,8 +80,6 @@ export async function loadGraph(app) {
   if (mode === 'real') return validate({ ...EMPTY, ...real })
 
   // overlay: take whichever slices "real" provides; fall back to mock per-slice.
-  // This is what lets the Scala generator ship "facts only" while flow stays
-  // mocked, then add flow, etc. — incremental de-mocking, no component edits.
   return validate({
     version: real.version ?? mock.version,
     generatedAt: real.generatedAt ?? mock.generatedAt,
@@ -106,12 +93,7 @@ export async function loadGraph(app) {
 }
 
 /**
- * Load one app's scenario index.
- *
- * Behind this seam rather than fetched in a component (agent rule 1) — it was the one place that
- * still reached for `/data/…` directly. An app with no scenarios (`scenarios: null` in its
- * descriptor, as TWE has) yields an empty list rather than a 404, so the picker is simply empty.
- *
+ * Load one app's scenario index. An app with no scenarios yields an empty list, not a 404.
  * @param {import('./apps.js').FactExplorerApp} app
  * @returns {Promise<Array<object>>}
  */

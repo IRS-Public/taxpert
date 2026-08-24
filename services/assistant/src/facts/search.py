@@ -1,4 +1,9 @@
-"""Keyword-based fact search for the identify_facts LLM tool."""
+"""Keyword search over the fact dictionary, backing the ``identify_facts`` tool.
+
+Returns static structure only (paths, names, types, dependency paths). Live
+values come from the tracked-fact tree the browser sends.
+See ../../../../docs/internals/assistant-service.md
+"""
 
 from __future__ import annotations
 
@@ -49,12 +54,8 @@ def identify_facts(
         if matches:
             return [_to_result(f) for f in matches[:max_results]]
 
-    # Tier 3: keyword scoring.
-    # Matches in the fact path or human-readable name are far more indicative of
-    # relevance than a keyword that merely appears somewhere in a long description
-    # (e.g. an IRA-limit fact whose description happens to mention "filing status").
-    # Weight path/name hits above description hits so the canonical fact for a term
-    # ranks ahead of facts that only mention it incidentally.
+    # Tier 3: keyword scoring, weighting path and name hits above description
+    # hits so the canonical fact for a term outranks incidental mentions.
     keywords = q_lower.split()
     if not keywords:
         return []

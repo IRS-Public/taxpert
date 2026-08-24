@@ -1,21 +1,14 @@
 // Pointer-drag and keyboard-step plumbing shared by everything draggable in the dock.
 //
-// Ported from taxpert-audit-panel.js's _setupWidthControls(), which is the established shape in this
-// repo: pointer capture on the handle, move/up bound on `window` so a fast drag that outruns the
-// cursor still tracks, a body class carrying the cursor and `user-select: none` for the duration,
-// and arrow-key parity on the same handle so a resize is not mouse-only.
-//
-// Generalised in two ways: the handle reports deltas rather than an absolute width (there are four
-// things to resize here, on both axes), and `resizePair` does the one piece of arithmetic the CSS
-// can't — splitting two flex ratios by where their shared edge was dragged to.
+// Move and up are bound on `window` so a drag that outruns the cursor still tracks, a body class
+// carries the cursor and `user-select: none` for the duration, and every handle takes arrow keys as
+// well as the pointer. See ../../../../../docs/internals/tool-panels.md.
 
 const KEYBOARD_STEP = 24
 
 /**
- * Turn `handle` into a pointer-drag source.
- *
- * `onMove` receives deltas from the *press point*, not the previous frame, so a handler can always
- * work from the geometry it captured in `onStart` and never accumulate rounding drift.
+ * Turn `handle` into a pointer-drag source. `onMove` receives deltas from the press point, not the
+ * previous frame, so a handler never accumulates rounding drift.
  *
  * @param {Element} handle
  * @param {object} options
@@ -93,12 +86,8 @@ export function onKeyResize (handle, onStep, step = KEYBOARD_STEP) {
 }
 
 /**
- * Split a pair of flex ratios by where their shared edge was dragged to.
- *
- * Two adjacent boxes with ratios a and b share a total, whatever that total is in px. Moving their
- * edge `delta` px redistributes the same sum: the pair keeps its combined share of the parent, so
- * dragging one splitter never disturbs a third sibling. `min` is honoured on both sides, which is
- * how PANEL_MIN_WIDTH survives a drag without the CSS min-width silently fighting the ratio.
+ * Split a pair of flex ratios by where their shared edge was dragged to. The pair keeps its combined
+ * share of the parent, so dragging one splitter never disturbs a third sibling.
  *
  * @param {{flex:number, size:number}} first  ratio and current px size of the leading box
  * @param {{flex:number, size:number}} second ratio and current px size of the trailing box
@@ -119,11 +108,7 @@ export function resizePair (first, second, delta, min) {
   return [firstFlex, sum - firstFlex]
 }
 
-/**
- * Keep a `role="separator"` handle's value in step with what it is splitting, so assistive tech
- * reads a position rather than an unlabelled control. Expressed as a percentage of the pair, which
- * is meaningful without knowing the container's px size.
- */
+/** Keep a `role="separator"` handle's aria-value* in step, as a percentage of the pair it splits. */
 export function updateSeparator (handle, ratio) {
   const now = Math.round(ratio * 100)
   handle.setAttribute('aria-valuemin', '0')

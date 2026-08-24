@@ -22,7 +22,7 @@
   color: var(--color-text-muted);
 }
 
-/* Tag color dot — the swatch color is driven by ANNOTATION_TAG_STYLE inline. */
+/* Tag color dot. The swatch color is driven by ANNOTATION_TAG_STYLE inline. */
 .annotate-editor__dot {
   width: 10px;
   height: 10px;

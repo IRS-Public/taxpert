@@ -3,7 +3,7 @@
   user-select: none;
 }
 
-/* ── Base panel — hidden until audit-mode is active ────────────────────── */
+/* ── Base panel, hidden until audit-mode is active ─────────────────────── */
 
 .audit-panel {
   --audit-panel-handle-width: 0.75rem;
@@ -101,7 +101,7 @@ body.audit-mode:not(.ff-legacy-audit-panel) .audit-panel {
   padding-left: 1rem;
 }
 
-/* ── Resizer — only meaningful when content is visible ─────────────────── */
+/* ── Resizer, only meaningful when content is visible ──────────────────── */
 
 .audit-panel__resizer {
   display: none;
@@ -128,7 +128,7 @@ body.audit-mode:not(.ff-legacy-audit-panel) .audit-panel {
   display: block;
 }
 
-/* ── Content pane — hidden until a tab is activated ────────────────────── */
+/* ── Content pane, hidden until a tab is activated ─────────────────────── */
 
 .audit-panel__content {
   display: none;

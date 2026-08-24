@@ -1,30 +1,18 @@
-// <taxpert-scenario-modal> — "Manage scenario", the single surface for everything that puts a
-// Fact Graph on the page: reset, copy, paste, AI generation, and the scenario library.
+// <taxpert-scenario-modal>, "Manage scenario": the single surface for everything that puts a fact
+// graph on the page. Reset, copy, paste, AI generation, and the scenario library.
 //
-// These used to be two tabs in the audit panel's right rail (Graph Inspector + Scenarios). They
-// aren't inspection — they're one setup task you do once and dismiss — so they moved out of the
-// rail and behind the global nav's "Scenario" button, which is what opens this modal.
+// The element self-wires, listening on the document for the nav's `nav-tool-select` event and
+// opening on detail.id === 'scenario'. <taxpert-audit-panel> creates it and forwards the host's
+// scenario <option>s and registerScenarioFilters() call.
 //
-// The element self-wires: it listens on the document for the nav's `nav-tool-select` event and
-// opens on detail.id === 'scenario', so a host only has to have both elements on the page. It is
-// created and owned by <taxpert-audit-panel> (see taxpert-audit-panel.js), which forwards the
-// host-supplied scenario <option>s and registerScenarioFilters() call to it.
+// It lives in this bundle because its behavior already did (fact-graph-io.js) and because it shares
+// the panel's toggled stylesheet.
 //
-// It lives in the audit-panel bundle because that is where its behavior already lived
-// (fact-graph-io.js) and because it shares the panel's toggled stylesheet.
+// Public API: ready, open(), close(), scenarioOptions, scenarioOptionsHtml,
+// registerScenarioFilters(fields, parseFilename), setAiScenarioGeneration(on).
 //
-// Public API
-//   ready                                  — Promise resolved once the dialog has been built
-//   open() / close()
-//   scenarioOptions = <option> nodes       — the host's scenario library (nodes, fragment, or list)
-//   scenarioOptionsHtml = '<option …>'     — the same, as an HTML string (legacy string path)
-//   registerScenarioFilters(fields, parseFilename)
-//   setAiScenarioGeneration(on)            — reveal/hide the AI generation section
-//
-// The markup lives in templates/scenario-modal.html and the <dialog> chrome in the shared shell
-// (shared/templates/shared.html); building it means cloning both. Every id the ported behavior
-// queries by (#load-fact-graph, #scenario-select, #scenario-gen-prompt, …) is preserved there, so
-// fact-graph-io.js works unchanged.
+// Every id the ported behavior queries by is preserved in templates/scenario-modal.html, so
+// fact-graph-io.js works unchanged. See ../../../../../docs/internals/audit-panel.md
 
 import {
   copyFactGraphToClipboard,
@@ -78,7 +66,7 @@ class TaxpertScenarioModal extends HTMLElement {
 
   // ── Public API ───────────────────────────────────────────────────────────────
 
-  /** The host's scenario library as nodes — an array, NodeList, or DocumentFragment. */
+  /** The host's scenario library as nodes: an array, NodeList, or DocumentFragment. */
   set scenarioOptions (options) {
     this._scenarioOptions = null
     if (options) {
@@ -114,7 +102,7 @@ class TaxpertScenarioModal extends HTMLElement {
 
   // AI scenario generation is an alpha feature, flagged separately from AI fact explanation. The
   // section is always rendered and carries data-ff="ai-scenario-generation"; revealing it is one
-  // body class (shared/styles/feature-flags.css), which is also what applyFlags() writes — so the
+  // body class (shared/styles/feature-flags.css), which is also what applyFlags() writes, so the
   // flag has exactly one representation in the DOM.
   setAiScenarioGeneration (on) {
     setFlagClass('ai-scenario-generation', on)
@@ -239,7 +227,7 @@ class TaxpertScenarioModal extends HTMLElement {
     )
     this.querySelector('#load-scenario-btn')?.addEventListener('click', loadScenarioFromAuditPanel)
     this.querySelector('#generate-scenario-btn')?.addEventListener('click', generateScenarioFromPrompt)
-    // Clears the loaded scenario, not just the AI section's result — see clearScenario().
+    // Clears the loaded scenario, not just the AI section's result. See clearScenario().
     this.querySelector('#all-screens-clear-scenario')?.addEventListener('click', clearScenario)
   }
 }

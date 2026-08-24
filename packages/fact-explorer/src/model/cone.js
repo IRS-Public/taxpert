@@ -1,35 +1,17 @@
-// Rooted dependency cone (M4+). The de-tangler for dense Fact-Dictionary slices.
+// Rooted dependency cone: keep one output node and its transitive dependency
+// ancestors, laid out as a layered tree. A pure FGM to sub-FGM stage whose output
+// still passes validate(), and the readable framing for a dense fact file.
 //
-// A fact file like eitcEligibility.xml (253 derived facts, 651 `depends` edges)
-// is a hairball under the banded swim-lane layout — that layout was built for
-// flow-page slices (a flow spine with facts hanging off questions), and a fact
-// file has no spine. The cone answers the question that actually matters when
-// reading derived logic: "what feeds THIS output, and nothing else?". Pick an
-// output (a knockout alert, or any derived fact) and we keep only its transitive
-// dependency ancestors, laid out as a clean layered tree.
-//
-// Like slice.js / filter.js / facets.js / drill.js this is a pure FGM→sub-FGM
-// stage: it adds no data and the sub-FGM it returns still passes validate(). It
-// is the N-hop, dependency-DIRECTED generalisation of drill.js's 1-hop ego view.
-//
-// Edge direction (confirmed in make-static-fgm.mjs): a `depends` edge is
-//   source = the fact  →  target = the fact it depends on
-// so the cone walks OUTGOING `depends` edges from the root toward its inputs.
-//
-// View-only flags ride on node.data (same idiom as __context / __focal): the
-// root is __focal; high-fan-in hubs (tax-year constants, /isFilingStatusMFJ, …)
-// are __hub so coneLayout pins them to a dedicated "inputs rail" instead of
-// letting them spider across the canvas. Nothing is dimmed — a cone is all
-// in-focus by construction.
+// A `depends` edge runs source = the fact, target = the fact it depends on, so the
+// walk follows OUTGOING `depends` from the root toward its inputs.
+// Why the cone exists and how ranking works: ../../../../docs/internals/fact-explorer-internals.md
 
-// A fact depended on by at least this many other facts is a "hub": a shared
-// input (e.g. /isTaxYear2025 → 28 dependants, /isFilingStatusMFJ → 13). Hubs are
-// railed rather than placed inline, which is where most crossing edges come from.
+// A fact depended on by at least this many other facts is a hub: a shared input
+// that coneLayout pins to an inputs rail instead of placing inline.
 export const HUB_FANIN_THRESHOLD = 8
 
-// Edges that belong in a dependency cone: fact→fact dependencies plus the
-// flow↔fact edges that let a knockout alert seed the cone / a writable show its
-// binding question. Flow `sequential` edges are intentionally excluded.
+// fact-to-fact dependencies plus the flow-to-fact edges that let an alert seed the
+// cone or a writable show its binding question. `sequential` is excluded.
 const CONE_EDGE_KINDS = new Set(['depends', 'knocks-out', 'binds', 'gates', 'shows', 'displays'])
 const FLOW_FACT_ENTRY = new Set(['knocks-out', 'binds', 'gates', 'shows', 'displays'])
 
@@ -89,10 +71,8 @@ export function coneGraph(graph, rootId, { maxDepth = Infinity, hubThreshold } =
   }
 
   const successors = (id) => {
-    // Facts expand toward their dependencies, plus the question that binds a
-    // writable (a terminal leaf). Only the ROOT flow node (a knockout alert)
-    // expands into facts; a binding question reached mid-walk is terminal, so the
-    // cone never bleeds back through that question's other gated/shown facts.
+    // Only the ROOT flow node expands into facts; a binding question reached mid-walk
+    // is terminal, so the cone never bleeds through that question's other facts.
     if (factIds.has(id)) return [...(depOut.get(id) ?? []), ...(bindsByFact.get(id) ?? [])]
     if (id === rootId && flowIds.has(id)) return flowEntry.get(id) ?? []
     return []
@@ -136,9 +116,8 @@ export function coneGraph(graph, rootId, { maxDepth = Infinity, hubThreshold } =
 const MAIN_STRIDE = 150 // distance between ranks (root → leaves)
 const CROSS_STRIDE = 270 // distance between siblings within a rank
 
-// Orient an edge root→leaf so ranks increase toward the inputs. `depends` and the
-// alert entry hop already run root→leaf; a `binds` edge is flipped so a writable's
-// question sits one rank deeper than the writable (a leaf annotation).
+// Orient an edge root->leaf so ranks increase toward the inputs. A `binds` edge is
+// flipped so a writable's question sits one rank deeper than the writable.
 function orient(e, flowIds) {
   if (e.kind === 'depends') return [e.source, e.target]
   const flowEnd = flowIds.has(e.source) ? e.source : e.target
@@ -147,12 +126,9 @@ function orient(e, flowIds) {
 }
 
 /**
- * Layered radial-free layout for a cone: rank = longest dependency distance from
- * the root (root at 0, leaves deepest); each rank ordered by the barycentre of
- * its parents to cut crossings; __hub nodes lifted into an "inputs rail" one rank
- * past the deepest non-hub rank. Returned as a position overlay (same shape as
- * egoLayout) so toReactFlow uses it verbatim and fitView centres the tree.
- *
+ * Layered layout for a cone: rank is the longest dependency distance from the root, each rank
+ * ordered by its parents' barycentre, hubs lifted into a rail past the deepest rank. Returned as
+ * a position overlay in the same shape as egoLayout.
  * @param {import('./fgm.js').FormBuilderGraph} cone  a coneGraph() sub-FGM
  * @param {string} rootId
  * @param {'vertical'|'horizontal'} [orientation]
@@ -203,8 +179,8 @@ export function coneLayout(cone, rootId, orientation = 'vertical') {
   const pos = {}
   const orderIndex = new Map()
 
-  // Vertical → (x = cross, y = main); horizontal → (x = main, y = cross).
-  // Top-left coords offset to centre each box (matches egoLayout).
+  // Vertical: (x = cross, y = main). Horizontal: (x = main, y = cross). Offset to
+  // centre each box, since React Flow positions are top-left.
   const place = (main, cross) => {
     const [x, y] = orientation === 'horizontal' ? [main, cross] : [cross, main]
     return { x: x - NODE_W / 2, y: y - NODE_H / 2 }

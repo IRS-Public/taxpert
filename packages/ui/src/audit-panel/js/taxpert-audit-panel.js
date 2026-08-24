@@ -1,43 +1,11 @@
-// <taxpert-audit-panel> — the shared Taxpert audit / debug panel.
+// <taxpert-audit-panel>: the workspace's page-level mount. It clones the panel shell (rail,
+// resizer, Fact Inspector and Explain sections) from templates/audit-panel.html, and creates the
+// three page-level dialogs the global nav opens: Scenario, Display, and Workspace settings.
 //
-// A framework-agnostic vanilla custom element (light DOM, no shadow root), matching the
-// <taxpert-global-nav> precedent. It *clones* the entire panel (resizer + content sections + tab
-// rail) out of templates/audit-panel.html — the same markup credit-assistant used to server-render
-// as ~8 Thymeleaf fragments — so a host only drops in a thin `<taxpert-audit-panel …>` mount. The
-// panel DOM keeps the original ids and class names, so the ported section modules' document-scoped
-// queries and the ported CSS keep working unchanged.
-//
-// Because the templates are fetched, connecting is asynchronous: `panel.ready` resolves once the
-// DOM exists, and `enable()` awaits it. Nothing is visible before `enable()` anyway (ADR-004: the
-// panel is `hidden` and its stylesheet is `disabled` until then), so the load costs no flash.
-//
-// Public API
-//   Attributes: api-base (default http://localhost:8000), scenarios-base, fact-dictionary-url,
-//               ai-scenario-generation-default, ai-fact-explanation-default,
-//               templates-base (override where templates/*.html are fetched from)
-//   Property:   ready — Promise resolved once the panel's DOM has been cloned in
-//   Instance methods:
-//     enable() / disable()                     — reveal / hide audit mode (the workspace toggle)
-//     openTab(dataTab) / closePanel()          — open a section / collapse to the rail
-//     trackFact(path, collectionId, setFocus)  — add a fact to the Fact Inspector
-//     registerSection(descriptor)              — add a host-owned section (e.g. Eligibility)
-//     registerScenarioFilters(fields, parse)   — inject host filter dropdowns into the modal
-//     openScenarioModal()                      — open "Manage scenario"
-//     openDisplayModal()                       — open "Display options"
-//     openWorkspaceSettingsModal()              — open "Workspace settings"
-//   Module-level enable(panelEl?) / disable(panelEl?) default to the single
-//     document.querySelector('taxpert-audit-panel') and back window.enableAuditMode/disableAuditMode.
-//
-// Three of the workspace's surfaces are not rail tabs, because none of them is inspection.
-// Scenario setup (reset / copy / paste / AI generation / library) lives in
-// <taxpert-scenario-modal>, the view preferences (condition cues, layout, language) in
-// <taxpert-display-modal>, and alpha feature-flag overrides in
-// <taxpert-workspace-settings-modal> — all three created here and appended to the body, opened
-// from the global nav's Scenario, Display, and settings-gear buttons. The panel still owns them
-// so hosts keep one mount and one registration API.
-//
-// The Fact Inspector lives in the imported side-effect modules below (they register <fact-link>,
-// <audited-fact> and expose window.* console helpers).
+// Templates are fetched, so `ready` resolves once the DOM exists and enable() awaits it. The rail
+// itself is hidden unless a host declares the legacyAuditPanel flag; the dialogs are not.
+// Attributes: api-base, scenarios-base, fact-dictionary-url, <flag-kebab>-default, templates-base.
+// Surfaces, flags and the enable/disable contract: ../../../../../docs/internals/audit-panel.md
 
 import { BUILT_IN_SECTIONS } from './sections.js'
 import { getTemplate } from '../../shared/js/templates.js'
@@ -78,23 +46,20 @@ class TaxpertAuditPanel extends HTMLElement {
     this._connected = false
     this._rendered = false
     this._syncWidth = () => {}
-    /** Resolves once the panel's DOM has been cloned in. `enable()` awaits it; so should tests. */
+    /** Resolves once the panel's DOM has been cloned in. */
     this.ready = Promise.resolve()
   }
 
   connectedCallback () {
     if (this._connected) return
     this._connected = true
-    // Capture host-supplied scenario <option>s before we wipe the light DOM — synchronously, so
-    // nothing can mutate them while the templates are in flight. The host wraps them in a
-    // <template> (keeps the page HTML valid — bare <option>s aren't valid page content); we also
-    // accept direct <option> children as a convenience.
+    // Read before _connect() replaces the light DOM, and synchronously, so nothing can mutate
+    // the host's <option>s while the templates are in flight.
     this._scenarioOptions = this._readScenarioOptions()
     this.ready = this._connect()
   }
 
-  // Host-supplied <option>s as a DocumentFragment, handed to the modal as nodes — no
-  // DOM → outerHTML → insertAdjacentHTML round-trip in between.
+  // Host <option>s, either wrapped in a <template> (valid page HTML) or as direct children.
   _readScenarioOptions () {
     const tpl = this.querySelector('template')
     const options = (tpl ? tpl.content : this).querySelectorAll('option')
@@ -113,9 +78,8 @@ class TaxpertAuditPanel extends HTMLElement {
     this._mountWorkspaceSettingsModal()
   }
 
-  // Both modals are siblings of the panel, not children: they are page-level dialogs and must not
-  // inherit the panel's `hidden`/width chrome. Created once each, reusing whatever the host may
-  // already have placed on the page.
+  // Dialogs are siblings of the panel, never children: they must not inherit its `hidden` or its
+  // width chrome. Reuses an element the host already placed on the page.
   _mountModal (tagName) {
     let modal = document.querySelector(tagName)
     if (!modal) {
@@ -134,13 +98,10 @@ class TaxpertAuditPanel extends HTMLElement {
     this._scenarioModal = modal
   }
 
-  // The display modal needs nothing from the panel — it reads its own state and picks its mode up
-  // off the page — so mounting it is the whole wiring.
   _mountDisplayModal () {
     this._displayModal = this._mountModal('taxpert-display-modal')
   }
 
-  // Same story for the workspace settings modal — it reads/writes feature flags directly.
   _mountWorkspaceSettingsModal () {
     this._workspaceSettingsModal = this._mountModal('taxpert-workspace-settings-modal')
   }
@@ -169,7 +130,6 @@ class TaxpertAuditPanel extends HTMLElement {
     this.workspaceSettingsModal?.open()
   }
 
-  // ── ctx passed to section render() callbacks ────────────────────────────────
   get _sectionContext () {
     // Rebuilt on each access so factDictionaryXml reflects the live (post-load) binding.
     return {
@@ -179,8 +139,6 @@ class TaxpertAuditPanel extends HTMLElement {
         this.trackFact(path, collectionId, setFocus),
     }
   }
-
-  // ── Public registration API ─────────────────────────────────────────────────
 
   /**
    * Register a host-owned section. Descriptor: { sectionId, dataTab, label, title, order,
@@ -197,16 +155,14 @@ class TaxpertAuditPanel extends HTMLElement {
   }
 
   /**
-   * Inject host filter dropdowns into the Manage scenario modal's library section. `fields` is an
-   * array of { id, groupId?, key, label, options:[{value,label}], showFor?:{ filter, values } };
-   * `parseFilename` maps a scenario filename to an object keyed by each field's `key`.
+   * Inject host filter dropdowns into the Manage scenario modal's library section.
+   * @param {Array<{id: string, groupId?: string, key: string, label: string, options: Array<{value: string, label: string}>, showFor?: {filter: string, values: string[]}}>} fields
+   * @param {(filename: string) => Record<string, string>} parseFilename
    */
   registerScenarioFilters (fields, parseFilename) {
     this._scenarioFilters = { fields: fields ?? [], parseFilename }
     this.scenarioModal?.registerScenarioFilters(this._scenarioFilters.fields, parseFilename)
   }
-
-  // ── Rendering ────────────────────────────────────────────────────────────────
 
   render () {
     this.classList.add('audit-panel', 'hidden')
@@ -223,8 +179,7 @@ class TaxpertAuditPanel extends HTMLElement {
     this._renderSections()
   }
 
-  // Build every section body + the rail tab list from the ordered section descriptors. The rail's
-  // toggle button comes with the shell, so only the per-section <li>s are (re)built here.
+  // The rail's toggle button ships with the shell, so only the per-section <li>s are rebuilt here.
   _renderSections () {
     this._content.replaceChildren()
     for (const li of this._rail.querySelectorAll('li:not(:first-child)')) li.remove()
@@ -242,8 +197,7 @@ class TaxpertAuditPanel extends HTMLElement {
     const body = el('div', `audit-panel__section${section.wrapperClass ? ' ' + section.wrapperClass : ''}`)
     if (section.sectionId) body.id = section.sectionId
     body.dataset.tab = section.dataTab
-    // Built-in sections name a <template>; host-registered ones may build their body themselves
-    // (credit-assistant's eligibility dashboard is genuinely data-derived).
+    // Built-in sections name a <template>; a host-registered one may build its own body.
     if (section.templateId) body.appendChild(getTemplate(section.templateId))
     else if (typeof section.render === 'function') section.render(body, this._sectionContext)
     else if (typeof section.buildBody === 'function') section.buildBody(body)
@@ -253,8 +207,7 @@ class TaxpertAuditPanel extends HTMLElement {
   _renderRailTab (section) {
     const fragment = getTemplate('tap-rail-tab')
     const li = fragment.querySelector('li')
-    // The convention feature-flags.js documents: a flagged tab is present but gated by CSS on the
-    // matching body.ff-<flag> class, rather than reached into and `hidden` from JS.
+    // A flagged tab is always rendered and gated by CSS on the matching body.ff-<flag> class.
     if (section.ff) li.dataset.ff = section.ff
 
     const button = fragment.querySelector('button')
@@ -268,12 +221,8 @@ class TaxpertAuditPanel extends HTMLElement {
     return fragment
   }
 
-  // ── Tabs / open-close ────────────────────────────────────────────────────────
-
-  // Exactly one section shows at a time, and none while the panel is collapsed. CSS can't compare
-  // the panel's data-active-tab against a section's data-tab, so the panel sets `hidden` and the
-  // stylesheet carries one generic pair of rules — a host-registered section gets the same
-  // treatment as a built-in one, which the old id-by-id enumeration in panel-shell.css never did.
+  // Exactly one section shows at a time. No CSS selector can compare the panel's data-active-tab
+  // against a section's data-tab, so `hidden` is the contract panel-shell.css keys off.
   _syncSectionVisibility () {
     const active = this.dataset.activeTab
     for (const section of this._content?.children ?? []) {
@@ -310,22 +259,18 @@ class TaxpertAuditPanel extends HTMLElement {
     trackFactImpl(path, collectionId, setFocus)
   }
 
-  // ── enable / disable (the workspace toggle) ─────────────────────────────────
-
   /**
-   * Enable audit mode: reveal the panel rail, restore persisted tab/width/tracked-fact state,
-   * fetch the fact-dictionary (memoized), and wire up the panel's controls.
+   * Enable audit mode: reveal the panel, restore persisted state, fetch the fact dictionary, and
+   * wire the controls.
    *
-   * Listener-teardown contract (unchanged from panel-shell.js): the persistent document keydown /
-   * window resize / fg-load listeners added here are NOT removed on disable(). One-time wiring is
-   * guarded by the data-*Initialized flags so re-enabling is idempotent, and disable() hides the
-   * panel which makes those handlers inert.
+   * The document keydown, window resize and fg-load listeners added here are NOT removed by
+   * disable(); the data-*Initialized flags keep re-enabling idempotent instead.
    */
   async enable () {
     // The panel's DOM is cloned from fetched templates, so it may not exist yet.
     await this.ready
 
-    // Focus hack: keep tracked facts from stealing focus during keyboard nav.
+    // Parks focus on <html> so a restored tracked fact does not steal it during keyboard nav.
     document.documentElement.tabIndex = -1
     document.documentElement.focus()
     document.documentElement.addEventListener(
@@ -334,12 +279,12 @@ class TaxpertAuditPanel extends HTMLElement {
       { once: true }
     )
 
-    // Reveal the panel (thin rail). The toggled stylesheet + `hidden` class both gate visibility.
+    // The toggled stylesheet and the `hidden` class both gate visibility.
     const styles = document.querySelector('#audit-panel-styles')
     if (styles) styles.disabled = false
     this.classList.remove('hidden')
 
-    // ADR-004: fetch the fact-dictionary only once audit mode is enabled (memoized).
+    // Memoized, and only once audit mode is on: a plain page load never fetches the dictionary.
     await loadFactDictionaryXml(this.getAttribute('fact-dictionary-url'))
 
     const resizer = this.querySelector('#audit-panel-resizer')
@@ -348,7 +293,6 @@ class TaxpertAuditPanel extends HTMLElement {
     this._syncWidth = this._setupWidthControls(resizer)
     this._syncWidth()
 
-    // Wire tab rail + close button + keyboard handler (idempotent).
     if (this.dataset.visibilityControlsInitialized !== 'true') {
       const toggleBtn = this.querySelector('#toggle-audit-panel')
       toggleBtn?.addEventListener('click', () => {
@@ -376,13 +320,10 @@ class TaxpertAuditPanel extends HTMLElement {
       this.dataset.visibilityControlsInitialized = 'true'
     }
 
-    // Feature flags: apply runtime state (show/hide Explain tab). The flag checkbox itself lives
-    // in the Workspace settings modal, which wires itself.
-    // Must run after visibility controls and before restoring the active tab.
+    // Must run after the visibility controls are wired and before the saved tab is restored.
     applyFlags()
     initChat()
 
-    // Restore previously open tab state.
     const savedStorage = getAuditPanelStorage()
     if (savedStorage.isOpen) {
       const savedTab = savedStorage.activeTab
@@ -394,7 +335,6 @@ class TaxpertAuditPanel extends HTMLElement {
       }
     }
 
-    // Restore tracked facts from session storage.
     const storage = getAuditPanelStorage()
     if (storage.trackedFacts) {
       for (const fact of storage.trackedFacts) {
@@ -402,9 +342,7 @@ class TaxpertAuditPanel extends HTMLElement {
       }
     }
 
-    // Cross-cutting exception (documented): wrap every <fg-show> on the page in a <fact-link>.
-    // This intentionally reaches OUTSIDE the panel into the host's flow DOM, so it stays a
-    // document-scoped pass (unwound in disable()).
+    // Reaches outside the panel into the host's flow DOM. Unwound in disable().
     const fgShows = document.querySelectorAll('fg-show')
     for (const fgShow of fgShows) {
       const factLink = document.createElement('fact-link')
@@ -413,31 +351,25 @@ class TaxpertAuditPanel extends HTMLElement {
       fgShow.parentElement.replaceChild(factLink, fgShow)
     }
 
-    // Load fact paths once the fact graph is available.
     if (!window.factGraph) {
       document.addEventListener('fg-load', setFactOptions)
     } else {
       setFactOptions()
     }
 
-    // View preferences (condition cues, validation text, inline modals, accordions, layout) live
-    // in the Display options modal, which wires itself; re-apply whatever the user last chose to
-    // the flow DOM this page just rendered.
+    // Re-apply the stored display options to the flow DOM this page just rendered.
     applyDisplayOptions()
 
-    // Scenario controls live in the Manage scenario modal, which wires itself. All that's left
-    // here is re-surfacing a generated scenario's description + Download button after
-    // loadFactGraph()'s page reload.
+    // Re-surface a generated scenario's description and Download button after the graph reload.
     renderGeneratedScenarioResult()
   }
 
   /**
-   * Disable audit mode: hide the panel, drop open/active-tab state, clear audit-panel session
-   * storage, hide injected condition chips, and unwrap the fact-link wrappers added in enable().
+   * Disable audit mode: hide the panel, clear its session storage, close the dialogs, and unwrap
+   * the <fact-link>s added in enable().
    */
   disable () {
-    // Turning the workspace off takes the nav's tool strip and settings gear with it, so an open
-    // modal would be left with no way back to it.
+    // The nav's tool strip goes with the workspace, so an open dialog would have no way back.
     this.scenarioModal?.close()
     this.displayModal?.close()
     this.workspaceSettingsModal?.close()
@@ -446,8 +378,7 @@ class TaxpertAuditPanel extends HTMLElement {
     if (styles) styles.disabled = true
     this.classList.add('hidden')
     document.body.classList.remove('audit-panel-open')
-    // Drop only the property the panel itself set. `removeAttribute('style')` would take any
-    // unrelated inline style the host page put on <body> with it.
+    // Only the property the panel set: the host may have its own inline styles here.
     document.documentElement.style.removeProperty(AUDIT_PANEL_WIDTH_PROPERTY)
     delete this.dataset.activeTab
     this.querySelectorAll('.audit-panel__tab[role="tab"]').forEach((btn) =>
@@ -457,7 +388,6 @@ class TaxpertAuditPanel extends HTMLElement {
     this._syncSectionVisibility()
     sessionStorage.removeItem(auditPanelStorageKey())
 
-    // Unwrap the fact-link wrappers added to <fg-show>s in enable().
     const fgShows = document.querySelectorAll('fg-show')
     for (const fgShow of fgShows) {
       const link = fgShow.parentElement
@@ -491,8 +421,8 @@ class TaxpertAuditPanel extends HTMLElement {
     }
   }
 
-  // Adjustable-width controls (pointer drag + arrow keys), persisted to session storage.
-  // Returns a syncWidth() that restores the stored (or default) width. Ported from panel-shell.js.
+  // Pointer-drag and arrow-key width controls, persisted to session storage. Returns a syncWidth()
+  // that restores the stored (or default) width.
   _setupWidthControls (resizer) {
     if (this.dataset.widthControlsInitialized === 'true' && typeof this._syncWidthFn === 'function') {
       return this._syncWidthFn
@@ -579,8 +509,7 @@ class TaxpertAuditPanel extends HTMLElement {
 
 customElements.define('taxpert-audit-panel', TaxpertAuditPanel)
 
-// Module-level enable/disable default to the single panel on the page, preserving
-// window.enableAuditMode/disableAuditMode and today's `import { enable } from '…'` call sites.
+// Default to the single panel on the page, and back window.enableAuditMode/disableAuditMode.
 export function enable (panelEl) {
   const panel = panelEl || document.querySelector('taxpert-audit-panel')
   return panel?.enable()

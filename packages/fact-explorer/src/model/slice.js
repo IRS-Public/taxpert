@@ -1,18 +1,10 @@
-// Slice the full FGM down to a renderable subgraph.
+// Scope the graph to one region: a flow page (partitioned by flowElement.pageId),
+// a fact-dictionary file (by fact.sourceFile), or everything. A pure FGM to sub-FGM
+// stage whose output still passes validate().
 //
-// The real graph (445 nodes / 900 edges) is too dense to read as one blob, so
-// the UI never renders it whole by default. Instead the user picks a *slice*:
-// one flow page, one fact-dictionary file, or the full graph. This module is a
-// pure seam between loadGraph() (full FGM) and toReactFlow() (a sub-FGM) — it
-// adds no data and the sub-FGM it returns still passes validate().
-//
-// Two partition keys already live in the data:
-//   - flow page:  every flowElement has a pageId
-//   - fact file:  every fact has a sourceFile
-//
-// A slice = the selected partition's nodes ("focus") plus, optionally, their
-// direct edge-neighbors ("context", rendered dimmed). Edges are kept only when
-// both endpoints survive, so the result is always a valid FGM.
+// A slice is the selected partition ("focus") plus, optionally, its direct edge
+// neighbours, tagged __context so the canvas dims them.
+// The full narrowing chain: ../../../../docs/internals/fact-explorer-internals.md
 
 export const FULL_KEY = 'full'
 
@@ -22,7 +14,7 @@ const fileKey = (file) => `file::${file}`
 const baseName = (file) => (file || '').replace(/\.xml$/, '')
 
 /**
- * Derive the slice-picker options straight from the graph — never hard-coded.
+ * Derive the slice-picker options from the graph itself.
  * @param {import('./fgm.js').FormBuilderGraph} graph
  * @returns {{key:string, group:string, label:string}[]}
  */
@@ -53,7 +45,6 @@ export function buildSliceOptions(graph) {
     opts.push({ key: fileKey(file), group: 'Fact files', label: `${file} (${n})` })
   }
 
-  // Full graph — available, but never the default.
   const total = graph.flowElements.length + graph.facts.length
   opts.push({ key: FULL_KEY, group: '', label: `Full graph (${total} nodes)` })
 

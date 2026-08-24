@@ -1,4 +1,4 @@
-// Real USWDS components — a-la-carte, not the full `uswds` bundle.
+// Real USWDS components, a-la-carte rather than the full `uswds` bundle.
 //
 // Fact Explorer has its own separate design system (variables.css, base.css) and its own
 // reset; `@use "uswds"` (or the precompiled dist/css/uswds.min.css) would layer USWDS's own
@@ -9,12 +9,12 @@
 //
 // Why this exists at all: <taxpert-workspace-settings-modal> (taxpert/react/workspace-
 // settings-modal, mounted in App.jsx) renders real `.usa-checkbox`/`.usa-button`/`.usa-modal__*`
-// markup — same as it does in credit-assistant, which vendors USWDS separately (see its
+// markup, the same as it does in credit-assistant, which vendors USWDS separately (see its
 // website-static/vendor/uswds-3.13.0/). Fact Explorer needs its own equivalent so that markup actually
 // renders (and looks the same as it does there), rather than falling back to unstyled native
 // controls.
 //
-// $theme-font-path / $theme-image-path point at public/uswds/{fonts,img} — vendored by
+// $theme-font-path and $theme-image-path point at public/uswds/{fonts,img}, vendored by
 // `npm run copy-uswds-assets` (scripts/copy-uswds-assets.mjs) from @uswds/uswds's dist/, kept in
 // its original relative layout so the @font-face / background-image url()s below resolve as
 // absolute site-root paths with no bundler-specific rewriting.
@@ -25,7 +25,7 @@
 );
 
 @use 'usa-checkbox';
-// The Applications section's rows are `.usa-radio` tiles — the workspace is over one application at
+// The Applications section's rows are `.usa-radio` tiles, the workspace being over one application at
 // a time. Missing from this list, they rendered as bare native radios here while the same modal
 // showed proper tiles in an app that vendors USWDS whole: the modal is one component and must not
 // look like two.
@@ -37,7 +37,7 @@
 // <taxpert-scenario-modal> (taxpert/react/scenario-modal) additionally renders real
 // .usa-form-group/.usa-label/.usa-select/.usa-textarea/.usa-tag/.usa-error-message markup for
 // its "Load existing scenario" and filter-dropdown sections.
-// The canvas control panel (canvas/controls/) is USWDS markup too — a search input, the scope
+// The canvas control panel (canvas/controls/) is USWDS markup too: a search input, the scope
 // <select>, tile checkboxes for every filter and layer kind, and one <fieldset> per layer. The
 // packages it needs beyond the modals' are here; see styles/controls.css.
 @use 'usa-fieldset';

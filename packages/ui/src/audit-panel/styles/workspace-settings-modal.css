@@ -1,4 +1,4 @@
-/* <taxpert-workspace-settings-modal> — the "Workspace settings" dialog opened from the global
+/* <taxpert-workspace-settings-modal>, the "Workspace settings" dialog opened from the global
    nav's settings gear (next to the workspace toggle). In credit-assistant, loaded through
    audit-panel.css's @import chain and gated by the toggled <link id="audit-panel-styles">; in
    fact-explorer, loaded directly by the react/WorkspaceSettingsModal.jsx adapter.
@@ -32,7 +32,7 @@
      calls for exactly this color, not a host's brand accent. */
   --twsm-section-bg: #e6e6fa;
 
-  /* The dialog's own insets. Declared once because two things read them — the main block's padding
+  /* The dialog's own insets. Declared once because two things read them: the main block's padding
      and the close button's position — and the X sitting on the heading depends on the two agreeing. */
   --twsm-inset-x: 2rem;
   --twsm-inset-top: 1.5rem;
@@ -131,7 +131,7 @@ taxpert-workspace-settings-modal {
   outline-offset: 2px;
 }
 
-/* The heading's rule is the only line in this modal — the section itself runs together.
+/* The heading's rule is the only line in this modal. The section itself runs together.
    Selector is doubled up with .usa-modal__heading (the element carries both classes — see
    workspace-settings-modal.js) so this wins on specificity over real USWDS's own
    .usa-modal__heading rule, which sets font-family to its "heading" role (serif by default)
@@ -214,7 +214,7 @@ taxpert-workspace-settings-modal {
   line-height: 1.3;
 }
 
-/* USWDS's own expand_more glyph — the same path the tool panels' row chevrons draw — so a shut
+/* USWDS's own expand_more glyph, the same path the tool panels' row chevrons draw, so a shut
    section reads as "opens downward" and an open one, rotated, as "was opened from here". */
 .twsm-section__chevron {
   flex: 0 0 auto;
@@ -234,7 +234,7 @@ taxpert-workspace-settings-modal {
   }
 }
 
-/* The frame an open section gets, in the same lavender its summary is already filled with — the
+/* The frame an open section gets, in the same lavender its summary is already filled with. The
    border rounds past the summary's own corners, and the summary loses its bottom two so the two
    pieces read as one continuous pill rather than a rounded row inside a rounded box. Padding moves
    here (from the old flat .twsm-section rule) so the content lines up under the summary's own
@@ -263,7 +263,7 @@ taxpert-workspace-settings-modal {
 }
 
 /* ── Option rows ─────────────────────────────────────────────────────────── */
-/* Each choice is its own bordered box — the Display modal's option rows use the same treatment
+/* Each choice is its own bordered box. The Display modal's option rows use the same treatment
    now. The Tools modal is the one holdout with stock USWDS rows, since a tool checkbox there reads
    as one item in a list rather than a switch you are throwing for the whole workspace.
 
@@ -336,7 +336,7 @@ taxpert-workspace-settings-modal {
   font-size: 0.875rem;
 }
 
-/* Shown in place of the rows when the host declares no feature flags — the library's own default,
+/* Shown in place of the rows when the host declares no feature flags. The library's own default,
    and the state of any application that has nothing in testing. Muted, because it is a statement
    about this build rather than something to act on. */
 .twsm-empty {
@@ -349,7 +349,7 @@ taxpert-workspace-settings-modal {
 /* ── Narrow viewports ────────────────────────────────────────────────────── */
 
 @media (max-width: 30em) {
-  /* Narrowing the inset takes the close button with it — that is what the property is for. An
+  /* Narrowing the inset takes the close button with it, which is what the property is for. An
      element selector beats the zero-specificity :where() the defaults are declared in. */
   taxpert-workspace-settings-modal {
     --twsm-inset-x: 1.25rem;
@@ -401,7 +401,7 @@ taxpert-workspace-settings-modal {
 }
 
 /* ── Outcomes editor ─────────────────────────────────────────────────────── */
-/* A determination is a nested form — name, fact, wording, then a group of facts per section — so
+/* A determination is a nested form (name, fact, wording, then a group of facts per section), so
    each one is a shut <details>. That keeps the modal the same height whether a host tracks one
    outcome or six, and means the list can be read at a glance before anything is opened. The marker
    is USWDS-plain; the summary carries the row's own name, which is the only thing to see when

@@ -16,7 +16,7 @@
   display: none;
 }
 
-/* One pair per flag — CSS can't match a class against an attribute value, so a new flag adds a
+/* One pair per flag. CSS cannot match a class against an attribute value, so a new flag adds a
    rule here alongside its entry in the host's config.featureFlags. */
 
 body.ff-ai-scenario-generation [data-ff="ai-scenario-generation"] {

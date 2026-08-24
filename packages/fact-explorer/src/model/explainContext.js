@@ -1,4 +1,4 @@
-// Pure builders for the "Explain this node" feature (no React, no fetch — so they
+// Pure builders for the "Explain this node" feature (no React, no fetch, so they
 // stay node-testable, per CLAUDE.md rule #8).
 //
 // They turn an FGM node + the active scenario overlay into the structured
@@ -90,7 +90,7 @@ function elementMeta(el) {
 /**
  * Structured context for a flow element: its own metadata, the live tree of the
  * fact it binds, and its 1-hop neighbours (facts + other flow nodes) reached over
- * the FGM edges. Pure — derives every lookup from `graph`.
+ * the FGM edges. Pure: every lookup is derived from `graph`.
  *
  * @param {object} el  the FGM flow element (node.data.raw with __kind 'flow')
  * @param {import('./fgm.js').FormBuilderGraph} graph

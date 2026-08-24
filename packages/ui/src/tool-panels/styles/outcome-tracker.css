@@ -94,7 +94,7 @@ taxpert-outcome-tracker {
   line-height: 1.3;
 }
 
-/* Padding and the row's hairline move onto the two grid cells — the `<li>` they used to live on no
+/* Padding and the row's hairline move onto the two grid cells. The `<li>` they used to live on no
    longer has a box to draw them on. Matching values on both cells is what makes two independent
    borders read as one continuous line under the row. */
 .ttp-outcome__path,
@@ -125,7 +125,7 @@ taxpert-outcome-tracker {
   padding-inline: var(--ttp-units-05) var(--ttp-units-2);
 }
 
-/* An unanswered fact is the bare word, greyed — nothing has happened to it yet. */
+/* An unanswered fact is the bare word, greyed, nothing having happened to it yet. */
 .ttp-outcome__fact[data-status="incomplete"] .ttp-outcome__state,
 .ttp-outcome__fact[data-status="unknown"] .ttp-outcome__state {
   color: var(--ttp-base-dark);
@@ -137,7 +137,7 @@ taxpert-outcome-tracker {
   height: 1.125rem;
 }
 
-/* No status draws a blank slot today — every entry in FACT_STATE (taxpert-outcome-tracker.js) names
+/* No status draws a blank slot today. Every entry in FACT_STATE (taxpert-outcome-tracker.js) names
    an icon, so the `hidden` the template ships is always cleared. The rule is kept because it is what
    makes going back to a blank one safe: `[hidden]`'s UA default is `display: none`, which drops the
    icon out of the flex row entirely and lets the label creep left into where the mark would have

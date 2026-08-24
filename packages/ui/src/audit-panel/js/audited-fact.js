@@ -1,9 +1,9 @@
-// Fact Inspector: the <fact-link> (wraps <fg-show>s and dependency links in the host flow) and
-// <audited-fact> (a tracked fact card) custom elements, plus trackFact/setFactOptions. Ported
-// from credit-assistant. The panel renders DOM with the same ids/classes as before, so the
-// document-scoped queries here keep resolving the single panel's controls, and the <audited-fact>
-// shadow root clones <template id="tap-fact"> out of templates/audit-panel.html — the same
-// clone-a-template shape the original fragments/audit-panel/fact-template.html had.
+// Fact Inspector: <fact-link>, which wraps display elements and dependency links in the host flow,
+// and <audited-fact>, a tracked fact card, plus trackFact and setFactOptions.
+//
+// The document-scoped queries below resolve the single panel's controls, so the panel must keep
+// rendering the ids and classes they name. <audited-fact> clones <template id="tap-fact"> into its
+// shadow root.
 import {
   factDictionaryXml,
   serializeXml,
@@ -13,8 +13,7 @@ import { getTemplate } from '../../shared/js/templates.js'
 import { getAuditPanelStorage, setAuditPanelStorage } from './storage.js'
 import { setLastActiveTabButton } from './tab-state.js'
 
-// The Fact Inspector's fact-path input; resolved lazily because the panel builds its DOM
-// after this module evaluates.
+// Resolved lazily, the panel building its DOM after this module evaluates.
 const getFactSelect = () => document.querySelector('#fact-select')
 
 class FactLink extends HTMLElement {
@@ -149,7 +148,7 @@ class AuditedFact extends HTMLElement {
 
     const definitionElement = document.createElement('div')
     definitionElement.setAttribute('slot', 'definition')
-    // The serialized fact XML (escaped above) with a <fact-link> spliced in per dependency —
+    // The serialized fact XML (escaped above) with a <fact-link> spliced in per dependency,
     // arbitrary dictionary structure, so there is no fixed markup to put in a template.
     // eslint-disable-next-line no-restricted-syntax
     definitionElement.innerHTML = fullDefinition
@@ -220,7 +219,7 @@ function trackFact (path, collectionId, setFocus = true) {
 }
 
 /**
- * Drop every tracked fact — what the Explain section's "Clear facts" button does. Its inline
+ * Drop every tracked fact, which is what the Explain section's "Clear facts" button does. Its inline
  * `onclick="clearTrackedFacts()"` named a function that existed nowhere in the package, so the
  * button has been inert since the panel moved here; this is that function.
  */
@@ -247,7 +246,7 @@ function setFactOptions () {
   }
 }
 
-// Enter in either fact-path input (fact-inspector + chat) tracks that input's own value — read off
+// Enter in either fact-path input tracks that input's own value, read off
 // the event target, so Enter in the chat input doesn't track the inspector's.
 function onFactPathKeydown (event) {
   if (event.key !== 'Enter') return

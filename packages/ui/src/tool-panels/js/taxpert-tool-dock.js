@@ -1,22 +1,13 @@
-// <taxpert-tool-dock> — the right-side panel area, the floating layer, and the drag/resize gestures
-// that move panels between them.
+// <taxpert-tool-dock>: the right-side panel area, the floating layer, and the drag and resize
+// gestures that move panels between them.
 //
-// It is the only surface that knows where panels sit relative to each other, so it owns dragging;
-// <taxpert-tool-panel> just exposes its grip. Everything it decides is written to tool-layout.js and
-// read back from there, so the Tools modal's checkboxes stay in step without the two ever talking.
-//
-// Layout is CSS. Columns and stacks are `flex: <ratio> 1 0`, minimums are `min-width` / `min-height`,
-// and a floating panel is four custom properties on the element. This module measures, clamps, and
-// writes ratios — it never computes a percentage or a pixel height, because equal flex already gives
-// the 100% / 50% / 33% split the designs call for.
-//
-// Resizes preview by writing custom properties straight onto the DOM and commit once on pointerup.
-// Committing per frame would re-render the dock mid-gesture, replacing the very splitter under the
-// pointer.
+// It is the only surface that knows where panels sit relative to each other, so it owns dragging.
+// Everything it decides is written to tool-layout.js and read back from there. Layout itself is CSS;
+// this module measures, clamps and writes flex ratios. See ../../../../../docs/internals/tool-panels.md.
 //
 // Public API
-//   ready — Promise resolved once the dock's DOM exists
-//   toolsModal — the <taxpert-tools-modal> it mounted, if it mounted one
+//   ready       Promise resolved once the dock's DOM exists
+//   toolsModal  the <taxpert-tools-modal> it mounted, if it mounted one
 
 import './taxpert-tool-panel.js' // side effect: customElements.define('taxpert-tool-panel')
 import './taxpert-tools-modal.js' // side effect: customElements.define('taxpert-tools-modal')
@@ -42,8 +33,7 @@ import { loadToolDockTemplates } from './templates.js'
 /** Thickness of the drop indicator bar, in px. */
 const DROP_BAR = 4
 
-// Which of a floating panel's four sides each handle moves. A corner is simply the two edges it
-// joins, which is why there is no separate corner arithmetic below.
+// Which of a floating panel's four sides each handle moves. A corner is the two edges it joins.
 const RESIZE_EDGES = new Map([
   ['n', { top: true }],
   ['s', { bottom: true }],
@@ -68,13 +58,8 @@ const RESIZE_CURSOR = new Map([
 ])
 
 /**
- * Where a floating panel's box lands when `edge` is dragged by `delta` from `start`.
- *
- * The north and west sides are the reason this is arithmetic rather than two additions: growing a
- * panel upwards means its height goes up *and* its origin comes back, because the side that was not
- * grabbed has to stay where it is. Clamping is what makes that safe — once the box is at its
- * minimum the origin stops moving too, so a panel dragged past its own floor pins rather than
- * inverting and walking away under the cursor.
+ * Where a floating panel's box lands when `edge` is dragged by `delta` from `start`. Growing north
+ * or west moves the origin as well as the size, so that the ungrabbed side stays put.
  *
  * @param {{x:number, y:number, w:number, h:number}} start the box when the drag began
  * @param {{dx:number, dy:number}} delta pointer movement since the press
@@ -128,11 +113,9 @@ class TaxpertToolDock extends HTMLElement {
     return this._toolsModal
   }
 
-  // ── Rendering ────────────────────────────────────────────────────────────────
-
   render () {
     // The <use href="#ttp-icon-…"> references resolve against the document, so the sprite goes in
-    // once per page rather than once per panel — the global nav's tgn-sprite arrangement.
+    // once per page rather than once per panel.
     if (!document.querySelector('.ttp-sprite')) {
       document.body.insertBefore(getTemplate('ttp-sprite'), document.body.firstChild)
     }
@@ -150,8 +133,8 @@ class TaxpertToolDock extends HTMLElement {
 
     this._wireDockResizer(this.querySelector('.ttd-dock__resizer'))
 
-    // The modal is the only way to switch a tool back on, so a host that mounts the dock gets it
-    // whether or not it asked — the same courtesy taxpert-audit-panel.js does for its three modals.
+    // The modal is the only way to switch a tool back on, so a host that mounts the dock gets one
+    // whether or not it asked for it.
     if (!document.querySelector('taxpert-tools-modal')) {
       this._toolsModal = document.body.appendChild(document.createElement('taxpert-tools-modal'))
     }
@@ -161,8 +144,8 @@ class TaxpertToolDock extends HTMLElement {
   }
 
   /**
-   * Reconcile the DOM with the stored layout. Panel elements are *moved*, never rebuilt, so a
-   * panel keeps its scroll position and its open <details> when it changes column or floats.
+   * Reconcile the DOM with the stored layout. Panel elements are moved, never rebuilt, so a panel
+   * keeps its scroll position and its open <details> when it changes column or floats.
    */
   _syncLayout () {
     if (!this._rendered) return
@@ -184,7 +167,7 @@ class TaxpertToolDock extends HTMLElement {
     this._renderColumns(layout)
     this._renderFloating(layout)
 
-    // Two attributes carry the dock's whole visual state; tool-dock.css does the rest.
+    // Two attributes carry the dock's whole visual state. tool-dock.css does the rest.
     this.toggleAttribute('data-open', wanted.size > 0)
     this.toggleAttribute('data-docked', layout.columns.length > 0)
     this._dock.hidden = layout.columns.length === 0
@@ -237,8 +220,6 @@ class TaxpertToolDock extends HTMLElement {
     element.style.setProperty('--ttp-h', `${Math.round(h)}px`)
   }
 
-  // ── Dock width ───────────────────────────────────────────────────────────────
-
   _applyDockWidth (px) {
     const next = Math.min(Math.max(Math.round(px), PANEL_MIN_WIDTH), maxDockWidth())
     this.style.setProperty('--ttd-width', `${next}px`)
@@ -252,8 +233,7 @@ class TaxpertToolDock extends HTMLElement {
     onPointerDrag(resizer, {
       bodyClass: 'ttd-resizing--x',
       onStart: () => dockWidth(),
-      // The dock is anchored to the right edge, so its width is simply how far the pointer is from
-      // that edge — the audit panel's resizer computes the same thing the same way.
+      // The dock is anchored to the right edge, so its width is how far the pointer is from it.
       onMove: ({ x }) => {
         preview = this._applyDockWidth(window.innerWidth - x)
       },
@@ -261,8 +241,6 @@ class TaxpertToolDock extends HTMLElement {
     })
     onKeyResize(resizer, ({ dx }) => setDockWidth(dockWidth() - dx))
   }
-
-  // ── Splitters ────────────────────────────────────────────────────────────────
 
   /** Between columns `index - 1` and `index`. */
   _columnSplitter (index) {
@@ -302,8 +280,7 @@ class TaxpertToolDock extends HTMLElement {
 
   /**
    * The shared body of both splitters: preview by writing the two flex ratios onto the DOM, commit
-   * once at the end. `resizePair` keeps the pair's combined share constant, so a third sibling is
-   * never disturbed.
+   * once at the end. Committing per frame would re-render the splitter out from under the pointer.
    */
   _wirePairResize (splitter, { axis, min, property, pair, measure, commit }) {
     const ratios = () => {
@@ -342,11 +319,9 @@ class TaxpertToolDock extends HTMLElement {
     })
   }
 
-  // ── Resizing a floating panel ────────────────────────────────────────────────
-
   /**
-   * One of a floating panel's eight resize handles. Docked panels are sized by the dock's splitters
-   * instead, and CSS hides these handles for them, so this never has to ask which it is.
+   * One of a floating panel's eight resize handles. CSS hides these on a docked panel, which is
+   * sized by the dock's splitters instead, so this never has to ask which the panel is.
    */
   _wireFloatResize (panel, handle) {
     const edge = handle.dataset.edge
@@ -371,8 +346,6 @@ class TaxpertToolDock extends HTMLElement {
     onKeyResize(handle, (delta) => floatTool(panel.tool, resized(box(), delta)))
   }
 
-  // ── Dragging a panel ─────────────────────────────────────────────────────────
-
   _wirePanelDrag (panel) {
     let target = { kind: 'float' }
 
@@ -380,8 +353,8 @@ class TaxpertToolDock extends HTMLElement {
       bodyClass: 'ttd-dragging',
       onStart: (event) => {
         const rect = panel.getBoundingClientRect()
-        // Lift the panel into the float layer so it tracks the cursor unclipped, and so the column
-        // it came from reflows immediately — the gap is the clearest preview of what leaving does.
+        // Lift the panel into the float layer so it tracks the cursor unclipped and the column it
+        // came from reflows immediately.
         panel.setAttribute('data-float', '')
         panel.setAttribute('data-dragging', '')
         this._setBox(panel, { x: rect.left, y: rect.top, w: rect.width, h: rect.height })
@@ -420,9 +393,8 @@ class TaxpertToolDock extends HTMLElement {
   }
 
   /**
-   * The rectangles a drop decision is made against, measured fresh each frame so they reflect the
-   * reflow the lifted panel already caused. The dragged panel is excluded: it is out of flow, so its
-   * rectangle says where the cursor is rather than where a drop would put it.
+   * The rectangles a drop decision is made against, measured fresh each frame. The dragged panel is
+   * excluded: it is out of flow, so its rectangle says where the cursor is, not where a drop lands.
    */
   _geometry (dragged) {
     const columns = [...this._columnsEl.querySelectorAll('.ttd-column')].map((column) => ({
@@ -439,9 +411,9 @@ class TaxpertToolDock extends HTMLElement {
   }
 
   /**
-   * The area a drop counts as "docked". With nothing docked the element has collapsed to no width,
-   * so measuring it would make every drop a float and a floating panel could never be dragged back —
-   * only "Reset tool layout" could rescue it. Offer the strip the dock *would* occupy instead.
+   * The area a drop counts as docked. With nothing docked the element has collapsed to no width, so
+   * this offers the strip the dock would occupy instead. Without that, a floating panel could never
+   * be dragged back and only "Reset tool layout" would rescue it.
    */
   _dockRect () {
     if (!this._dock.hidden) return this._dock.getBoundingClientRect()
@@ -463,8 +435,8 @@ class TaxpertToolDock extends HTMLElement {
       return
     }
     const columnEls = [...this._columnsEl.querySelectorAll('.ttd-column')]
-    // The same rect the decision was made against, so the indicator can't point somewhere the drop
-    // won't go — including the offered strip when nothing is docked yet.
+    // The same rect the decision was made against, so the indicator cannot point somewhere the drop
+    // will not go.
     const dock = this._dockRect()
 
     if (target.kind === 'new-column') {

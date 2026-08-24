@@ -56,73 +56,63 @@ function nodeColor(n) {
 /**
  * @param {object} props
  * @param {import('../model/apps.js').FactExplorerApp} props.app the Form Builder app being
- *   represented. App.jsx remounts this component on a change of `app.id` (`key={app.id}`) rather
- *   than threading the switch through every effect: the graph, the layout cache, the engine, the
- *   scenario overlay and the search index are all per-app, and a remount is the honest way to say
- *   so.
+ *   represented. App.jsx remounts this component on a change of `app.id` rather than threading the
+ *   switch through every effect. The graph, the layout cache, the engine, the scenario overlay and
+ *   the search index are all per-app, so a remount is the honest way to say so.
  */
 export default function FactExplorer({ app }) {
   const [graph, setGraph] = useState(null)
   const [error, setError] = useState(null)
   const [selected, setSelected] = useState(null)
-  // Right-edge width occupied by the embedded CA panel (0 when closed); the
-  // DetailPanel docks to its left so the two never overlap.
+  // Right-edge width the embedded app panel occupies, 0 when closed. DetailPanel docks to its
+  // left so the two never overlap.
   const [embedInset, setEmbedInset] = useState(0)
 
   // Which slice of the graph to render, and whether to pull in +1-hop context.
   const [sliceKey, setSliceKey] = useState(null)
   const [neighbors, setNeighbors] = useState(true)
 
-  // Drill-down: when set, the canvas swaps the slice for the ego-network mini-
-  // graph of this node id (its immediate edges + 1st-hop neighbours), centred.
+  // When set, the canvas swaps the slice for this node's ego-network, centred.
   const [drillId, setDrillId] = useState(null)
 
-  // Dependency cone: when set, the canvas swaps the slice for the rooted
-  // dependency tree of this output node (its transitive `depends` ancestors),
-  // laid out in layers with hubs railed. The de-tangler for dense fact files.
+  // When set, the canvas swaps the slice for this output node's rooted dependency tree.
   const [coneRootId, setConeRootId] = useState(null)
 
-  // M3 per-layer toggles + M6 fine-grained facets (both pure FGM→FGM).
+  // Per-layer toggles and fine-grained facets, both pure FGM to FGM.
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
-  // `null` means "whatever this graph's defaults are". The facet defaults depend on the graph (its
-  // flow-tag vocabulary is its own — an app can register node types the scaffold has never heard
-  // of), so they cannot be a useState initial value: the graph arrives later.
+  // `null` means "whatever this graph's defaults are". They depend on the graph, whose flow-tag
+  // vocabulary is its own, so they cannot be a useState initial value: the graph arrives later.
   const [facetOverride, setFacetOverride] = useState(null)
 
-  // M6 search: raw input + a debounced query that actually drives highlighting.
+  // Raw input, plus the debounced query that actually drives highlighting.
   const [query, setQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
   const [matchCursor, setMatchCursor] = useState(0)
 
-  // M5 layout persistence: bumped on "Reset layout" to force a fresh layout pass.
+  // Bumped on "Reset layout" to force a fresh layout pass.
   const [layoutVersion, setLayoutVersion] = useState(0)
 
-  // Banded-layout orientation: 'vertical' (flow top→bottom) or 'horizontal'. Set from the Display
-  // options modal (the nav's Display button), which is where every Taxpert destination arranges
-  // what it shows.
+  // Banded-layout orientation, set from the Display options modal, which is where every Taxpert
+  // destination arranges what it shows.
   const [orientation, setOrientation] = useState('vertical')
 
-  // Whether the embedded app panel is docked beside the canvas — the Display modal's "Show product
-  // experience side-by-side". Held here rather than inside EmbeddedAppPanel because it round-trips:
-  // the checkbox docks the panel, and the panel's own Close button has to flip the checkbox back off.
+  // Held here rather than inside EmbeddedAppPanel because it round-trips: the Display modal's
+  // checkbox docks the panel, and the panel's Close button has to flip that checkbox back off.
   const [sideBySide, setSideBySide] = useState(false)
 
   // Control-panel collapse state.
   const [headerOpen, setHeaderOpen] = useState(true)
 
-  // Measured header height, so the chat dock can pin just beneath the header
-  // regardless of its collapsed/expanded height.
+  // Measured, so the chat dock pins beneath the header at either of its heights.
   const headerRef = useRef(null)
   const [headerHeight, setHeaderHeight] = useState(0)
 
-  // Scenario overlay (N4): the corpus index (filenames + decoded dims), the
-  // active scenario, and the computed per-node status + per-fact live values.
+  // The scenario overlay: the corpus index, the active scenario, and the computed per-node status
+  // and per-fact values.
   //
-  // How it renders is one preference — the Display modal's "Reveal items skipped in scenarios" —
-  // rather than the three-way Off/Dim/Hide it replaced: revealed, the whole graph stays and the
-  // questions this taxpayer never reaches are dimmed; not revealed, they are structurally dropped
-  // (scenarioFilter), the all-screens-style "only what they see". The third state, "loaded but
-  // ignored", said the same thing as loading no scenario at all.
+  // How it renders is one preference, the Display modal's "Reveal items skipped in scenarios".
+  // Revealed, the whole graph stays and unreached questions are dimmed. Not revealed, they are
+  // structurally dropped. A third "loaded but ignored" state said the same as loading nothing.
   const [scenarioIndex, setScenarioIndex] = useState([])
   const [scenario, setScenario] = useState(null) // { filename }
   const [scenarioStatus, setScenarioStatus] = useState(new Map())
@@ -139,36 +129,31 @@ export default function FactExplorer({ app }) {
       .catch((e) => setError(e.message))
   }, [app])
 
-  // Load the scenario index (filenames + decoded dimensions). Soft-fails: if it hasn't been
-  // generated (npm run make-fgm), or the app has no scenarios at all, the picker just stays empty.
+  // Soft-fails. With no index generated, or no scenarios at all, the picker stays empty.
   useEffect(() => {
     loadScenarioIndex(app).then((j) => setScenarioIndex(j?.scenarios ?? j ?? []))
   }, [app])
 
-  // Tracks the last serialized graph we published, so the bridge subscription
-  // ignores the echo of our own publish (BroadcastChannel delivers to sibling
-  // instances in the same document too).
+  // The last graph published, so the subscription ignores the echo of our own publish.
+  // BroadcastChannel delivers to sibling instances in the same document too.
   const lastGraphRef = useRef(null)
 
-  // Imperative handle to the chat dock, so the "Explain this node" buttons can
-  // open it and fire an auto-prompt + structured context in one shot.
+  // So the "Explain this node" buttons can open the dock and fire a prompt in one shot.
   const chatRef = useRef(null)
 
-  // Live feature flags — read-only here. useFeatureFlags reads localStorage overrides on top of
-  // the build-time env defaults and re-renders when the shared <taxpert-workspace-settings-modal>
-  // (behind the global nav's settings gear — the only UI that toggles these) changes one. The two
-  // AI features are flagged apart: aiFactExplanation gates everything that reads facts back (the
-  // chat dock, the per-node and DetailPanel Explain badges, the scenario summary, which is an
-  // explain prompt through the same dock), aiScenarioGeneration only the scenario modal's
-  // Generate section.
+  // Read-only here. useFeatureFlags layers localStorage overrides over the build-time env defaults
+  // and re-renders when Workspace settings changes one.
+  //
+  // The two AI features are flagged apart. aiFactExplanation gates everything that reads facts back
+  // (the chat dock, the Explain badges, the scenario summary). aiScenarioGeneration gates only the
+  // scenario modal's Generate section.
   const featureFlags = useFeatureFlags()
   const aiFactExplanation = featureFlags.aiFactExplanation
   const aiScenarioGeneration = featureFlags.aiScenarioGeneration
 
-  // Run the real Scala.js engine in-browser on a serialized graph and overlay the
-  // computed visibility over the WHOLE FGM. Shared by the picker (loadScenario)
-  // and the inbound bridge handler (CA → Fact Explorer). When `publishOut` is set, the
-  // graph is broadcast so the embedded CA iframe rehydrates (Fact Explorer → CA).
+  // Run the real engine on a serialized graph and overlay the computed visibility over the WHOLE
+  // FGM. Shared by the picker and the inbound bridge handler. With `publishOut` set, the graph is
+  // broadcast so the embedded iframe rehydrates.
   async function applyScenarioJson(json, label, { publishOut } = {}) {
     const engine = await loadEngine(app)
     const sg = buildScenarioGraph(engine, json)
@@ -179,17 +164,17 @@ export default function FactExplorer({ app }) {
     if (publishOut) {
       const serialized = sg.toJSON()
       lastGraphRef.current = serialized
-      // Namespaced by the app's own storage prefix — this is what the embedded iframe's flow
-      // runtime reads, and what keeps two apps in one Fact Explorer from overwriting each other.
+      // Namespaced by the app's own prefix: what the embedded iframe's runtime reads, and what
+      // keeps two apps in one Fact Explorer from overwriting each other.
       bridgePublish(serialized, app.storagePrefix)
     }
   }
 
   // The real <taxpert-scenario-modal>'s "Load scenario" button fetches the selected scenario
   // file itself (fact-graph-io.js's loadScenarioFromAuditPanel, reading `#scenario-select`'s
-  // value — an id the modal's header comment documents as a stable integration point) and hands
+  // value, an id the modal's header comment documents as a stable integration point) and hands
   // the JSON text to window.loadFactGraph(). In credit-assistant that global saves it and reloads
-  // the page; here it feeds Fact Explorer's own pipeline instead — run the real engine in-browser
+  // the page. Here it feeds Fact Explorer's own pipeline instead: run the real engine in-browser
   // and overlay the computed visibility, exactly what the old inline picker's onLoad did.
   useEffect(() => {
     window.loadFactGraph = (json) => {
@@ -269,7 +254,7 @@ export default function FactExplorer({ app }) {
   // via DOM textContent, not string interpolation, so a scenario filename can't be read as markup)
   // and the filter-dropdown descriptors + filename decoder for whichever vocabulary this app
   // declared (see model/scenarios/). An app with none gets an empty `fields`, which the modal
-  // renders as a plain filename list. Handed over as nodes — the element takes them directly, so
+  // renders as a plain filename list. Handed over as nodes, the element taking them directly, so
   // there is no outerHTML → parse round-trip in the middle.
   const scenarioOptions = useMemo(
     () =>
@@ -283,7 +268,7 @@ export default function FactExplorer({ app }) {
   )
   const scenarioFilters = useMemo(() => vocabularyFor(app), [app])
 
-  // Whole-graph path→fact lookup (not just the current slice) — backs the
+  // Whole-graph path to fact lookup, not just the current slice, backing the
   // explain popup's labels and dependency navigation.
   const factByPath = useMemo(() => {
     const m = new Map()
@@ -311,7 +296,7 @@ export default function FactExplorer({ app }) {
   }
 
   // A dependency name in the explain popup selects (and, if on-canvas, centres)
-  // the target fact node — the Fact Explorer analogue of the audit panel's fact-link.
+  // the target fact node, the Fact Explorer analogue of the audit panel's fact-link.
   function navigateToFact(path) {
     const fact = factByPath.get(path)
     if (!fact) return
@@ -356,7 +341,7 @@ export default function FactExplorer({ app }) {
     })
   }
 
-  // Default to the first flow page once the graph loads — never the full graph.
+  // Default to the first flow page once the graph loads, never the full graph.
   useEffect(() => {
     if (graph && sliceKey === null) setSliceKey(defaultSliceKey(graph))
   }, [graph, sliceKey])
@@ -391,7 +376,7 @@ export default function FactExplorer({ app }) {
     scenarioStatus,
   ])
 
-  // Positions are computed once per slice/facet/reset — NOT per keystroke — so
+  // Positions are computed once per slice, facet or reset, NOT per keystroke, so
   // search never reshuffles the canvas. layoutVersion forces a rebuild after
   // "Reset layout" clears saved positions. Drill (radial ego) and cone (layered
   // tree) layouts override the banded placement and ignore saved drag positions.

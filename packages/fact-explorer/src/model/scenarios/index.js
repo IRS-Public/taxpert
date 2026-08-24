@@ -1,4 +1,4 @@
-// Scenario vocabularies — the one genuinely app-specific thing fact-explorer holds.
+// Scenario vocabularies, the one genuinely app-specific thing Fact Explorer holds.
 //
 // A scenario filter set is not a path that can be parameterized into generality: credit-assistant's
 // dropdowns say "Qualifying / Disqualifying", "Head of Household", "3 qualifying children", and its
@@ -6,8 +6,8 @@
 // that means anything to another app. So rather than pretend one vocabulary fits all, an app names
 // the one it uses in its fact-explorer.app.json (`scenarios.vocabulary`) and gets it from here.
 //
-// The floor is `none`, and it is the common case: an app with no scenarios at all — as
-// tax-withholding-estimator has — gets no filter dropdowns and a plain list of filenames. That is a
+// The floor is `none`, and it is the common case. An app with no scenarios at all gets no filter
+// dropdowns and a plain list of filenames. That is a
 // working scenario picker, not a degraded one.
 //
 // Deliberately NOT a data-driven filter DSL in the descriptor. Exactly one vocabulary exists; a
@@ -34,7 +34,7 @@ const VOCABULARIES = {
 }
 
 /**
- * The vocabulary an app declared. Unknown or absent names resolve to `none` rather than throwing —
+ * The vocabulary an app declared. Unknown or absent names resolve to `none` rather than throwing,
  * a scenario picker with no dropdowns is a much better failure than a fact-explorer that will not load.
  *
  * @param {string|null|undefined} id

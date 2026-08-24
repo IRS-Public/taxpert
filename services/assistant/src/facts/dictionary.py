@@ -1,4 +1,8 @@
-"""Fact dictionary XML parser for the EITC fact-graph."""
+"""Parses an application's fact-dictionary.xml into ``Fact`` records by path.
+
+Loaded once at startup from FACT_DICTIONARY_PATH or FACT_DICTIONARY_URL, and
+shared by both orchestrators. See ../../../../docs/internals/assistant-service.md
+"""
 
 from __future__ import annotations
 
@@ -8,9 +12,8 @@ from urllib.parse import urlparse
 
 from lxml import etree
 
-# Hardened XML parser: disable DTD loading, entity resolution and network access
-# so a malicious or malformed fact-dictionary.xml cannot trigger XXE / billion-laughs
-# entity expansion or fetch external resources while we parse it.
+# Hardened against XXE, entity expansion and external fetches. Keep in step with
+# the parser in src/agent/scenario_orchestrator.py.
 _SAFE_XML_PARSER = etree.XMLParser(
     resolve_entities=False,
     no_network=True,
@@ -40,10 +43,8 @@ class FactDictionary:
     def load(cls, source: str) -> "FactDictionary":
         """Load and parse a fact dictionary from a file path or HTTP(S) URL.
 
-        ``source`` is operator config (FACT_DICTIONARY_PATH / FACT_DICTIONARY_URL),
-        not user input. We still restrict URL loads to the http/https schemes so a
-        ``file://`` or other custom scheme can never be opened via ``urlopen`` (B310),
-        and parse with a hardened parser that blocks XXE / entity expansion.
+        URL loads are restricted to http/https so ``urlopen`` can never open
+        another scheme (bandit B310).
         """
         scheme = urlparse(source).scheme
         if scheme in ("http", "https"):
@@ -65,7 +66,7 @@ class FactDictionary:
 
     def _parse(self, root: etree._Element) -> None:
         """Walk the XML tree and populate facts_by_path."""
-        # Facts can appear as <Fact> or <WritableFact> elements anywhere in the tree
+        # <Fact> and <WritableFact> elements can appear at any depth.
         for elem in root.iter():
             local = etree.QName(elem.tag).localname if isinstance(elem.tag, str) else None
             if local not in ("Fact", "WritableFact"):
@@ -83,12 +84,10 @@ class FactDictionary:
             desc_elem = elem.find("Description")
             description = (desc_elem.text or "").strip() if desc_elem is not None else ""
 
-            # is_writable: True if tag is WritableFact OR has a <Writable> child
             is_writable = local == "WritableFact" or elem.find("Writable") is not None
 
-            # Collect direct <Dependency> children only (not nested ones under Derived etc.)
-            # The spec says "all <Dependency> children" — we treat all descendants to capture
-            # the formula dependencies for this fact.
+            # All <Dependency> descendants, not only direct children, so nested
+            # formula operands are captured too.
             dependencies: list[str] = []
             for dep in elem.iter("Dependency"):
                 dep_path = dep.get("path")

@@ -1,38 +1,11 @@
-// Switching the workspace from one application to another, without losing where you are.
+// The Applications section of Workspace settings: which application the workspace is over, and
+// where switching to another one lands.
 //
-// The workspace is a harness laid over *an* application, and there is more than one: a Form Builder
-// repo holds several, each served under its own base path, and the same three or four destinations
-// exist in each — Product Experience, Path Mode, Browse All, the Fact Explorer, the Authoring
-// Suite. Moving between applications used to mean going back to a landing page and picking a card,
-// which threw away the destination you were on.
+// The rule encoded here is that a switch keeps the destination, so Browse All in one application
+// goes to Browse All in the next. The hosts declare the destination URLs. No application name, path
+// or origin may appear in this file.
 //
-// So the rule this module encodes is: **switching application keeps the destination**. Browse All
-// in one application goes to Browse All in the next; Path Mode to Path Mode. The destination you
-// are on is the nav's `active` id, and each application declares its own href for each id.
-//
-// ── Why the hosts declare the URLs, rather than this deriving them ────────────────────────────
-//
-// It is tempting to give each application a `basePath` and have this append '/all-screens/' for
-// 'browse-all'. That would make the package know what a destination *means* — but destination ids
-// are the host's taxonomy, not this package's (nav-menu-data.js), and one of the two applications
-// here reaches its Fact Explorer at another origin entirely. A host already writes its own menu;
-// writing its siblings' is the same act.
-//
-// The shape, as a host supplies it through configure():
-//
-//   apps: {
-//     current: 'pet-planner',
-//     items: [
-//       { id: 'pet-planner', label: 'Pet Planner', destinations: [
-//           { id: 'product-experience', label: 'Product Experience', href: '<its base path>/' },
-//           …
-//       ]},
-//       { id: 'plant-planner', label: 'Plant Planner', destinations: [ … ] },
-//     ],
-//   }
-//
-// No application name, path or origin appears in this file, and none may — the items are entirely
-// the host's, exactly like `nav.menu`.
+// See ../../../../../docs/internals/workspace-configuration.md
 
 /** The event a host may intercept to switch application in-app instead of navigating. */
 export const APP_SELECT_EVENT = 'taxpert:app-select'
@@ -49,17 +22,12 @@ export function appItems (apps) {
   return items(apps).filter((app) => typeof app?.id === 'string' && app.id.length > 0)
 }
 
-/** The one that is being shown, by `apps.current`. `null` when the host named none or a stale id. */
+/** The one being shown, by `apps.current`. `null` when the host named none or a stale id. */
 export function currentApp (apps) {
   return appItems(apps).find((app) => app.id === apps?.current) ?? null
 }
 
-/**
- * Whether there is a choice to offer.
- *
- * One application is not a picker — it is a label — so the Applications section hides itself
- * rather than showing a control with a single option and nothing to switch to.
- */
+/** Whether there is a choice to offer. Below two, the Applications section hides itself. */
 export function hasAppChoice (apps) {
   return appItems(apps).length > 1
 }
@@ -70,12 +38,8 @@ export function destinationsOf (app) {
 }
 
 /**
- * Where selecting `targetId` should go, from the destination you are on now.
- *
- * The same destination in the target application when it has one; otherwise its first, because an
- * application that has no Authoring Suite should still be reachable from an Authoring Suite — just
- * not at a URL that 404s. `null` when the target declares no destinations at all, which is a host
- * that gave a bare id and nothing to do with it.
+ * Where selecting `targetId` goes from the destination you are on now: the same destination in the
+ * target application when it has one, otherwise its first. `null` when the target declares none.
  *
  * @param {object} apps the `apps` namespace
  * @param {string} targetId the application being switched to
@@ -92,12 +56,8 @@ export function switchTarget (apps, targetId, destinationId) {
 }
 
 /**
- * The destination the page is on, read from the mounted nav.
- *
- * The nav owns `active` — it is a page-level attribute the host stamps on the element, not
- * configuration — so this is a read of the workspace's own DOM rather than a second source of the
- * same fact. Absent nav, or no `active`, means "nowhere in particular", and the switch falls back
- * to the target's first destination.
+ * The destination the page is on, read from the mounted nav's `active` attribute rather than from
+ * configuration, because the page knows where it is and the configuration does not.
  *
  * @returns {string|null}
  */

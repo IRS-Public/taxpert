@@ -1,38 +1,25 @@
-// Live shared-state bridge (N6).
+// The live shared-state bridge between Fact Explorer and a running Form Builder app.
 //
-// The canonical contract between Fact Explorer and a running Form Builder app is the flow runtime's
-// serialized-graph sessionStorage key plus a BroadcastChannel. Because the Vite proxy collapses
-// both surfaces onto the 5180 origin, an embedded app iframe shares Fact Explorer's sessionStorage
-// and channel:
-//   - Fact Explorer → app: publish() writes the storage key and posts on the channel; the embedded
-//     iframe rehydrates via the app's own boot path.
-//   - app → Fact Explorer: the runtime's saveFactGraph() posts the serialized graph; subscribe()
-//     hands it back so Fact Explorer can treat it as the active scenario.
+// The contract is the flow runtime's serialized-graph sessionStorage key plus a BroadcastChannel.
+// The Vite proxy collapses both surfaces onto one origin, so an embedded app iframe shares Fact
+// Explorer's sessionStorage and channel. publish() writes the key and posts, and subscribe() hands
+// back what the app's own saveFactGraph() posted.
 //
-// ── The storage key is namespaced, and must be ────────────────────────────────────────────────
+// THE STORAGE KEY MUST BE NAMESPACED, which is why the prefix argument is required and has no
+// default. A bare key would be shared between two apps in one Fact Explorer, so one app's
+// serialized graph would rehydrate another's dictionary.
 //
-// This module wrote a bare 'factGraph' while the flow runtime has long read a *prefixed* one —
-// `storageKey('factGraph')` in flow-runtime/js/runtime-config.js, i.e. 'credit-assistant:factGraph'.
-// So the storage half of Fact Explorer → app was writing a key nothing read: rehydrating the
-// iframe on panel open and on the ⟳ Reload button did nothing, and only the BroadcastChannel path
-// worked (fg-graph-bridge.js writes the correct key itself on receipt, which is what hid the bug).
+// THE CHANNEL NAME AND MESSAGE SHAPE ARE FIXED BYTE FOR BYTE. fg-graph-bridge.js declares that a
+// hard compatibility constraint and names this file as the other side.
 //
-// With more than one app in Fact Explorer the same bare key would be *shared* between them — app A's
-// serialized graph rehydrating app B's dictionary, which is the exact collision storagePrefix
-// exists to prevent. Hence the required prefix argument: there is no sensible default for it.
-//
-// The channel name and the message shape are byte-for-byte fixed — fg-graph-bridge.js declares
-// that a hard compatibility constraint and names this file as the other side. Only the storage
-// key changed.
-//
-// React-free and feature-detected so it no-ops where BroadcastChannel is absent
-// (and stays node-testable).
+// React-free and feature-detected, so it no-ops where BroadcastChannel is absent and stays
+// node-testable. See ../../../../docs/internals/fact-explorer-internals.md
 
 const CHANNEL_NAME = 'taxpert:factGraph'
 
 /**
  * The flow runtime's serialized-graph key for one app. Mirrors `storageKey()` in
- * form-builder/website-static/flow-runtime/js/runtime-config.js — one line, duplicated rather than
+ * form-builder/website-static/flow-runtime/js/runtime-config.js. One line, duplicated rather than
  * imported for the same reason `makeCollectionIdPath` is: form-builder ships as a Scala jar, not an
  * npm package, and a relative path into vendor/form-builder/ exists only inside a built app, not in
  * fact-explorer's Vite bundle. Keep the two identical.
@@ -53,7 +40,7 @@ function makeChannel() {
 /**
  * Publish a serialized fact graph to every same-origin surface.
  * @param {string} serializedGraphJSON the engine's graph.toJSON() output
- * @param {string} storagePrefix the target app's storage prefix — required, so that two apps open
+ * @param {string} storagePrefix the target app's storage prefix. Required, so that two apps open
  *   in one Fact Explorer can never write each other's graph. Without it only the channel is used.
  */
 export function publish(serializedGraphJSON, storagePrefix) {

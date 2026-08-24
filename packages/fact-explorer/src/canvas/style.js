@@ -77,7 +77,7 @@ export const INPUT_TYPE_BADGE = {
   tin: { glyph: '⌗', label: 'TIN' },
 }
 
-// Fallback node style when a node's category isn't in CATEGORY_STYLE (defensive —
+// Fallback node style when a node's category is not in CATEGORY_STYLE (defensive,
 // only fires on malformed data). Mirrors the neutral conditional-block look.
 export const NODE_FALLBACK = { bg: '#fff', border: '#9aa3ab' }
 
@@ -96,7 +96,7 @@ export const FOCAL_HIGHLIGHT = { ring: '#2b6cb0', ringWidth: 4 }
 
 // Dependency-cone hub marker (node.data.hub). A high-fan-in shared input
 // (tax-year constants, /isFilingStatusMFJ, …) that coneLayout pins to the inputs
-// rail. The pin badge + muted look signal "shared leaf — referenced widely".
+// rail. The pin badge and muted look signal a shared leaf, referenced widely.
 export const HUB_BADGE = { glyph: '📌', label: 'Shared input (hub)', dim: 0.85 }
 
 // "Explain this node" badge (N7). A per-node launcher that hands the node to the
@@ -117,7 +117,7 @@ export const EXPLAIN_BADGE = {
 
 // Scenario-overlay emphasis (N4). When a scenario is loaded, computeVisibility's
 // status rides node.data (scenarioStatus / scenarioDim / scenarioIncomplete) and
-// FgmNode renders it through these tokens — never hard-coded colours. Seeds match
+// FgmNode renders it through these tokens, never hard-coded colours. Seeds match
 // the audit panel's swatch semantics: knockout red, incomplete amber, hidden dim.
 export const SCENARIO_STATUS = {
   'knockout-active': { ring: '#c0392b', ringWidth: 3, label: 'Knockout active' },

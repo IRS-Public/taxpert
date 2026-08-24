@@ -1,22 +1,11 @@
-// How a host writes its flow markup, described rather than assumed.
+// The host's flow markup, described as CSS selectors, attribute names and three predicates.
 //
-// The workspace reads the host's *rendered page*, not just its fact graph: Inspect makes every
-// question hoverable, the path cursor truncates at the first unanswered one, "Mark conditional
-// items" injects a chip beside each `condition`/`operator` pair. All of that was written against
-// credit-assistant's `fg-*` custom elements and USWDS classes, hardcoded across five modules.
+// The workspace reads the rendered page as well as the fact graph. Inspect makes questions
+// hoverable, the path cursor truncates at the first unanswered one, and "Mark conditional items"
+// chips each condition. The defaults reproduce the `fg-*` markup Form Builder's flow runtime
+// renders, so a host on that markup supplies nothing and any other overrides only what differs.
 //
-// Every default below reproduces exactly what those modules did, so credit-assistant — and
-// tax-withholding-estimator, which shares the same `fg-*` lineage — need supply nothing. A host
-// with different markup overrides only the keys that differ:
-//
-//   configure({ flowDom: { questionTag: 'x-question', displayTag: 'x-display' } })
-//
-// ── uncuedPaths is the one default that changed ───────────────────────────────────────────────
-//
-// inspect-cues.js carried `UNCUED_DISPLAY_FACTS = new Set(['/taxYear'])`. `/taxYear` is a fact in
-// *someone's* dictionary, not a platform concept, so it defaults to empty here and credit-assistant
-// supplies it. If Inspect cues start appearing on every tax-year mention, that config line is
-// missing — see credit-assistant's taxpert-config.html fragment.
+// See ../../../../../docs/internals/workspace-configuration.md
 
 /**
  * @typedef {object} FlowDom
@@ -43,8 +32,8 @@
  */
 
 /**
- * credit-assistant's conventions, which are also tax-withholding-estimator's. Returned fresh each
- * call so a host mutating its copy cannot corrupt the defaults.
+ * The flow runtime's own conventions. Returned fresh each call, so a host mutating its copy cannot
+ * corrupt the defaults.
  * @returns {FlowDom}
  */
 export function defaultFlowDom () {
@@ -62,9 +51,8 @@ export function defaultFlowDom () {
     knockoutAttr: 'knockout',
 
     modalTag: 'dialog',
-    // The link and the overlay are described separately because "show modals inline" has to pair
-    // them up: an overlay is authored at the foot of its page, and the only thing that says which
-    // question it belongs to is the link pointing at its id.
+    // Link and overlay are named separately because "show modals inline" has to pair them up. An
+    // overlay is authored at the foot of its page, and only the link says which question it is for.
     modalLinkSelector: 'modal-link',
     modalLinkAttr: 'for',
     screenSelector: 'article.screen',
@@ -72,12 +60,11 @@ export function defaultFlowDom () {
     titleSelector: '.twe-question, legend, label',
     notTitleSelector: '.usa-hint',
 
-    // Was ['/taxYear'] — an application fact, so it is the host's to supply. See the module comment.
+    // Application facts, so the host supplies them. Empty means every display unit earns a cue.
     uncuedPaths: [],
 
-    // A unit the host is not currently showing. `.hidden` is credit-assistant's own convention;
-    // offsetParent catches display:none from any other source, and the getClientRects() fallback
-    // covers position:fixed (whose offsetParent is null even when visible).
+    // offsetParent catches display:none from any source. The getClientRects() fallback covers
+    // position:fixed, whose offsetParent is null even when the element is visible.
     isHidden (el) {
       if (!el) return true
       if (el.classList?.contains('hidden')) return true
@@ -85,10 +72,8 @@ export function defaultFlowDom () {
       return el.offsetParent === null && el.getClientRects?.().length === 0
     },
 
-    // Whether a question already has a value. The host's element is the authority — credit-assistant's
-    // <fg-set> exposes a `value` getter — so this only falls back to reading form controls when it
-    // doesn't. Overridable because "answered" is a host judgement: an empty string may or may not
-    // count.
+    // The host's element wins when it exposes isAnswered() or a `value` getter. Reading form
+    // controls is the fallback. Overridable because whether an empty string counts is a host call.
     isAnswered (el) {
       if (!el) return false
       if (typeof el.isAnswered === 'function') return Boolean(el.isAnswered())
@@ -105,10 +90,8 @@ export function defaultFlowDom () {
       return false
     },
 
-    // Evaluate a flow condition. There is no host-agnostic way to do this — it needs the fact graph
-    // and the host's operator vocabulary — so the default answers `true` (nothing is conditioned
-    // out) rather than guessing. credit-assistant injects its own via config; today it passes the
-    // same function in as `checkConditionFn`.
+    // Evaluating a real condition needs the graph and the host's operator vocabulary, so the
+    // default concedes rather than guessing. Hosts override it.
     checkCondition () {
       return true
     },

@@ -3,7 +3,7 @@
 @import 'base.css';
 @import 'explain.css';
 
-/* Feature stylesheets — one per component family. */
+/* Feature stylesheets, one per component family. */
 @import 'home.css';
 @import 'fact-explorer.css';
 @import 'controls.css';

@@ -50,7 +50,7 @@
   --ttp-units-1: var(--units-1, 0.5rem);
   --ttp-units-2: var(--units-2, 1rem);
   --ttp-font: var(--font-sans, 'Source Sans Pro Web', 'Source Sans Pro', 'Helvetica Neue', Helvetica, Roboto, Arial, sans-serif);
-  /* Inspect's Advanced readout is raw fact-dictionary XML, which needs the mono face — USWDS ships
+  /* Inspect's Advanced readout is raw fact-dictionary XML, which needs the mono face. USWDS ships
      Roboto Mono, and the fallback stack is the one its own $theme-font-type-mono resolves to. */
   --ttp-font-mono: var(--font-mono, 'Roboto Mono Web', 'Roboto Mono', 'Bitstream Vera Sans Mono', Consolas, Monaco, monospace);
 

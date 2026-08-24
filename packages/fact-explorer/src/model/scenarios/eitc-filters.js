@@ -1,7 +1,7 @@
 // fact-explorer-owned EITC scenario-filter vocabulary for the shared <taxpert-scenario-modal>
 // (taxpert/react/scenario-modal, mounted in FactExplorer.jsx). Verbatim port of the field
 // descriptors credit-assistant registers for the same modal in Product Experience
-// (website-static/js/scenario-filters.js) — the five filter dropdowns, ported from
+// (website-static/js/scenario-filters.js): the five filter dropdowns, ported from
 // scenarios-section.html. Each `key` names the parseScenarioFilename() (scenarioFilename.js)
 // dimension the dropdown filters on; `showFor` (marital only) hides the group unless another
 // filter's value is in the given set (HOH-only, matching the original).

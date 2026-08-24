@@ -1,3 +1,9 @@
+"""Pydantic request and response bodies for the two routes.
+
+Shapes are mirrored in packages/ui and packages/fact-explorer, so a change here
+needs a matching change there.
+"""
+
 from __future__ import annotations
 
 from typing import Any
@@ -9,12 +15,9 @@ class ChatRequest(BaseModel):
     """Inbound chat request from the frontend."""
 
     prompt: str
-    # Either a plain list of fact paths, or a list of {path, value, ...} dicts.
+    # Either plain fact paths, or {path, value, complete, dependencies} dicts.
     tracked_facts: list[Any] = []
-    # Optional structured context for the "Explain this node" feature. A dict with a
-    # `kind` discriminator: "fact" (a fact path), "flow" (a flow element's metadata
-    # + bound fact + 1-hop neighbours), or "scenario" (the loaded scenario's outcome
-    # + active knockouts). None for a plain audit-panel chat.
+    # "Explain this node" payload, keyed by a `kind` of fact, flow or scenario.
     context: dict[str, Any] | None = None
 
 
@@ -33,10 +36,9 @@ class ScenarioRequest(BaseModel):
 class ScenarioResponse(BaseModel):
     """Outbound generated scenario.
 
-    ``scenario_json`` is the serialized fact-graph object (a flat map of
-    fact-path -> {"$type": ..., "item": ...} wrappers), exactly the shape of the
-    files in credit-assistant/.../scenarios/. The frontend JSON.stringify's it
-    before handing it to ``loadFactGraph()``.
+    ``scenario_json`` is a flat map of fact path to
+    ``{"$type": ..., "item": ...}`` wrapper, the same shape as the files in an
+    application's own scenarios/ directory.
     """
 
     scenario_json: dict[str, Any]

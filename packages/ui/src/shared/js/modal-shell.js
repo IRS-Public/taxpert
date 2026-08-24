@@ -1,20 +1,15 @@
-// The <dialog> shell the three workspace modals share.
+// The <dialog> shell shared by <taxpert-scenario-modal>, <taxpert-display-modal> and
+// <taxpert-workspace-settings-modal>.
 //
-// <taxpert-scenario-modal>, <taxpert-display-modal> and <taxpert-workspace-settings-modal> each
-// carried a byte-identical copy of this chrome (dialog + usa-modal__content > usa-modal__main +
-// close button + heading) and of open()/close() with their jsdom `showModal` guard. The markup now
-// lives once in src/shared/templates/shared.html as <template id="tms-shell">; this module stamps
-// the per-modal identity onto a clone and owns the open/close semantics.
-//
-//   loadModalShell()             — kick off / await the shared template file
-//   buildModalShell(host, opts)  — clone the shell into `host`; returns { dialog, main }
-//   openDialog(dialog) / closeDialog(dialog)
+// The markup lives once in src/shared/templates/shared.html as <template id="tms-shell">. This
+// module stamps the per-modal identity onto a clone and owns the open/close semantics, including
+// the jsdom fallback for engines without showModal().
 
 import { getTemplate, loadTemplates } from './templates.js'
 
 const SHARED_TEMPLATES = new URL('../templates/shared.html', import.meta.url)
 
-// USWDS's "a modal owns the viewport" body class; the host page's scroll lock keys off it.
+// USWDS's "a modal owns the viewport" body class. The host page's scroll lock keys off it.
 const BODY_MODAL_CLASS = 'usa-js-modal--active'
 
 /** Fetch (once) the shared template file. Awaited by every modal before it renders. */
@@ -26,9 +21,9 @@ export function loadModalShell () {
  * Clone the shared shell into `host`, replacing whatever it held.
  * @param {HTMLElement} host the custom element
  * @param {{ id: string, prefix: string, heading: string }} options
- *   `prefix` is the modal's BEM-ish namespace ('tsm' | 'tdm' | 'twsm'); it names the dialog's
- *   `<prefix>-dialog` / `-main` / `-close` / `-heading` classes and the heading id that
- *   aria-labelledby points at.
+ *   `prefix` is the modal's BEM-ish namespace ('tsm', 'tdm' or 'twsm'). It names the dialog's
+ *   `-dialog`, `-main`, `-close` and `-heading` classes, and the heading id aria-labelledby
+ *   points at.
  * @returns {{ dialog: HTMLDialogElement, main: HTMLElement }}
  */
 export function buildModalShell (host, { id, prefix, heading }) {
@@ -57,12 +52,9 @@ export function buildModalShell (host, { id, prefix, heading }) {
   return { dialog, main }
 }
 
-/**
- * Show `dialog` modally. Returns whether it actually opened (false if absent or already open).
- */
+/** Show `dialog` modally. Answers whether it opened, false when absent or already open. */
 export function openDialog (dialog) {
   if (!dialog || dialog.open) return false
-  // Guard for jsdom/older engines that don't implement showModal().
   if (typeof dialog.showModal === 'function') dialog.showModal()
   else dialog.setAttribute('open', '')
   document.body.classList.add(BODY_MODAL_CLASS)

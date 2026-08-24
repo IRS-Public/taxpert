@@ -1,4 +1,9 @@
-"""System prompt for the EITC diagnostic agent."""
+"""System prompt for the chat loop.
+
+Sets the tool ordering (identify_facts, then query_rag only when official
+grounding is needed), how to read the tracked-fact tree and the explain context,
+and the required submit_final_answer fields.
+"""
 
 from __future__ import annotations
 

@@ -8,11 +8,11 @@
 //
 // Read-only MVP: the audit panel interleaves *live* values from window.factGraph
 // (value chips, "incomplete" markers). There is no engine here, so those are
-// omitted — the renderer already degrades to a purely structural view (derivation
+// omitted. The renderer already degrades to a purely structural view (derivation
 // logic + dependency names + raw XML), which is exactly requirement #2.
 //
 // Dependency names are emitted as navigable spans (`data-nav-path`) so the panel
-// can select/centre the target fact node — the fact-explorer analogue of `fact-link`.
+// can select and centre the target fact node, the Fact Explorer analogue of `fact-link`.
 import { escapeHtml } from '../util/html.js'
 
 /** Prettify a fact path's leaf segment as a fallback label ("isFooBar" → "foo bar"). */

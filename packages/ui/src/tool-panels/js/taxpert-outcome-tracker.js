@@ -1,39 +1,27 @@
-// <taxpert-outcome-tracker> — the Outcome tracker tool's body: where each of the host's
+// <taxpert-outcome-tracker>, the Outcome tracker tool's body: where each of the host's
 // determinations has got to, and what is still standing between it and an answer.
 //
-// This is credit-assistant's old "Eligibility Inspector" audit-panel section, done as a panel. That
-// section printed two flat lists of fact paths with a colour swatch each and a legend explaining
-// what the swatches meant; a determination row answers the question you were actually reading those
-// lists to answer — has this settled, and to what — and keeps the fact-by-fact working behind a
-// <details>.
-//
-// The element owns no state and knows no application. `config.determinations` holds what is being
-// tracked and how each rollup is spoken, fact-values.js reads current values out of the host's
-// graph, and this renders the two together:
+// The element owns no state and knows no application. `config.determinations` holds what is tracked
+// and how each rollup is spoken, fact-values.js reads current values out of the host's graph, and
+// this renders the two together:
 //
 //   fg-load / fg-update     a value changed        → refresh every row in place
 //   taxpert:config-changed  the list itself moved  → rebuild
 //
-// Refreshing in place rather than rebuilding is the point of the first: an `fg-update` fires on
-// every keystroke in the flow, and rebuilding would slam shut any determination the user had
-// expanded to read. A config change is the one thing that does have to rebuild, and it is rare —
-// a host configures once at page level, or once per data-source switch.
+// Refreshing in place rather than rebuilding is the point of the first. An `fg-update` fires on
+// every keystroke, and rebuilding would slam shut any determination expanded to read.
 //
 // With no determinations configured the panel draws an empty state rather than an empty accordion
-// list. An empty list would read as "nothing has settled yet"; the truth is that nothing is being
-// tracked, and every host but the one that configures a list is in that position.
-//
-// It renders inside <taxpert-tool-panel>, which is created once and *moved* between columns rather
-// than rebuilt, so an expanded determination survives docking, floating and dragging.
+// list, which would read as "nothing has settled yet" when the truth is that nothing is tracked.
 //
 // A determination is:
 //   { id, label, rollupPath, outcome, sections: [{ heading, facts: [path] }] }
 //
-// `outcome` says how the rollup is spoken. It is a descriptor — `{ kind: 'boolean', … }` and the
-// three others in outcome-kinds.js — so that a determination is entirely JSON and can be edited,
-// shipped in a config file, or pasted between browsers. A function is still accepted and passes
-// straight through. Either way it is resolved once per row, when the tree is built, rather than on
-// every `fg-update`.
+// `outcome` is a descriptor (see shared/js/outcome-kinds.js), so a determination is entirely JSON.
+// A function is still accepted. Either way it is resolved once per row when the tree is built,
+// rather than on every fg-update.
+//
+// See ../../../../../docs/internals/tool-panels.md
 
 import { onFactChange, readFact } from './fact-values.js'
 import { getConfig, CONFIG_CHANGE_EVENT } from '../../shared/js/config.js'
@@ -42,16 +30,13 @@ import { getTemplate } from '../../shared/js/templates.js'
 import { loadOutcomeTrackerTemplates } from './templates.js'
 
 // What a fact row draws for each status fact-values.js reports. The outlined icons are deliberate:
-// the filled check_circle is the determination's own mark, and repeating it on every row underneath
-// would flatten the two levels together.
+// the filled check_circle is the determination's own mark, and repeating it below would flatten the
+// two levels together.
 //
-// Every status carries an icon, unanswered ones included. They were `icon: null` — the bare word,
-// with the slot held open but blank — and that read as a rendering fault rather than as a state,
-// because the column it sits in draws a mark on every other row. The part-drawn ring is the same
-// glyph the Watchlist gives an unanswered fact (taxpert-watchlist.js) and the same one a pending
-// determination wears in its own summary above, so "still working" is one picture at all three
-// levels. The `[hidden]` reserve rule in outcome-tracker.css stays: nothing sets it today, but it is
-// what keeps the label column aligned if a status ever goes back to having no mark.
+// Every status carries an icon, unanswered included, because the column draws a mark on every other
+// row and a blank slot read as a rendering fault. The part-drawn ring is the same glyph the
+// Watchlist gives an unanswered fact and the same one a pending determination wears, so "still
+// working" is one picture at all three levels.
 const FACT_STATE = new Map([
   ['complete', { icon: '#ttp-icon-check_circle_outline', label: 'True' }],
   ['false', { icon: '#ttp-icon-error_circle_outline', label: 'False' }],
@@ -59,7 +44,7 @@ const FACT_STATE = new Map([
   ['unknown', { icon: '#ttp-icon-pending', label: 'Unavailable' }],
 ])
 
-/** A fact still waiting on an answer — what the summary counts when it has no outcome to show. */
+/** A fact still waiting on an answer, which is what the summary counts with no outcome to show. */
 const isUnanswered = (state) => state.status !== 'complete' && state.status !== 'false'
 
 /**
@@ -67,7 +52,7 @@ const isUnanswered = (state) => state.status !== 'complete' && state.status !== 
  *
  * Exported because a host that supplies determinations usually has a second surface reading the
  * same paths, and deriving both from the one list is the whole reason the list moved out of this
- * package — credit-assistant's eligibility dashboard is the case in point.
+ * package. credit-assistant's eligibility dashboard is the case in point.
  */
 export function determinationFacts (determination) {
   return determination.sections.flatMap((section) => section.facts)
@@ -109,7 +94,7 @@ class TaxpertOutcomeTracker extends HTMLElement {
 
   // ── Rendering ────────────────────────────────────────────────────────────────
 
-  // The whole tree — rows, section headings, fact rows — is built here, and rebuilt only when the
+  // The whole tree (rows, section headings, fact rows) is built here, and rebuilt only when the
   // configured list changes. Everything after this point only writes text and swaps attributes.
   render () {
     const determinations = getConfig().determinations
@@ -200,7 +185,7 @@ class TaxpertOutcomeTracker extends HTMLElement {
 
   _refreshFact (element, state) {
     const display = FACT_STATE.get(state.status) ?? FACT_STATE.get('unknown')
-    // A complete non-boolean — a filing-status enum is the one in practice — shows its own value
+    // A complete non-boolean, a filing-status enum being the one in practice, shows its own value
     // rather than the True/False a boolean gets.
     const isBoolean = state.raw === true || state.raw === false
     const label = display.label === 'True' && !isBoolean ? state.value : display.label
@@ -209,7 +194,7 @@ class TaxpertOutcomeTracker extends HTMLElement {
     element.querySelector('[data-field="value"]').textContent = label
 
     // toggleAttribute, not `icon.hidden = …`. `hidden` is an HTMLElement property and this is an
-    // <svg>, which descends from Element via SVGElement and has no such reflection — so the
+    // <svg>, which descends from Element via SVGElement and has no such reflection, so the
     // assignment set a plain JS expando and left the `hidden` attribute the template ships exactly
     // where it was. Every fact row's icon was therefore permanently hidden, True and False included,
     // which is what "the outcome tables have lost their icons" looked like from outside.
@@ -219,7 +204,7 @@ class TaxpertOutcomeTracker extends HTMLElement {
   }
 }
 
-/** "2 unanswered facts" — and "1 unanswered fact", because the panel is read, not scanned. */
+/** "2 unanswered facts", and "1 unanswered fact", because the panel is read rather than scanned. */
 function unansweredLabel (count) {
   return `${count} unanswered fact${count === 1 ? '' : 's'}`
 }

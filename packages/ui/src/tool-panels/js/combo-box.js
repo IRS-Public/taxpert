@@ -13,7 +13,7 @@
 //   ↓ / ↑           move the active option (aria-activedescendant; the input keeps focus)
 //   Enter           commit the active option
 //   Escape          close, leaving the committed value alone
-//   Tab / blur      close, and snap the text back to what is actually committed — a half-typed
+//   Tab / blur      close, and snap the text back to what is actually committed. A half-typed
 //                   path is not a selection, and leaving it on screen would read as though it were
 //
 // The active option is marked `aria-selected="true"`, which is both the accessibility contract and
@@ -159,7 +159,7 @@ export function createComboBox ({ id, placeholder, onChange } = {}) {
         move(-1)
         break
       case 'Enter':
-        // Only swallow Enter when it means "take this option" — otherwise it belongs to the dialog.
+        // Only swallow Enter when it means "take this option". Otherwise it belongs to the dialog.
         if (isOpen() && commitActive()) event.preventDefault()
         break
       case 'Escape':

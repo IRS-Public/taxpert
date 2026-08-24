@@ -26,7 +26,7 @@ taxpert-watchlist {
 
 /* ── A pinned fact ───────────────────────────────────────────────────────── */
 
-/* The status ring is the row's one piece of colour, and it is the only thing keyed off the status —
+/* The status ring is the row's one piece of colour, and the only thing keyed off the status,
    the label and value stay body text, so a red row doesn't read as an error. */
 .ttp-watch__row[data-status="complete"] .ttp-watch__status {
   color: var(--ttp-green);
@@ -146,7 +146,7 @@ taxpert-watchlist {
   font-size: 0.8125rem;
 }
 
-/* Term and definition on one line, definition right-aligned — the designs' two-column read. The
+/* Term and definition on one line, definition right-aligned, the designs' two-column read. The
    1fr/auto split lets a long value take the room a short term doesn't need. */
 .ttp-watch__data-row {
   display: grid;
@@ -249,7 +249,7 @@ taxpert-add-fact-modal {
 .taf-main {
   position: relative;
   box-sizing: border-box;
-  /* Full width, explicitly — see the same rule in workspace-settings-modal.css. USWDS's
+  /* Full width, explicitly. See the same rule in workspace-settings-modal.css. USWDS's
      .usa-modal__content is a flex column and .usa-modal__main carries `margin: 0 auto`, whose auto
      cross-axis margins suppress the stretch and size this block to its widest child instead. */
   width: 100%;
@@ -310,7 +310,7 @@ taxpert-add-fact-modal {
   display: none;
 }
 
-/* Full width, matching the designs — the dialog has one action and it is the point of the dialog. */
+/* Full width, matching the designs. The dialog has one action and it is the point of the dialog. */
 .ttp-add-fact__submit {
   display: block;
   width: 100%;
@@ -324,7 +324,7 @@ taxpert-add-fact-modal {
 }
 
 /* ── Combo box ───────────────────────────────────────────────────────────── */
-/* USWDS's combo box look, without USWDS's combo box JS — see combo-box.js for why. The input keeps
+/* USWDS's combo box look, without USWDS's combo box JS. See combo-box.js for why. The input keeps
    .usa-input so it inherits the host's real field typography and height where USWDS is loaded. */
 
 .ttp-combo {

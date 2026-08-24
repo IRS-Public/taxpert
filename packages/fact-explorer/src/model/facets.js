@@ -1,12 +1,8 @@
-// Facet filters (M6 / 6b) — fine-grained, category-level narrowing.
+// Category-level narrowing within a layer: by flow tag, fact kind and edge kind,
+// plus a knockouts-only view. Where filter.js drops a whole layer, this narrows
+// what is left. A pure FGM to sub-FGM stage; runs after filterGraph.
 //
-// Where filter.js (M3) toggles whole *layers* (flow / facts / cross-edges),
-// facets narrow *within* a layer: by flow tag, by fact kind, by edge kind, plus
-// a "knockouts only" convenience view. It is the same kind of pure FGM→FGM
-// transform as sliceGraph / filterGraph — adds no data, and its output still
-// passes validate(). It runs after filterGraph and before toReactFlow():
-//
-//   transform( facetGraph( filterGraph( sliceGraph(graph, …), layers ), facets ) )
+// The full narrowing chain: ../../../../docs/internals/fact-explorer-internals.md
 
 import { FLOW_TAGS, EDGE_KINDS } from './fgm.js'
 
@@ -20,14 +16,8 @@ const metaOf = (graph) => ({
 })
 
 /**
- * The flow tags this graph actually contains, built-ins first (in their canonical order) and any
- * app-declared tag after, alphabetically.
- *
- * Derived from the graph rather than read off the `FLOW_TAGS` constant: a FormBuilderApp may register
- * its own node types, and a tag missing from this list is filtered off the canvas by default *and*
- * has no checkbox to bring it back — which is how a custom node used to become invisible rather
- * than merely unstyled.
- *
+ * The flow tags this graph actually contains: built-ins in canonical order, then app-declared tags
+ * alphabetically. Derived from the graph, since a tag missing here has no checkbox to bring it back.
  * @param {import('./fgm.js').FormBuilderGraph} [graph]
  * @returns {string[]}
  */
@@ -40,12 +30,8 @@ export function flowTagsOf(graph) {
 }
 
 /**
- * The "everything selected" facets for a given graph — the identity of `facetGraph`.
- *
- * A function of the graph, not a constant, because `flowTags` is. Total: called with no graph (the
- * moment before one has loaded) it falls back to the built-in tag vocabulary, so callers never
- * have to null-check the result.
- *
+ * The "everything selected" facets for a graph, the identity of `facetGraph`. Total: with no graph
+ * it falls back to the built-in tag vocabulary, so callers never null-check the result.
  * @param {import('./fgm.js').FormBuilderGraph} [graph]
  */
 export function defaultFacets(graph) {
@@ -88,8 +74,6 @@ export function facetGraph(graph, facets) {
   let keptFacts
 
   if (f.knockoutsOnly) {
-    // "Knockouts only": just the knockout alerts and the facts they knock out
-    // on — plus (below) the knocks-out edges between them. Everything else goes.
     const koAlertIds = new Set(
       graph.flowElements.filter((e) => e.tag === 'fg-alert' && e.alert?.knockout).map((e) => e.id)
     )
@@ -107,8 +91,7 @@ export function facetGraph(graph, facets) {
 
   const present = new Set([...keptFlow.map((e) => e.id), ...keptFacts.map((x) => x.id)])
 
-  // Same dangling-edge discipline as filterGraph: keep an edge only when both
-  // endpoints survived AND its kind is still selected.
+  // Keep an edge only when both endpoints survived and its kind is still selected.
   const edges = graph.edges.filter(
     (e) => present.has(e.source) && present.has(e.target) && edgeKinds.has(e.kind)
   )

@@ -1,46 +1,30 @@
 // The layout state behind the Tools modal and the tool dock: which tools are on, where each panel
-// sits, and how big it is.
+// sits, and how big it is. Persisted to localStorage under the `toolLayout` key.
 //
-// This module owns the state and its persistence; <taxpert-tools-modal> and <taxpert-tool-dock> are
-// two views over it — the display-options.js split. The difference from display-options is that
-// these two are *peers*: ticking a checkbox shows a panel, and closing [x] a panel unticks the
-// checkbox. So every mutator dispatches TOOL_LAYOUT_CHANGE_EVENT on `document` and both surfaces
-// re-sync from it, the way feature-flags.js already notifies read-side consumers it can't reach.
-//
-// Persistence is localStorage (not sessionStorage like display-options): a panel arrangement is
-// something you set up once and keep, not a preference belonging to the tab you're reviewing in.
-//
-// Sizes are stored as flex ratios, not pixels or percentages, because the CSS does the arithmetic:
-// panels in a column and columns in the dock are all `flex: <ratio> 1 0`, so three panels with no
-// stored ratio split the height three ways on their own. Nothing here computes 33%.
+// This module owns the state; <taxpert-tools-modal> and <taxpert-tool-dock> are peer views over it
+// and re-sync from TOOL_LAYOUT_CHANGE_EVENT. Sizes are stored as flex ratios rather than pixels,
+// because the CSS does the arithmetic. See ../../../../../docs/internals/tool-panels.md.
 //
 // State shape (in memory):
 //   on        Set of tool ids that are switched on
-//   columns   [{ flex, ids: [...] }]  docked columns, left→right; each `ids` is a top→bottom stack
-//   floating  Map id → { x, y, w, h }  undocked panels, in px
+//   columns   [{ flex, ids: [...] }]  docked columns, left to right; each `ids` is a top-down stack
+//   floating  Map id -> { x, y, w, h }  undocked panels, in px
 //   width     dock width in px, or null for the CSS default
-//   heights   Map id → flex ratio within its column
-//
-// Internal lookups go through Maps and Sets rather than plain objects so no read is a dynamic
-// `obj[name]` computed member access — the same reason feature-flags.js uses a Map.
+//   heights   Map id -> flex ratio within its column
 
 import { toolIds, canonicalIndex, inCanonicalOrder } from './tool-registry.js'
 import { storageKey } from '../../shared/js/storage-keys.js'
 
 export const TOOL_LAYOUT_CHANGE_EVENT = 'taxpert:tool-layout-changed'
 
-// storageKey('toolLayout') is called at each read and write, never captured in a module-scope const:
-// this module is imported before the host calls configure(), so a captured key would pin the
-// default 'taxpert:' prefix forever and the host's namespace would silently never take effect.
-//
-// A host that adopts a storagePrefix therefore loses its panel arrangement once, on the next load.
-// That is accepted — it is dev-tool state that costs seconds to set up again, and migration code
-// for it would outlive its usefulness by years.
+// storageKey('toolLayout') is called at each read and write, never captured in a module-scope
+// const: this module loads before the host's configure(), so a captured key would pin the default
+// prefix forever.
 
 /** Panel and column minimum, in px. Mirrors --ttp-min-width in tool-panel.css. */
 export const PANEL_MIN_WIDTH = 300
 
-/** The host content area never narrows past this — the USWDS tablet breakpoint. */
+/** The host content area never narrows past this, the USWDS tablet breakpoint. */
 export const HOST_MIN_WIDTH = 640
 
 /** Floating panels only. Mirrors --ttp-min-height in tool-panel.css. */
@@ -49,20 +33,15 @@ export const PANEL_MIN_HEIGHT = 300
 const DEFAULT_DOCK_WIDTH = 480
 
 let state = null
-// The tool list `state` was revived under. reviveState() drops any stored id the tool registry does
-// not know, and the registry is the *host's* — which arrives after this module loads. Without this,
-// the first read (under the library's three defaults) would memoize a state with a host's fourth
-// tool already discarded, and it would stay discarded for the life of the page.
+// The tool list `state` was revived under. The registry is the host's and arrives after this module
+// loads, so a state revived under the library defaults has to be re-revived when it changes.
 let revivedUnder = null
-
-// ── Persistence ───────────────────────────────────────────────────────────────
 
 function emptyState () {
   return { on: new Set(), columns: [], floating: new Map(), width: null, heights: new Map() }
 }
 
-// Anything unrecognised is dropped rather than trusted: the stored value outlives the tool list, so
-// a renamed or removed tool must not resurrect itself as an empty panel.
+// Anything unrecognised is dropped: the stored value outlives the tool list.
 function reviveState (raw) {
   const next = emptyState()
   if (!raw || typeof raw !== 'object') return next
@@ -96,8 +75,8 @@ function reviveState (raw) {
 
   next.width = raw.width === null || raw.width === undefined ? null : numberOr(raw.width, null)
 
-  // A tool switched on but placed nowhere (a half-written value, or one saved before a tool was
-  // added) still needs a home, or its checkbox would read as on with no panel to show for it.
+  // A tool switched on but placed nowhere still needs a home, or its checkbox reads as on with no
+  // panel to show for it.
   for (const id of toolIds()) {
     if (next.on.has(id) && !placed.has(id)) insertDocked(next, id)
   }
@@ -118,11 +97,9 @@ function serialize (value) {
   }
 }
 
-// Re-reads when the tool list itself moves, which on a normal page happens exactly once: this module
-// is imported before the host calls configure(), so a first read can land under the library's
-// defaults and the host's own tools arrive a moment later. Re-reading from storage rather than
-// patching the cached state keeps one revival path — and anything already written in this session
-// has been committed, so nothing in memory is lost by parsing it again.
+// Re-reads whenever the tool list itself moves, which on a normal page happens exactly once, when
+// the host's configure() lands. Anything written this session is already committed, so re-parsing
+// storage loses nothing.
 function load () {
   const signature = toolIds().join(' ')
   if (state && revivedUnder === signature) return state
@@ -148,13 +125,7 @@ export function _resetToolLayout () {
   revivedUnder = null
 }
 
-// ── Placement helpers ─────────────────────────────────────────────────────────
-
-/**
- * Put `id` in the last docked column at its canonical position among the panels already there —
- * never appended blindly. This is what makes "displays in order 1-3 no matter what order the
- * checkboxes were selected in" true.
- */
+/** Put `id` in the last docked column at its canonical position among the panels already there. */
 function insertDocked (value, id) {
   const column = value.columns.at(-1)
   if (!column) {
@@ -178,11 +149,8 @@ function detach (value, id) {
   }
 }
 
-// ── Reads ─────────────────────────────────────────────────────────────────────
-
 /**
- * A structural snapshot for the dock to render from. Columns and stacks are plain arrays; sizes are
- * flex ratios with 1 as the default, so a consumer never has to know which of them were stored.
+ * A structural snapshot for the dock to render from. Sizes are flex ratios with 1 as the default.
  * @returns {{ columns: {flex:number, ids:string[], panels:{id:string,flex:number}[]}[],
  *             floating: {id:string, x:number, y:number, w:number, h:number}[],
  *             width: number|null, on: string[] }}
@@ -222,15 +190,10 @@ export function maxDockWidth (viewport = window.innerWidth) {
   return Math.max(PANEL_MIN_WIDTH, viewport - HOST_MIN_WIDTH)
 }
 
-/**
- * Whether the dock can hold `count` side-by-side columns at the current viewport. Two-up needs
- * ~1240px and three-up ~1540px, which is exactly PANEL_MIN_WIDTH × count + HOST_MIN_WIDTH.
- */
+/** Whether the dock can hold `count` side-by-side columns at the current viewport. */
 export function fitsColumns (count, viewport = window.innerWidth) {
   return maxDockWidth(viewport) >= count * PANEL_MIN_WIDTH
 }
-
-// ── Writes ────────────────────────────────────────────────────────────────────
 
 export function setToolOn (id, on) {
   const value = load()
@@ -247,8 +210,8 @@ export function setToolOn (id, on) {
 }
 
 /**
- * Dock `id` into column `columnIndex` at stack position `index`. Passing a columnIndex one past the
- * end — or `newColumn` — opens a fresh column, which is how a side-by-side layout is made.
+ * Dock `id` into column `columnIndex` at stack position `index`. A columnIndex one past the end, or
+ * `newColumn`, opens a fresh column.
  */
 export function dockTool (id, { columnIndex, index = 0, newColumn = false } = {}) {
   const value = load()
@@ -289,9 +252,8 @@ export function setDockWidth (px) {
   commit()
 }
 
-// Sizes are always written as a *pair*. Dragging a splitter redistributes the two boxes that share
-// it and leaves every other sibling alone, so committing one side without the other would be a
-// layout nobody asked for — and would cost a second render to correct.
+// Sizes are always written as a pair: a splitter redistributes the two boxes that share it and
+// leaves every other sibling alone.
 
 export function setColumnFlexPair (columnIndex, before, after) {
   const value = load()
@@ -311,10 +273,8 @@ export function setPanelFlexPair (firstId, secondId, before, after) {
 }
 
 /**
- * Send every open panel back to the default right-side arrangement: one column, canonical order,
- * nothing floating, no stored sizes — so equal flex gives 100% / 50% / 33% for 1 / 2 / 3 panels.
- * Which tools are *on* is left alone; this is the modal's "Reset tool layout" button, not a
- * "turn everything off".
+ * Send every open panel back to the default arrangement: one column, canonical order, nothing
+ * floating, no stored sizes. Which tools are on is left alone.
  */
 export function resetToolLayout () {
   const value = load()

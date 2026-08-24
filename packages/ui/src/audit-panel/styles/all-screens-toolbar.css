@@ -169,7 +169,7 @@ taxpert-screens-toolbar {
 .all-screens__section-tab:hover {
   border-bottom-color: var(--tap-base-darkest);
 }
-/* Selected follows from the tab's own ARIA state — one representation of "this section is the
+/* Selected follows from the tab's own ARIA state, one representation of "this section is the
    selected one", instead of an `--active` class that two separate bits of JS both toggled. */
 .all-screens__section-tab[aria-selected="true"] {
   color: var(--tap-primary);

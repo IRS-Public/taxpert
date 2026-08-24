@@ -3,16 +3,16 @@
 // One control replacing two that overlapped. The M3 layer checkboxes (Flow / Facts / Cross-layer
 // edges) turned whole layers on and off; the M6 facet checkboxes, in a collapsible block below
 // them, narrowed *within* a layer by tag, fact kind and edge kind. Read together they said the same
-// thing twice — hiding the flow layer and unticking every flow tag are the same picture — so they
+// thing twice, hiding the flow layer and unticking every flow tag being the same picture, so they
 // are now one nested control: a parent switch per layer, with that layer's kinds beneath it.
 //
 // The two halves stay separate in the model, which is what makes the nesting cheap:
-//   · the switch is filter.js's `filters.{flow,facts,edges}` — the layer, dropped whole
-//   · the boxes are facets.js's `{flowTags,factKinds,edgeKinds}` — kinds within the layer
+//   · the switch is filter.js's `filters.{flow,facts,edges}`, the layer dropped whole
+//   · the boxes are facets.js's `{flowTags,factKinds,edgeKinds}`, kinds within the layer
 //
 // So flipping a switch off never edits the boxes. They render unticked and disabled because the
 // layer they belong to is gone, and flipping it back on restores exactly the selection that was
-// there before — no remembered copy, because nothing was overwritten.
+// there before, with no remembered copy, because nothing was overwritten.
 import PropTypes from 'prop-types'
 import { EDGE_KINDS } from '../../model/fgm.js'
 
@@ -27,12 +27,12 @@ const EDGE_LABELS = new Map([['knocks-out', 'knocks out']])
  * @param {{flow:boolean, facts:boolean, edges:boolean}} props.filters the parent switches
  * @param {(filters: object) => void} props.onFiltersChange
  * @param {object} props.facets the current facet selection
- * @param {{flowTags: string[]}} props.defaults `defaultFacets(graph)` — the flow-tag universe the
+ * @param {{flowTags: string[]}} props.defaults `defaultFacets(graph)`, the flow-tag universe the
  *   boxes are drawn from. A prop rather than an import of `FLOW_TAGS`, because which tags exist is
  *   a property of the loaded graph (an app can register its own node types).
  * @param {(facets: object) => void} props.onFacetsChange
- * @param {boolean} [props.disabled] "Knockouts" (the Filter section) is a view of its own — the
- *   alerts and the facts they knock out — so the layers it composes are not selectable under it.
+ * @param {boolean} [props.disabled] "Knockouts" is a view of its own, the alerts and the facts
+ *   they knock out, so the layers it composes are not selectable under it.
  */
 export default function LayerControls({
   filters,
