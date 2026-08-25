@@ -102,16 +102,14 @@ def test_extract_html_chunks_uses_breadcrumb_section_titles():
         "The child must be under nineteen at the end of the year, or under twenty-four if a full-time student. "
         * 4
     )
-    html = textwrap.dedent(
-        f"""
+    html = textwrap.dedent(f"""
         <html><body>
           <h1>Qualifying Child</h1>
           <p>{qc_para}</p>
           <h2>Age Test</h2>
           <p>{age_para}</p>
         </body></html>
-        """
-    )
+        """)
     path = _make_temp_html(html)
     chunks = extract_html_chunks(path)
 

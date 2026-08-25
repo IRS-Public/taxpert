@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import PropTypes from 'prop-types'
+import DOMPurify from 'dompurify'
 import { renderFactExplanation } from './factRender.js'
 import { ScenarioValueChip } from './scenarioValue.jsx'
 
@@ -9,6 +10,12 @@ export default function FactDetail({ fact, factLabel, onNavigate, scenarioValue 
     () => renderFactExplanation(fact, { factLabel }),
     [fact, factLabel]
   )
+  // renderFactExplanation already escapes text content, but the result still
+  // flows into dangerouslySetInnerHTML, so sanitize it too as defense in depth.
+  // Sanitized inline (rather than via a memoized helper) so the DOMPurify call
+  // sits directly between the raw HTML and the sink.
+  const safeSummaryHtml = DOMPurify.sanitize(summaryHtml)
+  const safeXmlHtml = DOMPurify.sanitize(xmlHtml)
 
   // Event-delegate clicks on navigable dependency names (data-nav-path).
   const onClick = (e) => {
@@ -52,14 +59,14 @@ export default function FactDetail({ fact, factLabel, onNavigate, scenarioValue 
 
       {showXml ? (
         <pre className="hr-xml-view">
-          <code dangerouslySetInnerHTML={{ __html: xmlHtml }} />
+          <code dangerouslySetInnerHTML={{ __html: safeXmlHtml }} />
         </pre>
       ) : (
         <div
           className="hr-body"
           onClick={onClick}
           onKeyDown={onKeyDown}
-          dangerouslySetInnerHTML={{ __html: summaryHtml }}
+          dangerouslySetInnerHTML={{ __html: safeSummaryHtml }}
         />
       )}
     </>

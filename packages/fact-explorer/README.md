@@ -24,12 +24,12 @@ build-time dependency on any application and runs with no Scala toolchain instal
 
 ## Where it fits
 
-| Neighbour | Relationship |
-|---|---|
-| [Form Builder](https://github.com/IRS-Public/form-builder) | The scaffold whose Flow XML and Fact Dictionary this visualizes. It can also emit the graph JSON itself, under `--formBuilderGraph`. |
-| The applications under [`../../apps/`](../../apps/), for example [the examples](https://github.com/IRS-Public/form-builder-examples) | What is being visualized. Each owns a `fact-explorer.app.json` at its repo root. |
-| [`../ui`](../ui) | The `taxpert` workspace UI (global nav, modals). Resolved through the root npm workspace and bundled by Vite. |
-| [`../../services/assistant`](../../services/assistant) | The FastAPI backend behind the optional AI explanation chat, at `http://localhost:8000/chat`. |
+| Neighbour                                                                                                                            | Relationship                                                                                                                         |
+| ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| [Form Builder](https://github.com/IRS-Public/form-builder)                                                                           | The scaffold whose Flow XML and Fact Dictionary this visualizes. It can also emit the graph JSON itself, under `--formBuilderGraph`. |
+| The applications under [`../../apps/`](../../apps/), for example [the examples](https://github.com/IRS-Public/form-builder-examples) | What is being visualized. Each owns a `fact-explorer.app.json` at its repo root.                                                     |
+| [`../ui`](../ui)                                                                                                                     | The `taxpert` workspace UI (global nav, modals). Resolved through the root npm workspace and bundled by Vite.                        |
+| [`../../services/assistant`](../../services/assistant)                                                                               | The FastAPI backend behind the optional AI explanation chat, at `http://localhost:8000/chat`.                                        |
 
 See the repository root [`../../README.md`](../../README.md) for the whole picture.
 
@@ -66,12 +66,12 @@ prefer that entry point.
 The application id is a path segment, and the History API drives view state. There is no router
 library.
 
-| Path | Shows |
-|---|---|
-| `/` | The landing page: the Taxpert global nav over a hero. Choosing which application the workspace is over happens in the nav's Workspace settings, so there are no application cards here. |
-| `/fact-explorer` | Normalized with `replaceState` to the default application's URL. |
-| `/fact-explorer/:appId` | The graph canvas for that application. |
-| `/fact-explorer/<unknown>` | An error page naming the ids this instance knows. A typo'd bookmark deliberately does not fall back to a different application. |
+| Path                       | Shows                                                                                                                                                                                   |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/`                        | The landing page: the Taxpert global nav over a hero. Choosing which application the workspace is over happens in the nav's Workspace settings, so there are no application cards here. |
+| `/fact-explorer`           | Normalized with `replaceState` to the default application's URL.                                                                                                                        |
+| `/fact-explorer/:appId`    | The graph canvas for that application.                                                                                                                                                  |
+| `/fact-explorer/<unknown>` | An error page naming the ids this instance knows. A typo'd bookmark deliberately does not fall back to a different application.                                                         |
 
 The default application is the first discovered one, unless an optional `form-builder-apps.json`
 beside the apps names a `defaultAppId`. Routing lives in [`src/App.jsx`](src/App.jsx).
@@ -106,32 +106,32 @@ and the registry cannot disagree.
 
 ### Descriptor fields
 
-| Field | Meaning |
-|---|---|
-| `id` | The `:appId` URL segment and the registry key. |
-| `label` | Display name in the nav and on the homepage. |
-| `appId` | `FormBuilderApp.appId`, the resources directory name. |
-| `basePath` | `FormBuilderApp.basePath`, for example `/app/eitc`. Also the Vite proxy key. |
-| `storagePrefix` | Namespaces the sessionStorage key the live bridge shares with the application. |
-| `devPort` / `devOrigin` | Where that application's dev server runs. Overridable per application with `VITE_APP_ORIGIN_<ID>`. |
-| `resourceRoot`, `taxYear` | Where the XML lives, and which tax year it is. |
-| `engine.bundle`, `engine.dictionary` | Paths, relative to `basePath`, to the Scala.js fact-graph bundle and `fact-dictionary.xml`. |
-| `capabilities` | `allScreens`, `scenarioMode`, `authorMode`. The nav prunes destinations an application was not built with, so a missing capability means one fewer menu entry instead of a 404. |
-| `scenarios` | `{ dir, vocabulary }`, or `null` for an application with no scenarios. |
-| `customFlowTags` | Flow node types the application registers beyond the built-in set. Must mirror `FormBuilderApp.nodeTypes`. |
-| `pagePrefixes` | Route prefix to short id, used by the node generator when it mints node ids. |
+| Field                                | Meaning                                                                                                                                                                         |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                                 | The `:appId` URL segment and the registry key.                                                                                                                                  |
+| `label`                              | Display name in the nav and on the homepage.                                                                                                                                    |
+| `appId`                              | `FormBuilderApp.appId`, the resources directory name.                                                                                                                           |
+| `basePath`                           | `FormBuilderApp.basePath`, for example `/app/eitc`. Also the Vite proxy key.                                                                                                    |
+| `storagePrefix`                      | Namespaces the sessionStorage key the live bridge shares with the application.                                                                                                  |
+| `devPort` / `devOrigin`              | Where that application's dev server runs. Overridable per application with `VITE_APP_ORIGIN_<ID>`.                                                                              |
+| `resourceRoot`, `taxYear`            | Where the XML lives, and which tax year it is.                                                                                                                                  |
+| `engine.bundle`, `engine.dictionary` | Paths, relative to `basePath`, to the Scala.js fact-graph bundle and `fact-dictionary.xml`.                                                                                     |
+| `capabilities`                       | `allScreens`, `scenarioMode`, `authorMode`. The nav prunes destinations an application was not built with, so a missing capability means one fewer menu entry instead of a 404. |
+| `scenarios`                          | `{ dir, vocabulary }`, or `null` for an application with no scenarios.                                                                                                          |
+| `customFlowTags`                     | Flow node types the application registers beyond the built-in set. Must mirror `FormBuilderApp.nodeTypes`.                                                                      |
+| `pagePrefixes`                       | Route prefix to short id, used by the node generator when it mints node ids.                                                                                                    |
 
 ## The data model: FGM
 
 Everything the UI draws is one **Form Graph Model** object, defined by JSDoc typedefs plus a runtime
 `validate()` in [`src/model/fgm.js`](src/model/fgm.js). It has four independent slices:
 
-| Slice | Contents |
-|---|---|
-| `flowPages` | One entry per flow page: route, title, source file, the ids of its elements. |
+| Slice          | Contents                                                                                                                      |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `flowPages`    | One entry per flow page: route, title, source file, the ids of its elements.                                                  |
 | `flowElements` | Questions, alerts, collections, gates and conditional blocks, each with its tag, parent, order, bound fact path and metadata. |
-| `facts` | One entry per `<Fact>`: path, `writable` or `derived`, type node, source file, dependency paths, raw XML. |
-| `edges` | Typed relationships between any two of the above. |
+| `facts`        | One entry per `<Fact>`: path, `writable` or `derived`, type node, source file, dependency paths, raw XML.                     |
+| `edges`        | Typed relationships between any two of the above.                                                                             |
 
 `EDGE_KINDS` is `sequential`, `exits`, `gates`, `binds`, `shows`, `knocks-out`, `displays`,
 `depends`. `FLOW_TAGS`, the built-in flow tags, is `fg-set`, `fg-alert`, `fg-collection`,
@@ -153,11 +153,11 @@ under plain Node in tests.
 reads through `loadGraph()`, so changing data source is never a component change. The mode comes from
 `VITE_FGM_SOURCE` (copy `.env.example` to `.env.local`).
 
-| `VITE_FGM_SOURCE` | Reads | Needs the application built or running? |
-|---|---|---|
-| `mock` (default) | `public/data/form-builder-graph.mock.json`, a hand-authored application-agnostic fixture exercising every node category and edge kind | No |
-| `real` | The selected application's graph | Yes |
-| `overlay` | Real slices over mock ones, falling back per slice | Partly |
+| `VITE_FGM_SOURCE` | Reads                                                                                                                                 | Needs the application built or running? |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| `mock` (default)  | `public/data/form-builder-graph.mock.json`, a hand-authored application-agnostic fixture exercising every node category and edge kind | No                                      |
+| `real`            | The selected application's graph                                                                                                      | Yes                                     |
+| `overlay`         | Real slices over mock ones, falling back per slice                                                                                    | Partly                                  |
 
 In `real` and `overlay` mode there are two candidate sources, tried in order:
 
@@ -183,14 +183,14 @@ The full graph for a real application runs to hundreds of nodes and roughly a th
 is unreadable as a single blob. The canvas narrows it through a chain of pure FGM-to-sub-FGM stages,
 each of which returns something that still passes `validate()`:
 
-| Stage | Module | What it does |
-|---|---|---|
-| 1. Scenario hide | [`model/scenarioFilter.js`](src/model/scenarioFilter.js) | Drop what the loaded scenario's taxpayer would never see. Only runs in hide mode. The default dims those nodes and leaves the graph intact. |
-| 2. Slice | [`model/slice.js`](src/model/slice.js) | Scope to one flow page, one fact-dictionary file, or the whole graph, with an optional one-hop context ring. |
-| 3. Layer filter | [`model/filter.js`](src/model/filter.js) | Turn the flow layer, the fact layer and cross-layer edges on or off. |
-| 4. Facets | [`model/facets.js`](src/model/facets.js) | Narrow within a layer by flow tag, fact kind and edge kind, plus a knockouts-only view. |
-| 5. Transform | [`canvas/transform.js`](src/canvas/transform.js) | Convert to React Flow nodes and edges, folding search and dimming state onto `node.data`. |
-| 6. Layout | [`canvas/layout.js`](src/canvas/layout.js) | Deterministic banded placement via dagre: a flow spine down the middle, writable facts in one band, deriveds in another, alerts and knockouts in a third, each aligned with the step it relates to. Works vertically or horizontally. |
+| Stage            | Module                                                   | What it does                                                                                                                                                                                                                          |
+| ---------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Scenario hide | [`model/scenarioFilter.js`](src/model/scenarioFilter.js) | Drop what the loaded scenario's taxpayer would never see. Only runs in hide mode. The default dims those nodes and leaves the graph intact.                                                                                           |
+| 2. Slice         | [`model/slice.js`](src/model/slice.js)                   | Scope to one flow page, one fact-dictionary file, or the whole graph, with an optional one-hop context ring.                                                                                                                          |
+| 3. Layer filter  | [`model/filter.js`](src/model/filter.js)                 | Turn the flow layer, the fact layer and cross-layer edges on or off.                                                                                                                                                                  |
+| 4. Facets        | [`model/facets.js`](src/model/facets.js)                 | Narrow within a layer by flow tag, fact kind and edge kind, plus a knockouts-only view.                                                                                                                                               |
+| 5. Transform     | [`canvas/transform.js`](src/canvas/transform.js)         | Convert to React Flow nodes and edges, folding search and dimming state onto `node.data`.                                                                                                                                             |
+| 6. Layout        | [`canvas/layout.js`](src/canvas/layout.js)               | Deterministic banded placement via dagre: a flow spine down the middle, writable facts in one band, deriveds in another, alerts and knockouts in a third, each aligned with the step it relates to. Works vertically or horizontally. |
 
 Two alternative framings replace steps 1 to 4 entirely and always work from the whole graph.
 [`model/drill.js`](src/model/drill.js) keeps one node and its immediate neighbours, and
@@ -243,11 +243,11 @@ a flow page supplies its own contents to that same dialog.
 [`src/canvas/controls/DisplayOptions.jsx`](src/canvas/controls/DisplayOptions.jsx) renders
 `taxpert/react/display-modal` with three descriptors:
 
-| Descriptor | Fact Explorer's contents |
-|---|---|
+| Descriptor          | Fact Explorer's contents                                                                                                             |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | `visibilityOptions` | An array of `{ id, label, checked, onChange }` rows: "Reveal items skipped in scenarios" and "Show product experience side-by-side". |
-| `layoutOptions` | `{ options, value, onChange }` for the vertical or horizontal canvas orientation. |
-| `footerAction` | `{ label, onSelect }` for "Reset layout". |
+| `layoutOptions`     | `{ options, value, onChange }` for the vertical or horizontal canvas orientation.                                                    |
+| `footerAction`      | `{ label, onSelect }` for "Reset layout".                                                                                            |
 
 State stays in `FactExplorer.jsx`. The descriptors carry the current value and the callback and are
 reassigned on each change, which keeps the dialog in step with a canvas the user may also be driving
@@ -282,17 +282,17 @@ tests/                      vitest suites, one per model or util module
 
 Every npm script in `package.json`:
 
-| Command | Does |
-|---|---|
-| `npm run dev` | `vite`, on port 5180 with `open` and `host: true`. |
-| `npm run build` / `npm run preview` | Production Vite build to `dist/`, and a local preview of it. |
-| `npm run build-registry` | `node scripts/build-registry.mjs`. Scans the apps directory and writes `public/data/apps.json`. `--root <dir>` scans elsewhere, `--empty` writes a registry with no applications, `--out <file>` redirects the output. |
-| `npm run make-fgm` / `npm run make-mock` | Both run `node scripts/make-static-fgm.mjs`, which parses every discovered application's Flow and Fact XML with `fast-xml-parser` into `public/data/<app>/form-builder-graph.json` and rewrites the registry alongside it. `-- --app <id>` limits it to one. The two script names are aliases for the same file. |
-| `npm run copy-uswds-assets` | `node scripts/copy-uswds-assets.mjs`. Copies `@uswds/uswds`'s `dist/fonts` and `dist/img` into `public/uswds/`, which the compiled Sass references by absolute path. |
-| `npm run postinstall` | Runs `copy-uswds-assets` after every `npm install`. |
-| `npm test` | `vitest run` over `tests/`. Mostly pure model modules under Node, with jsdom where DOM rendering is under test. Currently 149 tests in 20 files. |
-| `npm run lint` / `npm run lint:fix` | ESLint over `.js`, `.jsx`, `.mjs`. |
-| `npm run format` / `npm run format:check` | Prettier. |
+| Command                                   | Does                                                                                                                                                                                                                                                                                                             |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run dev`                             | `vite`, on port 5180 with `open` and `host: true`.                                                                                                                                                                                                                                                               |
+| `npm run build` / `npm run preview`       | Production Vite build to `dist/`, and a local preview of it.                                                                                                                                                                                                                                                     |
+| `npm run build-registry`                  | `node scripts/build-registry.mjs`. Scans the apps directory and writes `public/data/apps.json`. `--root <dir>` scans elsewhere, `--empty` writes a registry with no applications, `--out <file>` redirects the output.                                                                                           |
+| `npm run make-fgm` / `npm run make-mock`  | Both run `node scripts/make-static-fgm.mjs`, which parses every discovered application's Flow and Fact XML with `fast-xml-parser` into `public/data/<app>/form-builder-graph.json` and rewrites the registry alongside it. `-- --app <id>` limits it to one. The two script names are aliases for the same file. |
+| `npm run copy-uswds-assets`               | `node scripts/copy-uswds-assets.mjs`. Copies `@uswds/uswds`'s `dist/fonts` and `dist/img` into `public/uswds/`, which the compiled Sass references by absolute path.                                                                                                                                             |
+| `npm run postinstall`                     | Runs `copy-uswds-assets` after every `npm install`.                                                                                                                                                                                                                                                              |
+| `npm test`                                | `vitest run` over `tests/`. Mostly pure model modules under Node, with jsdom where DOM rendering is under test. Currently 149 tests in 20 files.                                                                                                                                                                 |
+| `npm run lint` / `npm run lint:fix`       | ESLint over `.js`, `.jsx`, `.mjs`.                                                                                                                                                                                                                                                                               |
+| `npm run format` / `npm run format:check` | Prettier.                                                                                                                                                                                                                                                                                                        |
 
 `make check` runs `lint-fix`, `format`, `format-check` and `test` in one go.
 

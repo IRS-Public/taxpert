@@ -6,10 +6,10 @@ shared by both orchestrators. See ../../../../docs/internals/assistant-service.m
 
 from __future__ import annotations
 
-import urllib.request
 from dataclasses import dataclass
 from urllib.parse import urlparse
 
+import requests
 from lxml import etree
 
 # Hardened against XXE, entity expansion and external fetches. Keep in step with
@@ -43,15 +43,15 @@ class FactDictionary:
     def load(cls, source: str) -> "FactDictionary":
         """Load and parse a fact dictionary from a file path or HTTP(S) URL.
 
-        URL loads are restricted to http/https so ``urlopen`` can never open
-        another scheme (bandit B310).
+        URL loads go through ``requests`` (never ``urllib``, which also
+        understands ``file://``) and are further restricted to http/https so a
+        dynamic source string can never resolve to a local file read.
         """
         scheme = urlparse(source).scheme
         if scheme in ("http", "https"):
-            with urllib.request.urlopen(
-                source
-            ) as response:  # nosec B310 — scheme restricted to http/https above
-                xml_bytes = response.read()
+            response = requests.get(source, timeout=30)
+            response.raise_for_status()
+            xml_bytes = response.content
         elif scheme in ("", "file"):
             path = source[len("file://") :] if scheme == "file" else source
             with open(path, "rb") as fh:

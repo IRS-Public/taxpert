@@ -21,7 +21,13 @@
   "rules": {
     "react/react-in-jsx-scope": "off",
     "react/prop-types": "warn",
-    "no-unused-vars": ["error", { "ignoreRestSiblings": true }]
+    "no-unused-vars": ["error", { "ignoreRestSiblings": true }],
+    // New in eslint-plugin-react-hooks@7's recommended preset. Both flag pre-existing,
+    // deliberate patterns here (init-on-open / reset-on-prop-change effects, and the
+    // "latest ref" pattern for resize/dock handlers) rather than bugs. Revisit case-by-case
+    // rather than blanket-refactoring on a dependency bump.
+    "react-hooks/set-state-in-effect": "off",
+    "react-hooks/refs": "off"
   },
   "ignorePatterns": ["dist/", "node_modules/", "public/data/"]
 }
