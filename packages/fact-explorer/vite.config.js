@@ -3,15 +3,16 @@ import { dirname, join, parse } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import { appsDir } from './scripts/build-registry.mjs'
+import { appsDirs } from './scripts/build-registry.mjs'
 
 const HERE = fileURLToPath(new URL('.', import.meta.url))
 
-// Applications live in their own repositories, and this one vendors none. `appsDir()` is the single
-// definition of where they are: FORM_BUILDER_APPS_DIR, else <repo root>/apps (see apps/README.md),
-// shared with build-registry.mjs and make-static-fgm.mjs so the dev proxy and the registry can
-// never disagree about the app list.
-const APPS_DIR = appsDir()
+// Applications live in their own repositories, and this one vendors none. `appsDirs()` is the
+// single definition of where they are: the apps directory (FORM_BUILDER_APPS_DIR, else
+// <repo root>/apps — see apps/README.md) plus any FORM_BUILDER_EXTRA_APPS_DIRS, shared with
+// build-registry.mjs and make-static-fgm.mjs so the dev proxy and the registry can never disagree
+// about the app list.
+const APPS_DIRS = appsDirs()
 
 // npm workspaces hoist dependencies to the workspace root, so a package is not necessarily under
 // this directory's own node_modules. Walk up until we find the one that holds it.
@@ -30,26 +31,34 @@ function nodeModulesDir(pkg) {
 // generated public/data/apps.json. vite.config.js is evaluated before any build step has run, and
 // apps.json is gitignored, so a fresh clone would have nothing to read.
 function discoveredApps() {
-  const root = APPS_DIR
-  if (!existsSync(root)) {
+  const roots = APPS_DIRS.filter((root) => existsSync(root))
+  if (!roots.length) {
     console.warn(
-      `[fact-explorer] no apps directory at ${root} — the dev proxy will be empty and the canvas ` +
-        'falls back to the mock fixture. Clone an app into it or set FORM_BUILDER_APPS_DIR ' +
-        '(see apps/README.md).'
+      `[fact-explorer] no apps directory at ${APPS_DIRS.join(', ')} — the dev proxy will be empty ` +
+        'and the canvas falls back to the mock fixture. Clone an app into it or set ' +
+        'FORM_BUILDER_APPS_DIR (see apps/README.md).'
     )
     return []
   }
-  // Symlinks as well as directories. See discoverDescriptors in scripts/build-registry.mjs.
-  const apps = readdirSync(root, { withFileTypes: true })
-    .filter(
-      (d) =>
-        (d.isDirectory() || d.isSymbolicLink()) &&
-        existsSync(join(root, d.name, 'fact-explorer.app.json'))
+  // Symlinks as well as directories, and first root wins on a duplicate id. Both match
+  // discoverDescriptors in scripts/build-registry.mjs, which this deliberately mirrors rather than
+  // calls: it must read the *committed* descriptors, and it runs before any build step has.
+  const seen = new Set()
+  const apps = roots
+    .flatMap((root) =>
+      readdirSync(root, { withFileTypes: true })
+        .filter(
+          (d) =>
+            (d.isDirectory() || d.isSymbolicLink()) &&
+            existsSync(join(root, d.name, 'fact-explorer.app.json'))
+        )
+        .map((d) => JSON.parse(readFileSync(join(root, d.name, 'fact-explorer.app.json'), 'utf8')))
     )
-    .map((d) => JSON.parse(readFileSync(join(root, d.name, 'fact-explorer.app.json'), 'utf8')))
+    .filter((app) => !seen.has(app.id) && seen.add(app.id))
   if (!apps.length) {
     console.warn(
-      `[fact-explorer] no fact-explorer.app.json under ${root} — nothing to proxy. See apps/README.md.`
+      `[fact-explorer] no fact-explorer.app.json under ${roots.join(', ')} — nothing to proxy. ` +
+        'See apps/README.md.'
     )
   }
   return apps

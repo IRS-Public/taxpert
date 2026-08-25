@@ -1,6 +1,14 @@
 # Generated website files
 out/
 
+# Application checkouts, and the compose fragments that mount them into Fact Explorer: other
+# people's repositories, and absolute paths on one machine. Each directory's README is kept —
+# they are what explain the directory to someone who finds it empty.
+/apps/*
+!/apps/README.md
+/docker-compose.apps.d/*
+!/docker-compose.apps.d/README.md
+
 # sbt
 target/
 project/target/

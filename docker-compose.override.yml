@@ -17,6 +17,11 @@ services:
     environment:
       VITE_USE_POLLING: "true"
       FORM_BUILDER_APPS_DIR: /apps
+      # Where an application living outside TAXPERT_APPS_DIR is mounted — one directory per app, by
+      # the fragments in docker-compose.apps.d/. It is a second root rather than a subdirectory of
+      # /apps because /apps is a read-only bind mount: nesting a mount inside one fails, since
+      # Docker has to create the mountpoint in the parent. See appsDirs() in build-registry.mjs.
+      FORM_BUILDER_EXTRA_APPS_DIRS: /apps-external
       VITE_FGM_SOURCE: "real"
       VITE_APP_ORIGIN_HOST: host.docker.internal
     extra_hosts:

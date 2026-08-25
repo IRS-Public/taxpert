@@ -3,7 +3,7 @@
 Taxpert is a suite of internal tools that helps teams understand and validate complex questionnaire software by making the rules and relationships of [Form Builder](https://github.com/IRS-Public/form-builder) and [Fact Graph](https://github.com/IRS-Public/fact-graph) applications easier to inspect. 
 It achieves this as a drop-in UI library, adding a lightweight workspace wrapper around a running Form Builder or Fact Graph application. 
 
-Read the full [Design Principles](docs/Design%20Principles.docx) for the rationale, supporting research, and future direction of Taxpert.
+Read the full [Why Taxpert](docs/why-taxpert.md) for the rationale, supporting research, and future direction of Taxpert.
 See [below](#capabilities) for a description of what capabilities are included in Taxpert today and at what level of 
 stability/maturity. See the [docs](docs), in particular [Onboarding](docs/onboarding.md), [Architecture](docs/architecture.md), and [Taxpert vs. Form Builder vs. Fact Graph](docs/adr/taxpert-form-builder-fact-graph.md) to learn more about how Taxpert works.
 
@@ -12,6 +12,13 @@ If you are interested in building your own Form
 Builder and Fact Graph application and customizing Taxpert to your needs, check out [Form Builder Template](https://github.com/IRS-Public/form-builder-template). Example applications 
 built on [Form Builder](https://github.com/IRS-Public/form-builder), [Fact Graph](https://github.com/IRS-Public/fact-graph), and [Taxpert](https://github.com/IRS-Public/taxpert) can be found at 
 [Form Builder Examples](https://github.com/IRS-Public/form-builder-examples).
+
+> The code in this repository addresses concrete friction points that arise during the development and maintenance of Fact Graph applications. 
+> Our primary focus is on cross-functional empowerment: building tools that make it easier for stakeholders to collaborate with engineers, test features, and understand complex logic.
+> The goal is to demonstrate "what it would take" to solve these problems, allowing us to learn what is practical and valuable before committing to long-term architectural standards.
+> Rather than shipping production-grade code for a dedicated platform team to maintain, we deliberately prioritized rapid prototyping over strict engineering maintainability. 
+> We fully anticipate that this code is a starting point for functionality and architecture, not the end result, and expect that it will be superceded in the future.
+> Do not deploy this repository directly to a production environment as-is. It lacks the necessary security, error-handling, and scalability guardrails.
 
 ## Capabilities 
 

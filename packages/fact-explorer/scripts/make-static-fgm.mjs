@@ -26,13 +26,13 @@ import { readFileSync, writeFileSync, readdirSync, mkdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join, resolve, basename as fileBase } from 'node:path'
 import { scenarioVocabulary } from '../src/model/scenarios/index.js'
-import { appsDir, discoverDescriptors, buildRegistryFile } from './build-registry.mjs'
+import { appsDirs, discoverDescriptors, buildRegistryFile } from './build-registry.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const FACT_EXPLORER = resolve(__dirname, '..')
-// Where the app repos are: FORM_BUILDER_APPS_DIR, else <repo root>/apps. Shared with
-// build-registry.mjs and vite.config.js so all three scan the same directory.
-const APPS = appsDir()
+// Where the app repos are: the apps directory, plus anything in FORM_BUILDER_EXTRA_APPS_DIRS.
+// Shared with build-registry.mjs and vite.config.js so all three scan the same directories.
+const APPS = appsDirs()
 
 const BUILT_IN_FLOW_TAGS = ['fg-set', 'fg-alert', 'fg-collection', 'fg-detail']
 
@@ -690,8 +690,8 @@ function main(argv) {
     throw new Error(
       `${
         only
-          ? `No app "${only}" — expected a fact-explorer.app.json declaring it under ${APPS}.`
-          : `No fact-explorer.app.json found under ${APPS}.`
+          ? `No app "${only}" — expected a fact-explorer.app.json declaring it under ${APPS.join(', ')}.`
+          : `No fact-explorer.app.json found under ${APPS.join(', ')}.`
       }\nApplications live in their own repositories: clone or symlink one into that directory, or ` +
         'set FORM_BUILDER_APPS_DIR. See apps/README.md.'
     )
