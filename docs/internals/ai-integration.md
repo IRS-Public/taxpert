@@ -9,12 +9,12 @@ repository and platform, while the **`taxpert` package** is the optional npm wor
 
 ## Related documents
 
-- [Onboarding](./onboarding.md) for running the stack, including the api service and Ollama
-- [Release status](./release-status.md) for component maturity
-- [Why Taxpert](./why-taxpert.md) for the rationale behind the platform
-- [Architecture](./architecture.md) for how the pieces fit together
-- [Deployment](./deployment.md) for deployment topologies and CI
-- [Root README](../README.md)
+- [Onboarding](../onboarding.md) for running the stack, including the api service and Ollama
+- [Release status](../release-status.md) for component maturity
+- [Why Taxpert](../adr/taxpert-form-builder-fact-graph.md) for the rationale behind the platform
+- [Architecture](../architecture.md) for how the pieces fit together
+- [Deployment](../deployment.md) for deployment topologies and CI
+- [Root README](../../README.md)
 
 ---
 
@@ -201,7 +201,7 @@ The backend base URL resolves in this order (`fact-graph-io.js` and `chat.js`):
 2. `configure({ endpoints: { apiBase } })` in `packages/ui/src/shared/js/config.js`
 3. the default `http://localhost:8000`
 
-Full setup steps for the api service, Ollama and Chroma live in [Onboarding](./onboarding.md).
+Full setup steps for the api service, Ollama and Chroma live in [Onboarding](../onboarding.md).
 
 ---
 
@@ -443,7 +443,7 @@ limiting, and a `/scenario/generate` route that reads files from configured dire
 Filename traversal is guarded (`_read_scenario` strips directory components with `Path(...).name`,
 and `_FILENAME_RE` restricts the output filename), and XML parsing is hardened against XXE and
 entity expansion in both `facts/dictionary.py` and `scenario_orchestrator.py`. None of that
-substitutes for keeping the port on a trusted network. See [Deployment](./deployment.md).
+substitutes for keeping the port on a trusted network. See [Deployment](../deployment.md).
 
 **Test status.** `cd api && make test` was run while writing this document: 60 tests passed in
 1.71 seconds, with 44 warnings, all of them deprecation notices from Starlette's test client and

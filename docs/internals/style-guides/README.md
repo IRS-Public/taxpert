@@ -29,7 +29,7 @@ in all three, with the single exception noted below.
 **Fact Explorer is the exception.** [`packages/fact-explorer/`](../../packages/fact-explorer/) is a
 React and Vite application with a build step, so the JavaScript guide's rules (no framework, no
 bundler, Web Components as the runtime) do not apply to it. Its CSS is still plain CSS in the same
-token style. See [packages/fact-explorer/README.md](../../packages/fact-explorer/README.md) for its
+token style. See [packages/fact-explorer/README.md](../../../packages/fact-explorer/README.md) for its
 own conventions.
 
 Nothing in these guides applies to a `website-static/vendor/` directory. Those are generated mirrors

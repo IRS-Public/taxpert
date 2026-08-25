@@ -198,7 +198,7 @@ Attributes are configuration read on connect. What changes afterwards changes th
 **CSS uses token-fallback layers.** Every `--tgn-*`, `--tap-*` and `--ttp-*` token chains through the
 host's own USWDS token with a hard fallback, at zero specificity via `:where()`, so a bundle looks
 right in a host that supplies those tokens and reasonable in one that does not. See the
-[style guides](../../docs/style-guides).
+[style guides](../../docs/internals/style-guides).
 
 ## Consuming it
 

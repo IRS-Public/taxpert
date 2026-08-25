@@ -1,7 +1,7 @@
 # apps/
 
 A mount point for the Form Builder applications this repository's tools read. Nothing here is an
-application, and none is vendored. Fact Explorer and the assistant both need to be told where to
+application. Fact Explorer and the assistant both need to be told where to
 find one, and this directory is the default answer. Clone or symlink each application repository
 into it so that every application's `fact-explorer.app.json` sits exactly one level down.
 
@@ -10,10 +10,13 @@ apps/
   credit-assistant/fact-explorer.app.json
   tax-withholding-estimator/fact-explorer.app.json
   benefits-enrollment/fact-explorer.app.json
+  ...
+  ...
+  ...
 ```
 
 ```bash
-git clone <your-app-repo> apps/my-app          # or: ln -s ~/code/my-app apps/my-app
+ln -s ~/code/my-app apps/my-app       
 ```
 
 Everything in here except this README is gitignored (`/apps/*` with a `!/apps/README.md` exception),
@@ -63,13 +66,9 @@ is the default. It is never required.
 
 ## What an application has to declare
 
-A `fact-explorer.app.json` at its repository root. `cookiecutter form-builder-template` emits one.
+A `fact-explorer.app.json` at its repository root, which `cookiecutter form-builder-template` generates.
 The fields it carries are the application's identity (`id`, `label`, `appId`, `basePath`,
 `storagePrefix`, `devPort`, `resourceRoot`, `taxYear`), the `engine` block naming its Fact Graph
 bundle and fact dictionary, a `capabilities` block, and optional `scenarios`, `customFlowTags` and
 `pagePrefixes` entries. They are documented in
 [`../packages/fact-explorer/README.md`](../packages/fact-explorer/README.md).
-
-The descriptor lives with the application rather than in this repository so that its values sit
-beside the `Main.scala` they mirror and move with the application. Dropping the repository into this
-directory is the whole of the wiring.

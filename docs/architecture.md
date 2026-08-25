@@ -1,27 +1,14 @@
 # Architecture
 
-This document explains how the pieces of the Taxpert platform fit together: the four layers, what
+This document explains how the pieces of the Taxpert platform fit together: the various layers, what
 happens at build time, what happens in the browser, how the optional workspace UI mounts over a
-running application, the five points at which an application extends the scaffold, and how a
+running application, the points at which an application extends the scaffold, and how a
 change should be routed to the directory that owns it. It is written for an engineer or architect
 reading the codebase for the first time, and for a reviewer deciding where a change belongs.
 
-Two names are close enough to collide. "Taxpert" or "the Taxpert platform" means the whole
-repository. "The `taxpert` package" or "the workspace UI" means the npm package in `packages/ui/`,
-which is one optional component inside it.
-
-## Related documents
-
-- [Onboarding](./onboarding.md), for running everything locally.
-- [Release status](./release-status.md), for the component inventory and maturity.
-- [Why Taxpert](./why-taxpert.md), for the rationale.
-- [AI integration](./ai-integration.md), for the LLM surfaces and the `api/` backend.
-- [Deployment](./deployment.md), for hosting topologies and CI.
-- The root [README](../README.md).
 
 ## 1. The layer model
 
-Four layers. Every dependency arrow points down, and nothing points back up.
 
 ```
 +---------------------------------------------------------------+
@@ -62,26 +49,51 @@ repository; the application ones are in
 [the example applications' repository](https://github.com/IRS-Public/form-builder-example), and hold for any Form
 Builder app:
 
-| Layer | File | What it declares |
-|---|---|---|
-| fact-graph | `fact-graph/build.sbt` | No platform dependency. Third-party only (scalatest, scala-xml, upickle, fs2). |
-| form-builder | `form-builder/build.sbt` | `"gov.irs" %% "factgraph" % "3.1.0-SNAPSHOT"`, plus Thymeleaf, jsoup, circe, os-lib, smol. |
-| credit-assistant | `credit-assistant/build.sbt` | `"gov.irs" %% "form-builder" % "0.1.0-SNAPSHOT"` and scalatest. Everything else arrives transitively. |
-| tax-withholding-estimator | `tax-withholding-estimator/build.sbt` | The same form-builder dependency, plus scala-csv for its own UAT scenario suite. |
-| taxpert | `packages/ui/package.json` | No runtime dependencies at all. Only dev dependencies (eslint, jsdom, neostandard). |
-| fact-explorer | `packages/fact-explorer/package.json` | `"taxpert": "*"`, resolved to `packages/ui` through the root npm workspace, as a real dependency, alongside React, Vite and `@xyflow/react`. |
+| Layer | File | What it requires                                                                                                                                                                                                |
+|---|---|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| fact-graph | `fact-graph/build.sbt` | No platform dependency. Third-party only (scalatest, scala-xml, upickle, fs2).                                                                                                                                  |
+| form-builder | `form-builder/build.sbt` | `"gov.irs" %% "factgraph" % "3.1.0-SNAPSHOT"`, plus Thymeleaf, jsoup, circe, os-lib, smol.                                                                                                                      |
+| credit-assistant | `credit-assistant/build.sbt` | `"gov.irs" %% "form-builder" % "0.1.0-SNAPSHOT"` and scalatest. Everything else arrives transitively.                                                                                                           |
+| tax-withholding-estimator | `tax-withholding-estimator/build.sbt` | The same form-builder dependency, plus scala-csv for its own UAT scenario suite.                                                                                                                                |
+| taxpert | `packages/ui/package.json` | No runtime dependencies at all. Only dev dependencies (eslint, jsdom, neostandard).                                                                                                                             |
+| fact-explorer | `packages/fact-explorer/package.json` | `"taxpert": "*"`, resolved to `packages/ui` through the root npm workspace, as a real dependency, alongside React, Vite and `@xyflow/react`.                                                                    |
 | an application | `credit-assistant/package.json`, `tax-withholding-estimator/package.json` | `taxpert` as a **dev** dependency, used only so `make copy-shared-ui` has something to mirror. A published version once taxpert is on npm; a `file:` path or `make link-taxpert` against a checkout until then. |
 
-Three consequences worth holding onto:
+This means:
 
-- The `taxpert` package imports nothing from form-builder, and form-builder names no path inside
-  `vendor/taxpert/`. Section 4 explains the contract that replaces the import.
+- The `taxpert` package imports nothing from `form-builder`, and `form-builder` names no path inside
+  `vendor/taxpert/`.
 - An application can drop the workspace entirely. The cookiecutter's `include_taxpert_workspace=no`
   emits an app with no `taxpert` dependency and no reference to the package anywhere.
-- The theme and the flow runtime are shared but live in `/form-builder/`, because an app without a
+- The theme and the flow runtime are shared but live in `form-builder`, because an app without a
   workspace still needs styling and a working questionnaire. To place any shared front-end code,
-  ask whether a workspace-less app needs it. Yes puts it in
-  `form-builder/src/main/resources/form-builder/website-static/`, no puts it in `packages/ui/src/`.
+  ask whether a workspace-less app needs it. If so, it should go in
+  `form-builder/src/main/resources/form-builder/website-static/`, else in `packages/ui/src/`.
+
+
+### The `taxpert` workspace, by surface
+
+Every surface below ships in one npm package and is mounted by an application through four HTML
+fragments the scaffold ships empty.
+
+| Surface | What it does | Entry module |
+|---|---|---|
+| Global nav | Top bar with the application taxonomy, the destination switcher, and the buttons that open the modals and the tool dock. | `src/global-nav/js/taxpert-global-nav.js` |
+| Audit panel | Element that owns the three modals and the legacy rail. Stays mounted whether or not the rail is shown. | `src/audit-panel/js/taxpert-audit-panel.js` |
+| Tool dock | Dockable, draggable, resizable right-side area holding the tool panels. | `src/tool-panels/js/taxpert-tool-dock.js` |
+| Inspect (tool) | Shows the facts, flow elements, and text behind whatever is selected on the page. | `src/tool-panels/js/taxpert-inspect.js` |
+| Outcome tracker (tool) | Tracks the determinations the host application declares, as they resolve. | `src/tool-panels/js/taxpert-outcome-tracker.js` |
+| Watchlist (tool) | Tracks the current value and completeness of arbitrary fact paths. | `src/tool-panels/js/taxpert-watchlist.js` |
+| Overrides (tool) | Edits a declared list of fact paths directly. Configured per host and off by default. | `src/tool-panels/js/taxpert-overrides.js` |
+| All-screens toolbar | Controls for the Browse All and Path Mode pages the scaffold generates. | `src/audit-panel/js/all-screens-toolbar.js` |
+| Display options modal | Visibility, layout, and language controls. A host whose display is not a flow page passes in its own option descriptors. | `src/audit-panel/js/display-modal.js` |
+| Scenario modal | Reset, copy, paste, load a saved Fact Graph scenario, and (behind a flag) generate one with an LLM. | `src/audit-panel/js/scenario-modal.js` |
+| Workspace settings modal | Application switcher, tool selection, feature flags, endpoint overrides, and a JSON view of the whole override record. | `src/audit-panel/js/workspace-settings-modal.js` |
+
+The three default tools are Inspect, Outcome tracker, and Watchlist, defined in `defaultTools()` in
+`packages/ui/src/shared/js/config.js`. Overrides is a fourth tool that a host declares explicitly.
+Tax Withholding Estimator is the only application that declares it today.
+
 
 ## 2. Build-time pipeline
 
@@ -123,14 +135,11 @@ Three consequences worth holding onto:
                    `-- start the smol static server, only under --serve
 ```
 
-Step by step, with the file that proves each one:
 
 1. **sbt resolves the two local artifacts.** Both `gov.irs:factgraph:3.1.0-SNAPSHOT` and
    `gov.irs::form-builder:0.1.0-SNAPSHOT` are published with `sbt publishLocal` into the local Ivy
    cache. Neither is on a public repository, so a first build needs both siblings published.
-2. **`FormBuilder.run(app, args)` is the app's entire Scala entry point.** `credit-assistant/src/main/scala/gov/irs/creditassistant/Main.scala`
-   is roughly thirty lines: one `FormBuilderApp` value and `@main def main(args: String*) =
-   FormBuilder.run(app, args)`. Argument parsing is a regex over `--(\w*)` in `FormBuilder.scala`.
+2. **`FormBuilder.run(app, args)` is the app's entire Scala entry point.** 
 3. **The parser reads Flow XML and the Fact Dictionary from disk.** `FormBuilder.resolvedFlowConfig`
    calls `os.read(app.flowDir / "index.xml")` and splices in every `<module src="..."/>` it names,
    stamping each spliced page with the module it came from. `os.read` rather than
@@ -219,7 +228,7 @@ inputs.
           fg-knockout-handlers.js, fg-flow-confirmations.js
 ```
 
-The generated page is static HTML. Nothing renders server-side at request time.
+The generated site is all static HTML, CSS and JavaScript. Nothing renders server-side at request time by default.
 
 The runtime bootstraps the fact graph by fetching the app's own `fact-dictionary.xml`, importing it
 into a `FactDictionary` through the Scala.js engine, and rehydrating a serialized graph out of
@@ -282,9 +291,13 @@ The `taxpert` package mounts over a running Form Builder app without either side
                               +-----------------------------+
 ```
 
-**Four fragments carry the mount.** `workspace-head` holds the stylesheet link, the preload for the
-nav's markup, and the element modules. `taxpert-config` holds the `configure()` call. `workspace-enable`
-calls `enable()` at the end of `<body>`. `workspace-all-screens` supplies the Browse All page's
+Four fragments carry the mount:
+- `workspace-head` holds the stylesheet link, the preload for the
+nav's markup, and the element modules. 
+- `taxpert-config` holds the `configure()` call. 
+- `workspace-enable`
+calls `enable()` at the end of `<body>`. 
+- `workspace-all-screens` supplies the Browse All page's
 toolbar in two halves, `-head` and `-body`, and is the one seam not gated on `--auditMode`, because
 that page only exists under `--allScreens` and is chrome all the way down. The library ships an empty
 `<th:block th:fragment="...">` for each.
@@ -293,21 +306,18 @@ that page only exists under `--allScreens` and is chrome all the way down. The l
 wants in `<head>` (a vendored library, a font, an extra module), and it is replaced unconditionally
 at the bottom of `head.html`. TWE fills it, and credit-assistant does not.
 
-**Why there is no import.** Naming `resources/vendor/taxpert/audit-panel/styles/audit-panel.css`
+Naming `resources/vendor/taxpert/audit-panel/styles/audit-panel.css`
 inside the library would hardcode the internal file layout of a package the library neither depends
 on nor versions, and would make `include_taxpert_workspace: no` a conditional inside a library
-template instead of a file that is simply never emitted. The rule is checkable by reading: grep
-`form-builder/src/main/resources/form-builder/templates` for `vendor/taxpert` and every hit is prose in a
-comment. The cost is about thirty lines of mount markup per app rather than once in the library, and
-both apps plus the cookiecutter carry a copy.
+template instead of a file that is simply never emitted.
 
-**What replaces the import.** Two duck-typed contracts, both in `packages/ui/src/shared/js/`:
+Two duck-typed contracts replace the imports, both in `packages/ui/src/shared/js/`:
 
-- `graph-adapter.js` defines a nine-method port over the fact graph: `paths`, `getCollectionIds`,
+- `graph-adapter.js` defines a port over the fact graph: `paths`, `getCollectionIds`,
   `get`, `set`, `getDefinition`, `toJson`, `load`, plus `changeEvents`. `windowFactGraphAdapter()`
   is the default implementation, and it resolves `window.factGraph` on every call rather than
-  capturing it, because the graph arrives asynchronously from the Scala.js bundle. Every read is
-  defensive by contract, because the tools re-read on every `fg-update`, which fires on every
+  capturing it, because the graph arrives asynchronously from the Scala.js bundle. The tools re-read on every 
+  `fg-update`, which fires on every
   keystroke. A host with a different graph supplies its own adapter through `configure({ graph })`.
 - `flow-dom.js` describes the host's flow markup as data: `questionTag`, `displayTag`, `alertTag`,
   `pathAttr`, `conditionAttr`, `screenSelector` and so on. The defaults reproduce credit-assistant's
@@ -333,7 +343,7 @@ taxpert's `node --test` run and fact-explorer's Vite bundle. The runtime used to
 copy, which was the last thing making a required package depend on an optional one. Keep the two
 byte-identical, and revisit the split rather than extending both if it ever grows.
 
-## 5. The five extension seams
+## 5. The five extension point
 
 | # | Seam | Mechanism | Real example |
 |---|---|---|---|
@@ -354,7 +364,7 @@ prefix to a file inside `/form-builder/` is a bug.
 Fact Explorer is a standalone React and Vite SPA at `localhost:5180` that visualizes any Form Builder
 app's flow and facts. One instance holds every app beside it.
 
-**Apps are discovered rather than registered.** Each app owns a `fact-explorer.app.json` at its repo
+Apps are discovered rather than registered. Each app owns a `fact-explorer.app.json` at its repo
 root carrying its id, label, `basePath`, `storagePrefix`, `devPort`, tax year, engine bundle and
 dictionary paths, capability flags, scenario configuration and any `customFlowTags` it registers.
 `npm run build-registry` (`scripts/build-registry.mjs`) globs every sibling directory that carries
@@ -362,7 +372,7 @@ one, absolutises the paths, and writes the generated, gitignored `public/data/ap
 app is putting its repo beside the others. An optional `form-builder-apps.json` beside the apps may set
 `defaultAppId` and `order`.
 
-**The graph itself has two source tiers plus a fixture.** A registry entry carries an `fgm` object
+The graph itself has two source tiers plus a fixture. A registry entry carries an `fgm` object
 with two URLs, and `fetchAppGraph` in `src/model/load.js` tries them in order:
 
 | Tier | URL | Produced by |
@@ -392,7 +402,7 @@ fact-explorer's `sessionStorage` and `BroadcastChannel`. `src/model/bridge.js` a
 `fg-graph-bridge.js` are the two halves of that live-sync contract, and the storage key it writes
 must carry the app's prefix. Each app has to be running for its own overlay to work.
 
-## 7. The api backend's place
+## 7. The LLM API
 
 `api/` is a FastAPI service on port 8000 that powers the audit panel's chat. It is optional and off
 by default: both AI surfaces sit behind the `--aiScenarioGeneration` and `--aiFactExplanation` build
@@ -401,11 +411,11 @@ over CORS at the `endpoints.apiBase` a host configures, so it is never part of a
 
 It exposes two POST routes, `/chat` and `/scenario/generate`, plus a `GET /health`. It runs an LLM
 tool-calling loop through LiteLLM against Ollama, with keyword search over the fact dictionary and
-cosine-similarity retrieval over IRS publications in ChromaDB. See [AI integration](./ai-integration.md)
+cosine-similarity retrieval over IRS publications in ChromaDB. See [AI integration](internals/ai-integration.md)
 for the surfaces, prompts, limits and proposed expansion, and [onboarding](./onboarding.md) for how
 to run it.
 
-## 8. Embedding
+## 8. App Embedding
 
 A Form Builder app rendered inside another page's frame shows the product without a second workspace.
 
@@ -426,7 +436,7 @@ inside a workspace.
 
 ## 9. State and storage
 
-Two independent namespaces. The flow runtime's prefix comes from `<meta name="form-builder:storage-prefix">`,
+The flow runtime's prefix comes from `<meta name="form-builder:storage-prefix">`,
 which renders `FormBuilderApp.storageKeyPrefix` and defaults to `appId`. The workspace's prefix comes
 from `configure({ app: { storagePrefix } })` and defaults to the literal `taxpert`. The two never
 share a key name, so the prefixes are independent by construction and neither package has to import
@@ -447,15 +457,8 @@ than capturing it at module scope, because both modules load before configuratio
 | `<taxpert-prefix>:configOverrides` | local | `shared/js/config.js` | Workspace-settings overrides. Built without `storageKey()`, since it feeds the config that function reads. |
 | `fact-explorer:v1` | local | `packages/fact-explorer/src/annotate/store.js` | Annotations and canvas layout, keyed by FGM node id. localStorage rather than session because notes are meant to survive reloads and be exported. |
 
-There is no migration when a host adopts a prefix. All of the workspace keys hold dev-tool state
-that costs seconds to recreate, and the loss happens once, on the next load.
 
 ## 10. Where a change belongs
-
-Two tests, applied in order. The first separates domain content (the flow, the facts, the words, the
-brand) from platform capability, and domain content belongs to the application. The second asks
-whether a second application would want the same thing, and anything that passes belongs to the
-library.
 
 | Kind of change | Directory | Notes |
 |---|---|---|
@@ -472,3 +475,33 @@ library.
 | Canvas rendering, node shapes, legend, layout | `packages/fact-explorer/src/canvas/` | The FGM schema and `validate()` live in `src/model/fgm.js`. Data source logic lives in `src/model/load.js`. |
 | Backend routes and request/response shapes | `services/assistant/src/api/` | Agent loop and prompts in `services/assistant/src/agent/`, fact search and RAG in `services/assistant/src/facts/` and `services/assistant/src/rag/`. |
 | A new application | `form-builder-template/`, then a new sibling directory | Its `fact-explorer.app.json` is the whole of its Fact Explorer registration. |
+
+
+## Gotchas
+
+**Discovery looks exactly one level down.** Fact Explorer and the assistant read an application
+from `${TAXPERT_APPS_DIR:-./apps}`, mounted read-only at `/apps`, and each application repository
+has to sit directly inside that directory with its `fact-explorer.app.json` one level down. Cloning
+the example repository and pointing `TAXPERT_APPS_DIR` at it satisfies that, because its two
+applications are its two subdirectories. The Node scripts also follow symlinks placed inside
+`apps/`, which is handy for the native path. A symlink whose target lies outside the mounted
+directory will dangle inside a container, so prefer `TAXPERT_APPS_DIR` when running the Docker
+stack.
+
+**Vendored copies of `packages/ui` are generated and gitignored.** An application without a bundler
+takes `taxpert` as a dependency and copies `node_modules/taxpert/src` into its own
+`website-static/vendor/taxpert/` during the build. Never hand-edit a `vendor/` directory and never
+commit one. Change `packages/ui/src/`, run `npm test --workspace packages/ui`, then run
+`make copy-shared-ui` in each application. `make check-shared-ui` fails an application's build if
+its mirror has drifted.
+
+**Parser, generator, node template and chrome locale changes belong in form-builder** rather than
+in an application. Republish with `sbt test publishLocal` there, then run `make ci` in more than one
+application. A second application is what catches an accidental assumption about the first.
+
+**The document index is not built by `make up`.** ChromaDB starts empty. The assistant's `make index`
+populates it from `services/assistant/data/`. Retrieval returns nothing until it has run, and
+`make rebuild` clears it again.
+
+**Nothing here starts without a profile.** A bare `docker compose up` is a no-op by design, because
+no service in this repository is an application.

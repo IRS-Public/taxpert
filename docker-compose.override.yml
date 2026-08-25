@@ -1,79 +1,30 @@
-# Development overlay — Docker Compose auto-merges this on top of docker-compose.yml.
-#
-#   docker compose --profile explorer --profile ai up --build            # dev: hot reload
-#   docker compose -f docker-compose.yml --profile explorer up --build   # prod-like: ignore this file
-#
-# Edit source on the host -> the container rebuilds/reloads in real time. For Fact Explorer you then
-# refresh the browser. macOS bind mounts don't emit filesystem events, so each watcher is put into
-# polling mode.
-#
-# Both services this repository builds are here, and nothing else: the Form Builder applications
-# live in their own repositories and run there (`make dev`, natively). What used to be a watch
-# container per app is that app repo's business now — this stack only needs to *reach* it, which
-# is what TAXPERT_APP_HOST and the read-only /apps mount are for.
-#
-# Every service that reads an application reads it from ${TAXPERT_APPS_DIR:-./apps}: one directory
-# holding one or more app repos, each with a fact-explorer.app.json at its root. Point it at your
-# checkout (`TAXPERT_APPS_DIR=~/my-apps`) or clone/symlink into ./apps — see apps/README.md.
-
 services:
-  # --- assistant: uvicorn --reload ------------------------------------------------------
-  # Restarts on save. src/ is bind-mounted; the project is installed editable by uv.
   assistant:
     environment:
       UVICORN_RELOAD: "1"
       WATCHFILES_FORCE_POLLING: "true"
-      # The scenario generator reads an app's existing scenarios (to clone) and its flow XML (to
-      # find knockouts) from the app source tree mounted read-only below. Defaults name
-      # credit-assistant because that is the app the feature was built against; override both for
-      # another app.
       SCENARIOS_DIR: ${TAXPERT_SCENARIOS_DIR:-/apps/credit-assistant/src/main/resources/credit-assistant/scenarios}
       FLOW_DIR: ${TAXPERT_FLOW_DIR:-/apps/credit-assistant/src/main/resources/credit-assistant/flow}
     volumes:
       - ./services/assistant/src:/app/src
-      # The app repos, read-only — supplies scenarios/ + flow/ to /scenario/generate.
       - ${TAXPERT_APPS_DIR:-./apps}:/apps:ro
 
-  # --- fact-explorer: Vite dev server (true HMR) -----------------------------------
-  # Swap the nginx runtime for the build stage and run `vite` on container port 80
-  # (kept behind the base 5180:80 mapping). node_modules stays the image's copy.
+  # --- fact-explorer: Vite dev server  -----------------------------------
   fact-explorer:
     build:
       target: build
     working_dir: /workspace/packages/fact-explorer
     environment:
       VITE_USE_POLLING: "true"
-      # Where the apps are. Read by build-registry.mjs, make-static-fgm.mjs and vite.config.js —
-      # all three resolve it the same way, and without it they look for ./apps in this checkout,
-      # which is not where the mount lands.
       FORM_BUILDER_APPS_DIR: /apps
-      # Read the generated per-app graphs (public/data/<app>/form-builder-graph.json from
-      # make-fgm below), not the small hand-authored mock fixture. Without this,
-      # load.js defaults to `mock`. See src/model/load.js / .env.example.
       VITE_FGM_SOURCE: "real"
-      # Scenario overlay (N1–N6): the Vite dev proxy must reach each app's dev server. Inside this
-      # container `localhost:3003` is the container itself, so the descriptors' devPorts are read
-      # against the host instead. Set VITE_APP_ORIGIN_<ID> (descriptor id, upper-cased, - as _) to
-      # override one app — e.g. VITE_APP_ORIGIN_TWE=http://my-twe-service when an app does run in
-      # a container on this network.
       VITE_APP_ORIGIN_HOST: host.docker.internal
     extra_hosts:
-      - "host.docker.internal:host-gateway"   # reach an app running natively on the host, on Linux too
-    # Regenerate every discovered app's graph + scenario index, and the app registry, from the live
-    # source trees on every `up`, then start Vite. Output lands in the bind-mounted
-    # /workspace/packages/fact-explorer/public/data, so it also appears on the host.
-    #
-    # An app is discovered only if it is under the mounted apps directory, so that directory is
-    # exactly the app list Fact Explorer's homepage shows. `|| true` keeps an empty apps directory
-    # from killing the service: make-fgm fails loudly in the logs and Vite still serves the mock
-    # fixture.
+      - "host.docker.internal:host-gateway"
     command: ["sh", "-c", "npm run make-fgm || true; npm run dev -- --host 0.0.0.0 --port 80"]
     volumes:
       - ./packages/fact-explorer:/workspace/packages/fact-explorer
       - ./packages/ui:/workspace/packages/ui
-      # Keep the image's installed workspace root; only the sources are live.
       - /workspace/node_modules
       - /workspace/packages/fact-explorer/node_modules
-      # The app repos, read-only — supplies fact-explorer.app.json, facts/, flow/ and (where the
-      # app has them) scenarios/ to make-fgm, and is what the registry is built from.
       - ${TAXPERT_APPS_DIR:-./apps}:/apps:ro
