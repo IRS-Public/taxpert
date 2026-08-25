@@ -20,7 +20,7 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
-    "@dagrejs/dagre": "^1.1.4",
+    "@dagrejs/dagre": "^3.1.1",
     "@uswds/uswds": "^3.13.0",
     "@xyflow/react": "^12.3.5",
     "dompurify": "^3.4.14",
