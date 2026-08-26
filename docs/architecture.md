@@ -412,8 +412,8 @@ over CORS at the `endpoints.apiBase` a host configures, so it is never part of a
 It exposes two POST routes, `/chat` and `/scenario/generate`, plus a `GET /health`. It runs an LLM
 tool-calling loop through LiteLLM against Ollama, with keyword search over the fact dictionary and
 cosine-similarity retrieval over IRS publications in ChromaDB. See [AI integration](internals/ai-integration.md)
-for the surfaces, prompts, limits and proposed expansion, and [onboarding](./onboarding.md) for how
-to run it.
+for the surfaces, prompts, limits and proposed expansion, and [QUICKSTART.md](QUICKSTART.md) for
+how to run it.
 
 ## 8. App Embedding
 

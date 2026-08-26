@@ -4,7 +4,7 @@ This document describes the two ways the Taxpert platform can be shipped and wha
 Path 1 uploads static files to object storage and runs no servers at all. Path 2 runs the full
 container stack, including a Python API, a vector database, and a model host. It is written for a
 team deciding which artifact to put in front of users, and for whoever has to operate the result.
-Local development setup is out of scope. See [onboarding.md](./onboarding.md).
+Local development setup is out of scope. See [QUICKSTART.md](QUICKSTART.md).
 
 "Taxpert" or "the Taxpert platform" means this repository as a
 whole, the workspace UI plus its companion services, together with the Form Builder scaffold and

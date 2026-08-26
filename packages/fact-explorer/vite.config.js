@@ -86,6 +86,19 @@ const withOriginHost = (origin) => {
 // native `npm run dev` is unaffected.
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    // One React, whatever npm's tree says. @xyflow/react declares react as a peer of `>=17`, and in
+    // this workspace npm satisfied that by installing its own react@18 at the root while this
+    // package keeps the react@19 it depends on. Two copies means two hook dispatchers: the canvas
+    // threw "Cannot read properties of null (reading 'useState')" from ReactFlowProvider and every
+    // route rendered blank. Deduping resolves both specifiers to this package's copy — 19 satisfies
+    // xyflow's peer range, so nothing is being forced here that the dependency did not allow.
+    //
+    // Kept as a resolver rule rather than an `overrides` block in the root package.json because it
+    // fixes the bundle rather than the install: a fresh `npm install`, a different npm version, or
+    // a lockfile refresh can reintroduce the split, and this holds either way.
+    dedupe: ['react', 'react-dom'],
+  },
   css: {
     preprocessorOptions: {
       scss: {

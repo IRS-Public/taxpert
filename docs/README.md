@@ -12,7 +12,7 @@ linked from the root [README.md](../README.md).
 |--------------------------------------|----------------------------------------|---|
 | 1                                    | [taxpert-form-builder-fact-graph.md](adr/taxpert-form-builder-fact-graph.md)       | Why this exists, what problems it solves, and why it is open source |
 | 2                                    | [architecture.md](architecture.md)     | How the pieces fit together, with diagrams of the build pipeline and the browser runtime |
-| 3                                    | [onboarding.md](onboarding.md)         | How to get everything running on your machine, every build flag, and the failure modes you are likely to hit |
+| 3                                    | [QUICKSTART.md](QUICKSTART.md)      | How to get everything running on your machine, how a library change reaches what consumes it, and the failure modes you are likely to hit. The single setup document for all five repositories |
 | 4                                    | [release-status.md](release-status.md) | What is in this release, how mature each part is, and what is present in the tree without being finished |
 | 5     | [deployment.md](deployment.md)         | The static path with no backend, the full container stack, and the tradeoffs between them |
 

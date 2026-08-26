@@ -9,7 +9,7 @@ repository and platform, while the **`taxpert` package** is the optional npm wor
 
 ## Related documents
 
-- [Onboarding](../onboarding.md) for running the stack, including the api service and Ollama
+- [QUICKSTART.md](../QUICKSTART.md) for running the stack, including the api service and Ollama
 - [Release status](../release-status.md) for component maturity
 - [Why Taxpert](../adr/taxpert-form-builder-fact-graph.md) for the rationale behind the platform
 - [Architecture](../architecture.md) for how the pieces fit together
@@ -201,7 +201,7 @@ The backend base URL resolves in this order (`fact-graph-io.js` and `chat.js`):
 2. `configure({ endpoints: { apiBase } })` in `packages/ui/src/shared/js/config.js`
 3. the default `http://localhost:8000`
 
-Full setup steps for the api service, Ollama and Chroma live in [Onboarding](../onboarding.md).
+Full setup steps for the api service, Ollama and Chroma live in [QUICKSTART.md](../QUICKSTART.md).
 
 ---
 

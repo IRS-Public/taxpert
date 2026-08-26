@@ -98,6 +98,18 @@ class TaxpertGlobalNav extends HTMLElement {
     return this.getAttribute('app') || getConfig().app.id
   }
 
+  // Reflects to the attribute the getter reads, so setting the property and writing the markup mean
+  // the same thing. It exists because a getter with no setter is a *throwing* property, not a
+  // read-only one: React 19 assigns any prop whose name it finds on a custom element instance
+  // rather than setting an attribute the way React 18 did, so `<taxpert-global-nav app="…">` in JSX
+  // became `element.app = '…'` — "Cannot set property app of #<TaxpertGlobalNav> which has only a
+  // getter", thrown during render, which blanks the host application. Nothing re-renders here: the
+  // id is read at connect and is fixed for a mount, unlike `active` below.
+  set app (value) {
+    if (value === null || value === undefined) this.removeAttribute('app')
+    else this.setAttribute('app', value)
+  }
+
   get menu () {
     if (this._menu) return this._menu
     const json = this.getAttribute('menu-json')

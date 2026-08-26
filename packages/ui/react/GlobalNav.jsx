@@ -1,6 +1,6 @@
 // Thin React adapter for <taxpert-global-nav>.
 //
-// Handles the Web-Component-in-React sharp edges (React 18):
+// Handles the Web-Component-in-React sharp edges:
 //   - Non-string props (menu array) can't be set as attributes — assign them as
 //     DOM properties via a ref.
 //   - Custom events have no JSX onXxx binding — bridge with addEventListener.
@@ -9,6 +9,11 @@
 //     (active, workspaceOn) are pushed through its property setters instead;
 //     each does the one targeted DOM update it implies. Attributes that are
 //     fixed for a mount (app, labels, workspace-locked) still pass as JSX props.
+//   - React 19 assigns a JSX prop as a DOM *property* whenever the custom element has one by that
+//     name, where React 18 set an attribute. So each simple-identifier prop passed below — `app`
+//     and `active` — needs a setter on the element or the assignment throws mid-render and blanks
+//     the whole host. Hyphenated props (context-label, workspace-*) are never valid identifiers and
+//     stay attributes, which is why they were never affected.
 
 import { useEffect, useRef } from 'react'
 import '../src/global-nav/js/taxpert-global-nav.js' // side effect: customElements.define(...)

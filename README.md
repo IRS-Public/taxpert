@@ -5,7 +5,12 @@ It achieves this as a drop-in UI library, adding a lightweight workspace wrapper
 
 Read the full [Why Taxpert](docs/why-taxpert.md) for the rationale, supporting research, and future direction of Taxpert.
 See [below](#capabilities) for a description of what capabilities are included in Taxpert today and at what level of 
-stability/maturity. See the [docs](docs), in particular [Onboarding](docs/onboarding.md), [Architecture](docs/architecture.md), and [Taxpert vs. Form Builder vs. Fact Graph](docs/adr/taxpert-form-builder-fact-graph.md) to learn more about how Taxpert works.
+stability/maturity. [QUICKSTART.md](docs/QUICKSTART.md) is the single setup document for the whole taxpert/form-builder 
+ecosystem,
+in this repository. See the [docs](docs), in particular [Architecture](docs/architecture.md) and [Taxpert vs. Form 
+Builder vs. Fact Graph](docs/adr/taxpert-form-builder-fact-graph.md) to learn more about the genesis of Taxpert and how 
+it works. [release-status.md](docs/release-status.md) describes the level of maturity of each capability within 
+Taxpert today.
 
 
 If you are interested in building your own Form 
@@ -20,34 +25,23 @@ built on [Form Builder](https://github.com/IRS-Public/form-builder), [Fact Graph
 > We fully anticipate that this code is a starting point for functionality and architecture, not the end result, and expect that it will be superceded in the future.
 > Do not deploy this repository directly to a production environment as-is. It lacks the necessary security, error-handling, and scalability guardrails.
 
-## Capabilities 
-
 ![Taxpert Workspace](docs/taxpert_layout.png)
 
-There are three levels of maturity for capabilities included in taxpert today:
-- General availability (GA): The public surface is stable. Breaking changes would be deliberate and versioned.
-- Beta: The surface is settled in shape but it has not been extensively tested and is liable to change in the future. Feature set is deliberately narrower than the eventual target. 
-- Alpha: Experimental and works in a basic sense but does not produce consistent results and requires significant investment. Modules, routes, and prompts may be renamed or removed.                                                         
+## Quickstart
 
+[QUICKSTART.md](docs/QUICKSTART.md) is the single setup document for this repository and the related form-builder 
+applications around it. It covers both ways to run a Form Builder application with these tools over it, in Docker or
+natively, the commands that carry a change in `form-builder` or in this repository out to every
+application that consumes it, and the failure modes you are most likely to hit.
 
-| Capability                                    | Level | Why                                                                                                     |
-|-----------------------------------------------|-----|---------------------------------------------------------------------------------------------------------|
-| `taxpert` workspace package                   | GA  | Shared package consumed across both applications and internal tooling.                                  |
-| Fact Explorer                                 | GA  | Fully integrated tool supporting visual flow navigation, searching, and fact analysis.                  |
-| Scenario mode                                 | GA  | Fully supported feature for loading and running saved scenario data in live applications.               |
-| Browse All and Path Mode                      | GA  | Fully supported administration and view features active in both applications.                           |
-| Tool dock, Inspect, Outcome tracker, Watchlist | GA  | Default user-facing tools included out of the box for all applications.                                 |
-| Global nav                                    | GA  | Unified navigation structure deployed across both applications.                                         |
-| Overrides tool                                | GA  | Active tool deployed and supported in production.                                                       |
-| Display options modal                         | GA  | Shared UI modal proven to support custom configuration across host applications.                        |
-| Workspace settings modal                      | GA  | Full-featured workspace management (tool selection, feature flags, data import/export).                 |
-| Author Mode                                   | Beta | Functional but the full lifecycle has not been extensively tested                                       |
-| Form Builder Graph generator                  | Beta | Operational for basic graphing, but missing several visual relationship edges.                          |
-| AI API backend service                        | Alpha | Experimental service with minimal evaluation harness; behavior varies based on the underlying AI model. |
-| AI fact explanation                           | Alpha | Experimental service with minimal evaluation harness; behavior varies based on the underlying AI model. |
-| AI scenario generation                        | Alpha | Experimental service with minimal evaluation harness; behavior varies based on the underlying AI model. |
-| RAG retrieval and ChromaDB indexing           | Alpha | Experimental service with minimal evaluation harness; behavior varies based on the underlying AI model. |
----
+The short form, with Docker:
+
+```bash
+cd taxpert && make up     # Fact Explorer on 5180, the assistant on 8000, ChromaDB on 8001
+```
+
+Generating an application with Form Builder Template that includes Taxpert will start up taxpert for you in Docker 
+automatically.
 
 ## Where this sits
 
