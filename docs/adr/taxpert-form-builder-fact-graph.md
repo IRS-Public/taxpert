@@ -5,7 +5,7 @@ solve and how it does it.  It is written for an engineer, architect, or technica
 manager who is deciding whether to adopt, contribute to, or fund work on this stack.
 
 The product and design rationale lives in a separate document,
-[Why Taxpert](docs/why-taxpert.md). Read it to better understand the user research behind Taxpert,
+[Why Taxpert](../why-taxpert.md). Read it to better understand the user research behind Taxpert,
 the design principles, the descriptions of the workspaces and their modes (Experience Explorer's
 Product Experience, Path, and Browse All modes, and Fact Explorer), the audiences and roles the tools
 serve, the governance model, and future vision. 
@@ -108,7 +108,7 @@ graph cannot describe a flow that does not exist.
 
 
 ### Taxpert: Separating Flow from Inspection 
-See [Why Taxpert](docs/why-taxpert.md) to understand the full scope of features that Taxpert provides today. 
+See [Why Taxpert](../why-taxpert.md) to understand the full scope of features that Taxpert provides today. 
 
 An original implementation of Taxpert bundled Flow XML generation with the taxpert workspace UI, however after several iterations they are now considered distinct entities with distinct domains:
 

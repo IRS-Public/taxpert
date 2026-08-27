@@ -8,14 +8,15 @@ carry a change in one of the shared libraries out to everything that consumes it
 Because there are five repositories involved, each one's README or ONBOARDING.md points to this document as the 
 source of truth, rather than repeating any of it.
 
-1. [Prerequisites](#prerequisites)
-2. [Where the checkouts go](#where-the-checkouts-go)
+1. [Prerequisites](#prerequisites), the toolchain each path needs and where the checkouts go
+2. [Generating an application](#generating-an-application)
 3. [The Docker path](#the-docker-path), where nothing but Docker is installed on your machine
 4. [The native path](#the-native-path), where you run sbt, node and the dev servers yourself
-5. [Propagating a change](#propagating-a-change), what to run after editing a library
-6. [Regenerating derived artifacts](#regenerating-derived-artifacts)
-7. [Troubleshooting](#troubleshooting)
-8. [Reference documentation](#reference-documentation)
+5. [Environment variables](#environment-variables)
+6. [Ports](#ports)
+7. [Propagating a change](#propagating-a-change), what to run after editing a library
+8. [Regenerating derived artifacts](#regenerating-derived-artifacts)
+9. [Troubleshooting](#troubleshooting)
 
 ## Prerequisites
 
@@ -23,7 +24,7 @@ source of truth, rather than repeating any of it.
 |---|---|---|---|---|
 | Docker Desktop | Any current release | Compose v2 syntax in every `docker-compose.yml` | Required | Not used |
 | cookiecutter | Any current release | `form-builder-template` is a standard cookiecutter | Only to generate an application | Only to generate an application |
-| JDK | 21 | `eclipse-temurin:21-jdk-jammy` in the application Dockerfiles | Not needed | Required |
+| JDK | 21 or newer | `eclipse-temurin:21-jdk-jammy` in the application Dockerfiles and `java-version: '21'` in the generated CI workflow | Not needed | Required |
 | sbt | 1.11.4 | `project/build.properties` in every Scala project | Not needed | Required |
 | Node | 20 or newer | `node:20-alpine` in Fact Explorer's Dockerfile, `node-version: '22'` in the generated CI workflow | Not needed | Required |
 | xmllint | From libxml2 | An application's `make validate-xml` and `make format` call it | Not needed | Required |
@@ -69,7 +70,7 @@ Answering `yes` to `include_taxpert_workspace`, `include_fact_explorer` and `inc
 every surface described below. Run cookiecutter from where you want the application to land rather
 than from inside a checkout of the template.
 
-Alternatively you can clone a reference applications and follow its README for running one or all of the 
+Alternatively you can clone the reference applications and follow their READMEs for running one or all of the 
 applications natively or in Docker:
 
 ```bash
@@ -134,11 +135,16 @@ Note the `http` rather than `https`, and the trailing slash. `dev_port` defaults
 `127.0.0.1` rather than on all interfaces, because it writes to the flow XML and the fact dictionary
 in your working tree.
 
+Give the watcher a minute before expecting anything but the flow itself. The image bakes a
+production build, which passes no generator flags, and nginx serves that as soon as the container
+starts. Author Mode and Browse All are added by the `sbt ~run` watcher on its first pass, so both
+return 404 until it finishes. The flow is up immediately either way.
+
 Run `make unregister-explorer` before you delete or move an application repository. A fragment
 naming a path that no longer exists fails `docker compose up` for the whole taxpert stack rather
 than just for that one application.
 
-### Using an example applications
+### Using an example application
 
 All three share one Docker layout, so `make up` behaves the same in any of them.
 

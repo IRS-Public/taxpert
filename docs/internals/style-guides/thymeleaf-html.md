@@ -58,7 +58,7 @@ An application resolves its own `templates/` first and the scaffold's second, pe
 overrides exactly the templates it needs to and inherits the rest untouched. Tax Withholding
 Estimator's `nodes/inputs/date.html` override and its two `fg-withholding-adjustments-*.html`
 node templates are the working example. See
-[architecture.md](../../architecture.md#5-the-five-extension-seams) for the resolver mechanics.
+[architecture.md](../../architecture.md#5-the-five-extension-points) for the resolver mechanics.
 
 - **Filenames are `kebab-case` and match the element or concept** they render (`fg-set.html`
   renders `<fg-set>`, `inputs/dollar.html` renders `type="dollar"`).

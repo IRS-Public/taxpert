@@ -24,9 +24,9 @@ in all three, with the single exception noted below.
 |---|---|
 | `form-builder/src/main/resources/form-builder/` | The scaffold's own layer: `templates/` (page, all-screens, `fragments/`, `nodes/`, `nodes/inputs/`) plus `website-static/theme/` and `website-static/flow-runtime/`, which hold the design tokens, the shared component CSS, and the `<fg-set>` / `<fg-collection>` / `<fg-show>` element implementations |
 | An application's `src/main/resources/<appId>/`, in its own repository, for example `credit-assistant/` or `tax-withholding-estimator/` in the [example applications](https://github.com/IRS-Public/form-builder-examples) | Each application's own `website-static/` and `templates/`: its `main.css` import root, its brand and component CSS, its flow entry point, its knockout handlers, its template overrides |
-| [`packages/ui/src/`](../../packages/ui/src/) | The workspace UI package: global nav, audit panel, tool panels. Plain ESM and CSS with no bundler, so the JavaScript and CSS guides apply in full |
+| [`packages/ui/src/`](../../../packages/ui/src/) | The workspace UI package: global nav, audit panel, tool panels. Plain ESM and CSS with no bundler, so the JavaScript and CSS guides apply in full |
 
-**Fact Explorer is the exception.** [`packages/fact-explorer/`](../../packages/fact-explorer/) is a
+**Fact Explorer is the exception.** [`packages/fact-explorer/`](../../../packages/fact-explorer/) is a
 React and Vite application with a build step, so the JavaScript guide's rules (no framework, no
 bundler, Web Components as the runtime) do not apply to it. Its CSS is still plain CSS in the same
 token style. See [packages/fact-explorer/README.md](../../../packages/fact-explorer/README.md) for its

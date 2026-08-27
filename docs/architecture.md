@@ -46,7 +46,7 @@ reading the codebase for the first time, and for a reviewer deciding where a cha
 
 The declarations behind those arrows. Paths under `packages/` and `services/` are in this
 repository; the application ones are in
-[the example applications' repository](https://github.com/IRS-Public/form-builder-example), and hold for any Form
+[the example applications' repository](https://github.com/IRS-Public/form-builder-examples), and hold for any Form
 Builder app:
 
 | Layer | File | What it requires                                                                                                                                                                                                |
@@ -343,7 +343,7 @@ taxpert's `node --test` run and fact-explorer's Vite bundle. The runtime used to
 copy, which was the last thing making a required package depend on an optional one. Keep the two
 byte-identical, and revisit the split rather than extending both if it ever grows.
 
-## 5. The five extension point
+## 5. The five extension points
 
 | # | Seam | Mechanism | Real example |
 |---|---|---|---|

@@ -1,28 +1,29 @@
 # Taxpert
+
 ## Overview
-Taxpert is a suite of internal tools that helps teams understand and validate complex questionnaire software by making the rules and relationships of [Form Builder](https://github.com/IRS-Public/form-builder) and [Fact Graph](https://github.com/IRS-Public/fact-graph) applications easier to inspect. 
-It achieves this as a drop-in UI library, adding a lightweight workspace wrapper around a running Form Builder or Fact Graph application. 
 
-Read the full [Why Taxpert](docs/why-taxpert.md) for the rationale, supporting research, and future direction of Taxpert.
-See [below](#capabilities) for a description of what capabilities are included in Taxpert today and at what level of 
-stability/maturity. [QUICKSTART.md](docs/QUICKSTART.md) is the single setup document for the whole taxpert/form-builder 
-ecosystem,
-in this repository. See the [docs](docs), in particular [Architecture](docs/architecture.md) and [Taxpert vs. Form 
-Builder vs. Fact Graph](docs/adr/taxpert-form-builder-fact-graph.md) to learn more about the genesis of Taxpert and how 
-it works. [release-status.md](docs/release-status.md) describes the level of maturity of each capability within 
-Taxpert today.
+Taxpert is a suite of internal tools that helps teams understand and validate the rules and relationships inside
+[Form Builder](https://github.com/IRS-Public/form-builder) and
+[Fact Graph](https://github.com/IRS-Public/fact-graph) applications. It's core is a 
+drop-in UI library that wraps a lightweight workspace around a running application, with several optional extensions.
 
+| Document | What it covers                                                                        |
+|---|---------------------------------------------------------------------------------------|
+| [Why Taxpert](docs/why-taxpert.md) | The problem Taxpert addresses, supporting user research, and future direction    |
+| [Architecture](docs/architecture.md) | How the pieces fit together, with diagrams of the build pipeline and the browser runtime |
+| [Taxpert vs. Form Builder vs. Fact Graph](docs/adr/taxpert-form-builder-fact-graph.md) | What each of the three libraries owns and why they are separate                       |
+| [Release status](docs/release-status.md) | Which capabilities ship today, and how mature each one is                             |
 
-If you are interested in building your own Form 
-Builder and Fact Graph application and customizing Taxpert to your needs, check out [Form Builder Template](https://github.com/IRS-Public/form-builder-template). Example applications 
-built on [Form Builder](https://github.com/IRS-Public/form-builder), [Fact Graph](https://github.com/IRS-Public/fact-graph), and [Taxpert](https://github.com/IRS-Public/taxpert) can be found at 
+To build your own Form Builder and Fact Graph application and customize Taxpert to it, start with
+[Form Builder Template](https://github.com/IRS-Public/form-builder-template). For applications
+already built on the three libraries, see
 [Form Builder Examples](https://github.com/IRS-Public/form-builder-examples).
 
 > The code in this repository addresses concrete friction points that arise during the development and maintenance of Fact Graph applications. 
 > Our primary focus is on cross-functional empowerment: building tools that make it easier for stakeholders to collaborate with engineers, test features, and understand complex logic.
 > The goal is to demonstrate "what it would take" to solve these problems, allowing us to learn what is practical and valuable before committing to long-term architectural standards.
 > Rather than shipping production-grade code for a dedicated platform team to maintain, we deliberately prioritized rapid prototyping over strict engineering maintainability. 
-> We fully anticipate that this code is a starting point for functionality and architecture, not the end result, and expect that it will be superceded in the future.
+> We fully anticipate that this code is a starting point for functionality and architecture, not the end result, and expect that it will be superseded in the future.
 > Do not deploy this repository directly to a production environment as-is. It lacks the necessary security, error-handling, and scalability guardrails.
 
 ![Taxpert Workspace](docs/taxpert_layout.png)
@@ -34,14 +35,8 @@ applications around it. It covers both ways to run a Form Builder application wi
 natively, the commands that carry a change in `form-builder` or in this repository out to every
 application that consumes it, and the failure modes you are most likely to hit.
 
-The short form, with Docker:
-
-```bash
-cd taxpert && make up     # Fact Explorer on 5180, the assistant on 8000, ChromaDB on 8001
-```
-
-Generating an application with Form Builder Template that includes Taxpert will start up taxpert for you in Docker 
-automatically.
+Generating an application with Form Builder Template that includes Taxpert will run the taxpert stack automatically 
+in Docker.
 
 ## Where this sits
 
