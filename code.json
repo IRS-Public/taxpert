@@ -1,0 +1,82 @@
+{
+    "name": "taxpert",
+    "version": "0.1.0",
+    "organization": "Internal Revenue Service",
+    "description": "Taxpert is a suite of internal tools that helps teams understand and validate the rules and relationships inside Form Builder and Fact Graph applications.",
+    "longDescription": "Taxpert's core is a drop-in, framework-agnostic UI library that wraps a lightweight workspace around a running Form Builder application: a global nav, an audit panel, dockable tool panels (Inspect, Outcome tracker, Watchlist, Overrides), and an all-screens browsing toolbar. Around that library the repository ships optional companion pieces, including Fact Explorer, a React and Vite single-page application that visualizes any Form Builder application's flow and fact dictionary as an interactive graph, and an assistant service that answers questions about a fact dictionary against IRS publications. Taxpert reaches the application it sits over through runtime contracts rather than imports, so it is genuinely optional: an application generated without it still ships the theme and the questionnaire runtime, both of which come from the Form Builder jar, and neither package depends on the other.",
+    "status": "Development",
+    "permissions": {
+        "licenses": [
+            {
+                "name": "CC0-1.0",
+                "URL": "https://github.com/IRS-Public/taxpert/blob/main/LICENSE.md"
+            }
+        ],
+        "usageType": [
+            "openSource"
+        ],
+        "exemptionText": ""
+    },
+    "repositoryHost": [
+        "github.com/IRS-Public"
+    ],
+    "repositoryURL": "https://github.com/IRS-Public/taxpert",
+    "repositoryVisibility": "public",
+    "homepageURL": "https://github.com/IRS-Public/taxpert",
+    "disclaimerURL": "https://github.com/IRS-Public/taxpert?tab=readme-ov-file#legal-disclaimer-public-repository-access",
+    "vcs": "git",
+    "platforms": [
+        "web"
+    ],
+    "categories": [
+        "other"
+    ],
+    "softwareType": [
+        "libraryModule",
+        "standalone/web"
+    ],
+    "languages": [
+        "HTML",
+        "CSS",
+        "JavaScript",
+        "Python",
+        "Shell",
+        "Makefile"
+    ],
+    "sbom": "https://github.com/IRS-Public/taxpert/network/dependencies",
+    "relatedCode": [
+        "https://github.com/IRS-Public/fact-graph",
+        "https://github.com/IRS-Public/form-builder",
+        "https://github.com/IRS-Public/form-builder-template",
+        "https://github.com/IRS-Public/form-builder-examples",
+        "https://github.com/IRS-Public/tax-withholding-estimator",
+        "https://github.com/IRS-Public/eitc-assistant"
+    ],
+    "reusedCode": [
+        "https://github.com/IRS-Public/tax-withholding-estimator",
+        "https://github.com/IRS-Public/eitc-assistant"
+    ],
+    "tags": [
+        "Open Source",
+        "IRS",
+        "Tax",
+        "Fact Graph",
+        "Form Builder",
+        "Developer Tools"
+    ],
+    "feedbackMechanism": "https://github.com/IRS-Public/taxpert/issues",
+    "AIUseCaseID": "0",
+    "repositoryType": "library",
+    "userInput": true,
+    "group": "IRS/IT",
+    "userType": [
+        "government",
+        "developers"
+    ],
+    "maturityModelTier": 2,
+    "date": {
+        "created": "2026-05-25T15:46:50Z",
+        "lastModified": "2026-08-27T13:08:55Z",
+        "metadataLastUpdated": "2026-08-27T18:11:45Z"
+    }
+}
