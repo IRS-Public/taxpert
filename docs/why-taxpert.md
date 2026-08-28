@@ -5,13 +5,13 @@
 ## Contents
 - [What is Taxpert for?](#what-is-taxpert-for)
 - [About](#about)
-- [Design Rationale](#design-rationale)
+- [Design rationale](#design-rationale)
 - [What this release contains](#what-this-release-contains)
 - [This release and the future](#this-release-and-the-future)
-- [Design Principles](#design-principles)
+- [Design principles](#design-principles)
 - [Audience, roles, and governance](#audience-roles-and-governance)
 - [Roles and governance](#roles-and-governance)
-- [Summary of Research](#summary-of-research)
+- [Summary of research](#summary-of-research)
 - [Scope](#scope)
 - [Findings](#findings)
 - [Next steps](#next-steps)
@@ -36,13 +36,13 @@ Ahead of its pilot season, the IRS Direct File team recognized the need to creat
 
 That team took a first step toward that vision, building an internal top-down view of most of the product’s content, annotated with system metadata. That “All Screens” view showed the value to troubleshooting of being able to see in one place the presentation, screen flows, and rule information that could be surfaced. And it yielded learnings about how quickly that information load becomes overwhelming. 
 
-The same use case exists for today’s IRS software products aimed at helping taxpayers with difficult calculations like tax withholding estimation or eligibility for tax credits and more.  
+The same use case exists for today’s IRS software products aimed at helping taxpayers with difficult calculations like tax withholding estimation or eligibility for tax credits.  
 
 This document describes the Taxpert tool suite (a portmanteau for the “tax expert” interface). This is internal tooling that builds on previous versions like All Screens and the Tax Withholding Estimator’s Audit Mode. This version provides several new task-focused views and interactions that expand testing support while addressing the information load issue.
 
 This document describes the problem to be solved, this team’s design vision, discovery research, choices made for this release, and possibilities for the future.
 
-## Design Rationale
+## Design rationale
 The system is the source of truth. What if anybody on the team could point at it and ask, “What’s this doing and why?”
 
 We believe people rarely start understanding a complex system by reading documentation. They begin with the system itself and with questions.
@@ -52,7 +52,7 @@ We believe people rarely start understanding a complex system by reading documen
 
 Our vision for Taxpert has evolved over time and benefitted from research over a period of years, but it has always focused on the notion of inquiry first. We aim to support inquiry via the product experience to help teams easily locate and inspect content, facts, rules, and behaviors. Taxpert is designed as a self-serve tool for people to answer questions while building deeper system understanding as they go.
 
-But beyond just one person’s understanding, we envision Taxpert as a mediator of cross-discipline collaboration, giving domain experts, designers, testers, and engineers a common point of reference and shared language for discussing implementation precisely. That influenced the vision for the tool as one that answers different kinds of questions for different kinds of users.
+But beyond just one person’s understanding, we envision Taxpert as a mediator of cross-discipline collaboration, giving domain experts, designers, testers, and engineers a common point of reference and shared language for discussing implementation with precision. That influenced the vision for the tool as one that answers different kinds of questions for different kinds of users.
 
 ## What this release contains
 To support both top-down and bottom-up inquiry, this release of Taxpert provides two complementary workspaces:
@@ -66,7 +66,7 @@ The Experience Explorer workspace offers three task-focused modes:
 - **Browse All mode**, for examining all contents, static, dynamic, or conditionally hidden
 
 #### Product Experience mode
-Product Experience mode allows exploration of the product as an end user. It allows both manual inputs and preset scenarios and offers inspection tools. This mode is best suited to UI and path exploration, answering questions like:
+Product Experience mode allows exploration of the product as an end user. It allows both manual inputs and preset scenarios plus offers inspection tools. This mode is best suited to UI and path exploration, answering questions like:
 - “What will the user see?”
 - “Why is this item shown?” 
 - “What fact is collected and why?”
@@ -75,17 +75,17 @@ Product Experience mode allows exploration of the product as an end user. It all
 #### Path Mode
 Path Mode is similar to the product experience mode but is aimed at a different need: seeing one path, end to end. It provides a bird’s eye view of the scenario that makes tracing a path across screens possible. Path Mode is particularly valuable for designing and testing coherent user experiences, branching logic, spotting missing tests, and testing different year-based rulesets. 
 
-Like the Product Experience view, it allows both manual inputs and preset scenarios and offers inspection tools. 
+Like the Product Experience mode, it allows both manual inputs and preset scenarios plus offers inspection tools. 
 
 #### Browse All
-Browse All reveals the entire product as a visual corpus. A refinement of the “All Screens” view, users can see every piece of content, question, field, and output in one place with minimal noise or conditionality. This allows discovery, comparison, content consistency and localization QA without requiring time-consuming navigation through every possible scenario.
+Browse All reveals the entire product as a visual corpus. A refinement of the “All Screens” view, users can see every piece of content, every question, field, and output in one place with minimal noise and nothing conditionally hidden. This allows discovery, comparison, content consistency and localization QA without requiring time-consuming navigation through every possible scenario.
 
-This mode is most useful for seeing content presentation without needing to first know what answers to give to force it to appear in the user experience.
+This mode is most useful for seeing content presentation without needing to first know how to force it to appear in the user experience.
 
 ### Fact Explorer
 Where Experience Explorer is organized around the user experience, Fact Explorer is organized around the underlying data model.
 
-Fact Explorer is an experimental visualization of the interconnected network of facts, flow elements, and relationships. It’s intended to afford exploration of the underlying rules and system structure and to show how tests expressed in plain language in the user interface connect to underlying facts, and how those facts connect to others
+Fact Explorer is an experimental visualization of the interconnected network of facts, flow elements, and relationships. It’s intended to afford exploration of the underlying rules and system structure and to show how tests expressed in plain language in the user interface connect to underlying facts, and how those facts connect to yet others.
 
 This is an experiment in data visualization because the graph becomes very complex, very quickly, even beyond the first one or two connections. Fact Explorer addresses this with tools for searching, filtering, and narrowing views of the graph, like by section and preset scenario. Users can focus on facts, flow elements, connections, paths, or a combination. Fact Explorer is particularly valuable for understanding structure and rules, tracing derived facts, dependencies, and reasoning about relationships that span multiple sections of the product. We anticipate usability testing and iterating more on the experiments in this workspace because we believe it holds a lot of promise as a tool for understanding how tax rules that build upon each other are handled in the system.
 
@@ -124,7 +124,7 @@ We hypothesize that more information can be successfully layered onto the establ
 ### Phase III: Create
 A far future explores Taxpert-mediated authoring concepts, workflow management, and change impact support.
 
-## Design Principles
+## Design principles
 
 ### Create shared understanding
 People can’t safely change a system they don’t understand and they can’t easily work together without a common understanding of a problem or a common language for naming and describing it. Addressing issues of understanding and shared reference is Taxpert’s top goal.
@@ -151,9 +151,9 @@ Taxpert is an internal tool built to help IRS teams deliver accurate products fo
 **Domain experts.** In the IRS use case, domain or subject matter experts (SMEs) are most often Treasury and IRS lawyers who participate in design, manual testing, and even code review to ensure the final product is accurate and reliable for taxpayers. There are other domain experts who contribute similarly, including economists, privacy officers, and many more roles. Depending on the use of this tool suite, the domain experts are the people who best know the subject matter.
 
 ## Roles and governance
-The MVP version of Taxpert has a simple governance structure: Engineering is the governing role. Taxpert doesn’t support individual accounts or loginws, and the suite is currently accessed locally. Immediate next plans include making it available in a dev or testing environment for the team. There are no immediate plans to support individual accounts or additional administration roles, but changes to governance may be implied by far future plans like workflow capabilities and authoring.
+The MVP version of Taxpert has a simple governance structure: Engineering is the governing role. Taxpert doesn’t support individual accounts or logins, and the suite is currently accessed locally. Immediate next plans include making it available in a dev or testing environment for the team. There are no immediate plans to support individual accounts or additional administration roles, but changes to governance may be implied by far future plans like workflow capabilities and authoring.
 
-## Summary of Research
+## Summary of research
 This release was supported by research.
 
 Research starting with IRS Direct File and continuing through the most recent release of the IRS Tax Withholding Estimator (TWE) suggests an integrated human-readable inspection layer as broadly useful for IRS fact-graph-based products with similar complexity issues: statute-based logic, high-stakes accuracy validation needs, and individually held system and domain knowledge. Although TWE is smaller and focused on calculation modeling rather than return preparation, building and validating it reproduced many of the same information needs identified when building and validating IRS Direct File.
@@ -265,13 +265,13 @@ Reduce the effort required to build, execute, and repeat validation activities.
 ### Support system evolution
 Help teams understand the downstream effects of proposed changes.
 - Support modeling and evaluating downstream impacts of proposed changes, flagging flow issues like invalid/unfulfillable conditions
-- Identify flow issues such as invalid or unfulfillable conditions before implementation.
+- Identify flow issues such as invalid or unfulfillable conditions before implementation
 
 ## Next steps
 The current release addresses many of the needs identified in this research, but additional evaluation is needed to understand how well the toolset supports real-world update and validation work.
 
 Recommended research steps include:
-- Evaluative research: usability test current interfaces, having participants complete core update and validation tasks.
-- Product fit research: study how the toolset supports upcoming tax-year updates efforts for the EITC Assistant and the Tax Withholding Estimator. 
+- **Evaluative research.** Usability test current interfaces, having participants complete core update and validation tasks.
+- **Product fit research.** Study how the toolset supports upcoming tax-year updates efforts for the EITC Assistant and the Tax Withholding Estimator.
 
 Together, these studies will help determine where the current toolset succeeds in supporting real update and validation work and where additional capabilities or refinements are needed.

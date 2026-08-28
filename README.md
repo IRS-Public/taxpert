@@ -20,13 +20,14 @@ already built on the three libraries, see
 [Form Builder Examples](https://github.com/IRS-Public/form-builder-examples).
 
 > The code in this repository addresses concrete friction points that arise during the development and maintenance of Fact Graph applications. 
-> Our primary focus is on cross-functional empowerment: building tools that make it easier for stakeholders to collaborate with engineers, test features, and understand complex logic.
+> Our primary focus is increasing delivery capacity by making system behavior, dependencies, and logic easier to trace, understand, and validate.
+> We do this with tools aimed at exposing rule logic in the context of the built application to make it easier for engineers and stakeholders to collaborate, test, and ship with confidence.
 > The goal is to demonstrate "what it would take" to solve these problems, allowing us to learn what is practical and valuable before committing to long-term architectural standards.
-> Rather than shipping production-grade code for a dedicated platform team to maintain, we deliberately prioritized rapid prototyping over strict engineering maintainability. 
+> Rather than shipping production-grade code for a dedicated platform team to maintain, we deliberately prioritized experimentation and rapid prototyping over strict engineering maintainability. 
 > We fully anticipate that this code is a starting point for functionality and architecture, not the end result, and expect that it will be superseded in the future.
 > Do not deploy this repository directly to a production environment as-is. It lacks the necessary security, error-handling, and scalability guardrails.
 
-![Taxpert Workspace](docs/taxpert_layout.png)
+![Diagram of the Taxpert suite, its workspaces, modes, tools and controls](docs/taxpert_layout.png)
 
 ## Quickstart
 

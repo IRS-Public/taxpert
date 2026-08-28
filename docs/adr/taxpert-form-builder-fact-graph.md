@@ -33,7 +33,7 @@ Earned Income Tax Credit depends on filing status, age, residency, investment in
 relationship of qualifying children, and half a dozen phase-out thresholds that change every year.
 Withholding depends on a different set of the same kind of rules. 
 
-Developing these types of eligibility determination or calculator applications requires at least two decisions: First, how to model the business logic as a rules engine. Second, how to capture inputs from your end users and funnel them into your rules engine. 
+Developing these types of eligibility determination or calculator applications requires at least two decisions: First, how to model the business logic as a rules engine. Second, how to elicit accurate inputs from your end users and funnel them into your rules engine. 
 While these decisions seem trivial on paper and in the beginning of development, in practice certain choices do and do not scale well and can create insurmountable amounts of tech debt. This is true for two reasons:
 
 1. Calculation and eligibility rules engines written as procedural code cannot be introspected.
@@ -65,8 +65,8 @@ environments."
 
 ## Addressing these problems
 
-Taxpert and [Form Builder](https://github.com/IRS-Public/form-builder) are build as a deliberate responses to these problems. 
-1. [Form Builder](https://github.com/IRS-Public/form-builder) and [Fact Graph]([Form Builder](https://github.com/IRS-Public/fact-graph)) address the first problem by requiring
+Taxpert and [Form Builder](https://github.com/IRS-Public/form-builder) are built as a deliberate responses to these problems. 
+1. [Form Builder](https://github.com/IRS-Public/form-builder) and [Fact Graph](https://github.com/IRS-Public/fact-graph) address the first problem by requiring
 both business logic (e.g. tax code) and user interface conditional logic to be stored as data that survives the build, in both cases as DSL specific XML (Fact Dictionary XML and Flow XML). 
 2. Taxpert addresses the second problem by requiring the running application to
 expose its state to a layer that was written separately from it.
