@@ -27,8 +27,7 @@ services:
       context: ./services/assistant
       dockerfile: Dockerfile
     env_file:
-      - path: .env
-        required: false
+      - .env
     environment:
       CHROMA_HOST: chromadb
       CHROMA_PORT: "8000"
