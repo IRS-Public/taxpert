@@ -318,9 +318,29 @@ function parseFactsFile(file, fileName, factsByPath) {
 // Node ids read as `<page-prefix>:<tag>:<factBasename>`, so the prefix is cosmetic but stable —
 // an app may shorten its routes in fact-explorer.app.json (`pagePrefixes`). Everything unlisted falls
 // back to a slug of the route; '/' becomes 'root' rather than any particular app's first page.
+//
+// The map is read as a map of route *prefixes*, which is how every descriptor already writes it and
+// what the shortening is for: Direct File declares one entry per category root ('/income' -> 'income')
+// against 138 pages whose routes are all three segments deep, so an exact-match lookup never fired and
+// every page fell through to `slug(route)` — whose 40-character cap then collapsed
+// '/credits-and-deductions/credits/cdcc-qualified-yes' and '...-no' onto one id. Longest declared
+// prefix wins, matched on a segment boundary so '/income' never claims '/income-sources'.
 function pagePrefix(route) {
   if (cfg.pagePrefixes[route]) return cfg.pagePrefixes[route]
-  return slug(route.replace(/^\//, '')) || 'root'
+
+  let best = null
+  for (const [declared, short] of Object.entries(cfg.pagePrefixes)) {
+    if (declared === '/') continue // a prefix of everything, so only ever the fallback below
+    const base = declared.replace(/\/+$/, '')
+    if (!base) continue
+    if (route === base || route.startsWith(`${base}/`)) {
+      if (!best || base.length > best.base.length) best = { base, short }
+    }
+  }
+
+  const tail = slug(best ? route.slice(best.base.length) : route)
+  const head = best ? best.short : ''
+  return [head, tail].filter(Boolean).join('-') || cfg.pagePrefixes['/'] || 'root'
 }
 
 let edgeCounter = 0
@@ -478,7 +498,10 @@ function parseFlowFile(file, out, factsByPath) {
     const route = a.route
     const title = a.title
     const prefix = pagePrefix(route)
-    const pageId = `page:${prefix}`
+    // Through `unique` for the same reason every element id is: `slug` truncates, and two routes
+    // that agree for their first 40 characters would otherwise mint one id and fail fgm.js's
+    // duplicate check at load — the whole graph refusing to open over a pair of names.
+    const pageId = unique(`page:${prefix}`, out.usedIds)
 
     const elementIds = []
     const usedIds = out.usedIds
