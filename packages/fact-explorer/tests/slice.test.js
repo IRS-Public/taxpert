@@ -6,27 +6,33 @@ import { loadMock } from './_fixtures.js'
 describe('slice', () => {
   const mock = loadMock()
 
-  it('defaults to the first flow page, never the full graph', () => {
+  it('defaults to the first flow module, never the full graph', () => {
     const key = defaultSliceKey(mock)
     expect(key).not.toBe(FULL_KEY)
-    expect(key).toBe(`page::${mock.flowPages[0].id}`)
+    expect(key).toBe(`pagefile::${mock.flowPages[0].sourceFile}`)
   })
 
-  it('builds grouped options that include every page and the full graph', () => {
+  it('builds grouped options that include every flow module (one per source file) and the full graph', () => {
     const opts = buildSliceOptions(mock)
     expect(opts.some((o) => o.key === FULL_KEY)).toBe(true)
-    for (const p of mock.flowPages) {
-      expect(opts.some((o) => o.key === `page::${p.id}`)).toBe(true)
+    const sourceFiles = new Set(mock.flowPages.map((p) => p.sourceFile))
+    for (const file of sourceFiles) {
+      expect(opts.some((o) => o.key === `pagefile::${file}`)).toBe(true)
     }
+    // one option per distinct source file, not per page — the fixture happens to be 1:1, so this
+    // only proves grouping doesn't fan a single-page file out into duplicates.
+    const flowPageOpts = opts.filter((o) => o.group === 'Flow pages')
+    expect(flowPageOpts.length).toBe(sourceFiles.size)
   })
 
-  it('a page slice yields a valid sub-FGM scoped to that page', () => {
+  it('a flow-module slice yields a valid sub-FGM scoped to every page cut from that file', () => {
     const key = defaultSliceKey(mock)
-    const pageId = key.slice('page::'.length)
+    const file = key.slice('pagefile::'.length)
+    const pageIds = new Set(mock.flowPages.filter((p) => p.sourceFile === file).map((p) => p.id))
     const g = sliceGraph(mock, key, { neighbors: false })
     expect(() => validate(g)).not.toThrow()
-    // with neighbors off, every flow node belongs to the page (focus only)
-    expect(g.flowElements.every((e) => e.pageId === pageId)).toBe(true)
+    // with neighbors off, every flow node belongs to one of the file's pages (focus only)
+    expect(g.flowElements.every((e) => pageIds.has(e.pageId))).toBe(true)
   })
 
   it('+1 hop adds dimmed context nodes beyond the focus set', () => {

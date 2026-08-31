@@ -1,6 +1,14 @@
-// Scope the graph to one region: a flow page (partitioned by flowElement.pageId),
-// a fact-dictionary file (by fact.sourceFile), or everything. A pure FGM to sub-FGM
-// stage whose output still passes validate().
+// Scope the graph to one region: a flow module (partitioned by flowPage.sourceFile,
+// via flowElement.pageId), a fact-dictionary file (by fact.sourceFile), or everything.
+// A pure FGM to sub-FGM stage whose output still passes validate().
+//
+// A flow module is a group of pages, not one — the generator cuts a subcategory into
+// a `<page>` per screen run within one XML file, so a single sourceFile like
+// `you-and-your-family-about-you.xml` owns a dozen pageIds. The picker groups by that
+// file rather than by page: layout.js already lays out a multi-page slice as
+// consecutive document-ordered runs (that's what the +1-hop neighbour case
+// exercises), so nothing downstream assumed one page per slice — grouping here is
+// purely which pageIds land in the focus set.
 //
 // A slice is the selected partition ("focus") plus, optionally, its direct edge
 // neighbours, tagged __context so the canvas dims them.
@@ -8,10 +16,13 @@
 
 export const FULL_KEY = 'full'
 
-const pageKey = (id) => `page::${id}`
+const pageFileKey = (file) => `pagefile::${file}`
 const fileKey = (file) => `file::${file}`
 
 const baseName = (file) => (file || '').replace(/\.xml$/, '')
+
+/** The key a flow page groups under: its source file, or its own route when that's missing. */
+const pageGroupOf = (p) => p.sourceFile || p.route
 
 /**
  * Derive the slice-picker options from the graph itself.
@@ -21,17 +32,24 @@ const baseName = (file) => (file || '').replace(/\.xml$/, '')
 export function buildSliceOptions(graph) {
   const opts = []
 
-  // One option per flow page, in document order, counted by owned elements.
+  // One option per flow module (source file), in document order, counted by owned
+  // elements across every page the file was cut into.
   const elsByPage = new Map()
   for (const e of graph.flowElements) {
     elsByPage.set(e.pageId, (elsByPage.get(e.pageId) ?? 0) + 1)
   }
+  const pagesByFile = new Map() // group key -> pages, in first-seen (document) order
   for (const p of graph.flowPages) {
-    const n = elsByPage.get(p.id) ?? 0
+    const group = pageGroupOf(p)
+    if (!pagesByFile.has(group)) pagesByFile.set(group, [])
+    pagesByFile.get(group).push(p)
+  }
+  for (const [group, pages] of pagesByFile) {
+    const n = pages.reduce((sum, p) => sum + (elsByPage.get(p.id) ?? 0), 0)
     opts.push({
-      key: pageKey(p.id),
+      key: pageFileKey(group),
       group: 'Flow pages',
-      label: `${baseName(p.sourceFile) || p.route} (${n})`,
+      label: `${baseName(pages[0].sourceFile) || group} (${n})`,
     })
   }
 
@@ -51,18 +69,21 @@ export function buildSliceOptions(graph) {
   return opts
 }
 
-/** The default slice: the first flow page (never the full graph). */
+/** The default slice: the first flow module (never the full graph). */
 export function defaultSliceKey(graph) {
-  if (graph.flowPages.length) return pageKey(graph.flowPages[0].id)
+  if (graph.flowPages.length) return pageFileKey(pageGroupOf(graph.flowPages[0]))
   if (graph.facts.length) return fileKey(graph.facts[0].sourceFile)
   return FULL_KEY
 }
 
 /** Node ids that make up the *focus* set for a given selection key. */
 function focusIdsFor(graph, key) {
-  if (key.startsWith('page::')) {
-    const pageId = key.slice('page::'.length)
-    return new Set(graph.flowElements.filter((e) => e.pageId === pageId).map((e) => e.id))
+  if (key.startsWith('pagefile::')) {
+    const group = key.slice('pagefile::'.length)
+    const pageIds = new Set(
+      graph.flowPages.filter((p) => pageGroupOf(p) === group).map((p) => p.id)
+    )
+    return new Set(graph.flowElements.filter((e) => pageIds.has(e.pageId)).map((e) => e.id))
   }
   if (key.startsWith('file::')) {
     const file = key.slice('file::'.length)

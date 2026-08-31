@@ -25,8 +25,9 @@ describe('canvas/layout (banded layout)', () => {
   const mock = loadMock()
 
   it('lays the flow spine out top-to-bottom in document order', () => {
-    const pageId = mock.flowPages[0].id
-    const { nodes } = toReactFlow(sliceGraph(mock, `page::${pageId}`, { neighbors: false }))
+    const { nodes } = toReactFlow(
+      sliceGraph(mock, `pagefile::${mock.flowPages[0].sourceFile}`, { neighbors: false })
+    )
     const topLevel = nodes
       .filter((n) => n.data.raw.__kind === 'flow' && !n.data.raw.parentId)
       .sort((a, b) => (a.data.raw.order ?? 0) - (b.data.raw.order ?? 0))
@@ -43,7 +44,10 @@ describe('canvas/layout (banded layout)', () => {
     const kids = mock.flowElements.filter((e) => e.parentId === coll.id && e.tag !== 'fg-alert')
     expect(kids.length).toBeGreaterThan(0)
 
-    const { nodes } = toReactFlow(sliceGraph(mock, `page::${coll.pageId}`, { neighbors: false }))
+    const collPage = mock.flowPages.find((p) => p.id === coll.pageId)
+    const { nodes } = toReactFlow(
+      sliceGraph(mock, `pagefile::${collPage.sourceFile}`, { neighbors: false })
+    )
     const frame = nodes.find((n) => n.id === coll.id)
     expect(frame.type).toBe('fgmFrame')
     expect(frame.style.width).toBeGreaterThan(0)
@@ -88,8 +92,9 @@ describe('canvas/layout (banded layout)', () => {
   })
 
   it('honours saved manual positions over the computed layout', () => {
-    const pageId = mock.flowPages[0].id
-    const sliced = sliceGraph(mock, `page::${pageId}`, { neighbors: false })
+    const sliced = sliceGraph(mock, `pagefile::${mock.flowPages[0].sourceFile}`, {
+      neighbors: false,
+    })
     const someId = sliced.flowElements[0].id
     const { nodes } = toReactFlow(sliced, { [someId]: { x: 999, y: 777 } })
     expect(nodes.find((n) => n.id === someId).position).toEqual({ x: 999, y: 777 })

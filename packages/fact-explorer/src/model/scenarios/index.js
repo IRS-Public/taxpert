@@ -10,13 +10,16 @@
 // dropdowns and a plain list of filenames. That is a
 // working scenario picker, not a degraded one.
 //
-// Deliberately NOT a data-driven filter DSL in the descriptor. Exactly one vocabulary exists; a
-// schema for expressing arbitrary ones would be inventing a language for a population of one. This
-// lookup can grow a data branch later without a single caller changing, so the seam is already in
-// the right place.
+// Deliberately NOT a data-driven filter DSL in the descriptor. Two vocabularies exist and they share
+// no dimension — credit-assistant filters on qualifying children and an income band, Direct File on
+// filing status, topic and which upstream suite a scenario came from — so a schema for expressing
+// arbitrary ones would still be inventing a language for a population of two. This lookup can grow a
+// data branch later without a single caller changing, so the seam is already in the right place.
 
 import { SCENARIO_FILTER_FIELDS as eitcFields } from './eitc-filters.js'
 import { parseScenarioFilename as parseEitc } from './eitc-filename.js'
+import { SCENARIO_FILTER_FIELDS as directFileFields } from './direct-file-filters.js'
+import { parseScenarioFilename as parseDirectFile } from './direct-file-filename.js'
 
 /**
  * @typedef {Object} ScenarioVocabulary
@@ -30,6 +33,7 @@ const NONE = { fields: [], parseFilename: () => ({}) }
 /** @type {Record<string, ScenarioVocabulary>} */
 const VOCABULARIES = {
   eitc: { fields: eitcFields, parseFilename: parseEitc },
+  'direct-file': { fields: directFileFields, parseFilename: parseDirectFile },
   none: NONE,
 }
 

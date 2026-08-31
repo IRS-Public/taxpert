@@ -93,7 +93,8 @@ class TaxpertScenarioModal extends HTMLElement {
   /**
    * Inject host filter dropdowns above the scenario <select>. `fields` is an array of
    * { id, groupId?, key, label, options:[{value,label}], showFor?:{ filter, values } };
-   * `parseFilename` maps a scenario filename to an object keyed by each field's `key`.
+   * `parseFilename` maps a scenario filename to an object keyed by each field's `key`. A value may
+   * be a string or an array of them — an array matches if it contains the selected option.
    */
   registerScenarioFilters (fields, parseFilename) {
     this._scenarioFilters = { fields: fields ?? [], parseFilename }
@@ -211,7 +212,13 @@ class TaxpertScenarioModal extends HTMLElement {
       const parsed = parseFilename(option.value)
       option.hidden = fields.some((field) => {
         const v = values[field.id]
-        return v && parsed[field.key] !== v
+        if (!v) return false
+        // A dimension may be many-valued: one Direct File scenario is about the Saver's Credit *and*
+        // a 1099-R, and filtering to either should find it. A scalar stays a scalar — the vocabulary
+        // decides which of its dimensions are lists, and an app whose dimensions are all scalars
+        // (credit-assistant's five are) behaves exactly as before.
+        const parsedValue = parsed[field.key]
+        return Array.isArray(parsedValue) ? !parsedValue.includes(v) : parsedValue !== v
       })
     }
     const selectedOption = select.options[select.selectedIndex]
