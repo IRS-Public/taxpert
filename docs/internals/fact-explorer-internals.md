@@ -74,6 +74,15 @@ A fact depended on by at least `HUB_FANIN_THRESHOLD` others is a hub: a shared i
 A slice is the selected partition, called the focus, plus optionally its direct edge neighbours,
 tagged `__context` so the canvas dims them.
 
+`sliceKeyForNode()` is the inverse of that partitioning: the key whose focus set holds a given node.
+Search's typeahead reads it to jump to a hit — a match on another slice is not drawn, so
+highlighting it is not navigation — and `tests/slice.test.js` asserts the round trip over every node
+of every generated graph on disk. Keep the two in step: a key that does not actually contain the
+node lands the reader on a slice where it still is not there.
+
+Search itself never narrows anything. `matchIds()` highlights, `suggest()` offers the same hits as
+typeahead rows, and both run over the whole graph so the counter can say in-view against total.
+
 Turning a layer off in `filter.js` leaves that layer's facet selection untouched, so switching it
 back on restores what was chosen.
 

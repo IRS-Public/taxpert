@@ -136,6 +136,42 @@
   font-size: var(--font-body);
 }
 
+/* The Scope dropdown's chevron, inlined rather than fetched.
+
+   USWDS draws it with `@include add-background-svg("usa-icons/unfold_more")`, which compiles to
+   `url("/uswds/img/usa-icons/unfold_more.svg")` — a file that is not in this repository. It is
+   vendored into public/uswds/ by scripts/copy-uswds-assets.mjs on postinstall, and public/uswds/
+   is generated and gitignored, so the chevron only exists where that step ran and only resolves
+   where this SPA is served from the site root. An `npm ci --ignore-scripts`, an image whose build
+   stage skipped scripts, or a deployment under a path prefix each turn it into a 404 instead.
+
+   The 404 is silent, and that is what makes it worth defending against here rather than treating
+   as someone's broken install: `appearance: none` has already taken the native arrow away by the
+   time the fetch fails, so the control renders as a plain box. Nothing then says the Scope field
+   opens — and the Scope field is how you change what the canvas is showing, so a reader who does
+   not know it is a <select> has no way to reach another slice or another fact file.
+
+   Inlined it cannot 404 and needs no asset step. Same 24x24 glyph at the same viewBox, filled at
+   --color-text's value, which a data URI cannot read as a variable. `background-image` is the
+   whole of what is restated: USWDS still supplies the size, the position, and the padding that
+   keeps a long option label clear of it. */
+.fe-panel .usa-select {
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='%231b1f23'%3E%3Cpath d='M12 5.83 15.17 9l1.41-1.41L12 3 7.41 7.59 8.83 9 12 5.83zm0 12.34L8.83 15l-1.41 1.41L12 21l4.59-4.59L15.17 15 12 18.17z'/%3E%3C/svg%3E"),
+    linear-gradient(transparent, transparent);
+}
+
+/* Forced colors (Windows high contrast): USWDS hands the control back to the browser here —
+   `appearance: listbox`, no background image — because a background image is not painted in this
+   mode at all. That rule is `.usa-select`, and the one above is `.fe-panel .usa-select`, so
+   without this it would win and the chevron would be missing in exactly the mode USWDS restores
+   it in. Same fix, same reason, one specificity step up. */
+@media (forced-colors: active) {
+  .fe-panel .usa-select {
+    background-image: none;
+  }
+}
+
 /* One choice. USWDS's tile variant draws the bordered box, its checked fill and its focus ring, so
    there is nothing here to keep in step with `:checked` — only the row's spacing and font. Same
    --font-body as the controls above: a checkbox/radio row is a control, not the hint text beside it. */
@@ -165,6 +201,16 @@
 
 .fe-search__input {
   margin-top: var(--space-1);
+}
+
+/* Why the last jump is not on the canvas. A note under the input rather than an alert: the node is
+   selected and the detail panel is showing it, so nothing has failed — one of the Layers or Type
+   filters simply does not draw it. role="status" on the element, so it is announced without
+   stealing focus from the search box the reader is still typing in. */
+.fe-search__miss {
+  margin: var(--space-05) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-sm);
 }
 
 .fe-search__matches {

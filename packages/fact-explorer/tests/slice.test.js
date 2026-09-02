@@ -1,7 +1,13 @@
 import { describe, it, expect } from 'vitest'
-import { buildSliceOptions, defaultSliceKey, sliceGraph, FULL_KEY } from '../src/model/slice.js'
+import {
+  buildSliceOptions,
+  defaultSliceKey,
+  sliceGraph,
+  sliceKeyForNode,
+  FULL_KEY,
+} from '../src/model/slice.js'
 import { validate } from '../src/model/fgm.js'
-import { loadMock } from './_fixtures.js'
+import { loadMock, loadAllReal } from './_fixtures.js'
 
 describe('slice', () => {
   const mock = loadMock()
@@ -50,5 +56,49 @@ describe('slice', () => {
     const g = sliceGraph(mock, FULL_KEY, { neighbors: true })
     expect(g.flowElements.length).toBe(mock.flowElements.length)
     expect(g.facts.length).toBe(mock.facts.length)
+  })
+})
+
+describe('slice.sliceKeyForNode', () => {
+  const mock = loadMock()
+
+  // The property the search jump depends on: the key it returns must be one the picker offers,
+  // and slicing on it must put the node in the FOCUS set — not in some other slice's dimmed
+  // one-hop ring, which is drawn but is not what "take me to this node" means.
+  it('names a slice that actually holds the node, for every node in the graph', () => {
+    const keys = new Set(buildSliceOptions(mock).map((o) => o.key))
+    for (const node of [...mock.facts, ...mock.flowElements]) {
+      const key = sliceKeyForNode(mock, node.id)
+      expect(keys.has(key)).toBe(true)
+      const sliced = sliceGraph(mock, key, { neighbors: false })
+      const found = [...sliced.facts, ...sliced.flowElements].find((n) => n.id === node.id)
+      expect(found, `${node.id} is not in ${key}`).toBeTruthy()
+      expect(found.__context).toBeFalsy()
+    }
+  })
+
+  // The same property over every generated graph on disk, which is where the shapes the mock does
+  // not have live: a flow file cut into a dozen pages, a fact file with thousands of facts, and
+  // (direct-file) an element whose page is not the one its route suggests.
+  it.each(loadAllReal())('holds for every node of %s', (_appId, graph) => {
+    const keys = new Set(buildSliceOptions(graph).map((o) => o.key))
+    const focusByKey = new Map()
+    for (const node of [...graph.facts, ...graph.flowElements]) {
+      const key = sliceKeyForNode(graph, node.id)
+      expect(keys.has(key)).toBe(true)
+      if (!focusByKey.has(key)) {
+        const sliced = sliceGraph(graph, key, { neighbors: false })
+        focusByKey.set(key, new Set([...sliced.facts, ...sliced.flowElements].map((n) => n.id)))
+      }
+      expect(focusByKey.get(key).has(node.id), `${node.id} is not in ${key}`).toBe(true)
+    }
+  })
+
+  it('falls back to the full graph for a node the picker has no option for', () => {
+    expect(sliceKeyForNode(mock, 'fact:/nothing-here')).toBe(FULL_KEY)
+    const orphan = { ...mock.facts[0], id: 'fact:/orphan', sourceFile: undefined }
+    expect(sliceKeyForNode({ ...mock, facts: [...mock.facts, orphan] }, 'fact:/orphan')).toBe(
+      FULL_KEY
+    )
   })
 })

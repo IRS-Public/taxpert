@@ -135,3 +135,31 @@ export function sliceGraph(graph, key, { neighbors = true } = {}) {
     edges: graph.edges.filter((e) => visible.has(e.source) && visible.has(e.target)),
   }
 }
+
+/**
+ * The slice a node lives on: the selection that puts it in the *focus* set rather than in some
+ * other slice's dimmed one-hop ring.
+ *
+ * The inverse of `focusIdsFor`, and it has to stay that way — search's "jump to this node" reads
+ * it to decide which slice to switch to, and a key that does not actually contain the node lands
+ * the reader on a slice where it still is not drawn, which is the failure it exists to prevent.
+ *
+ * Falls back to the full graph for a node the picker has no option for (a flow element whose page
+ * is missing, a fact with no source file), because "everything" is the one selection that always
+ * contains it.
+ *
+ * @param {import('./fgm.js').FormBuilderGraph} graph the WHOLE graph — a shard only knows its own
+ * @param {string} id                                 a node id, e.g. "fact:/filingStatus"
+ * @returns {string} a key from buildSliceOptions()
+ */
+export function sliceKeyForNode(graph, id) {
+  const el = graph.flowElements.find((e) => e.id === id)
+  if (el) {
+    const page = graph.flowPages.find((p) => p.id === el.pageId)
+    const group = page && pageGroupOf(page)
+    return group ? pageFileKey(group) : FULL_KEY
+  }
+  const fact = graph.facts.find((f) => f.id === id)
+  if (fact?.sourceFile) return fileKey(fact.sourceFile)
+  return FULL_KEY
+}

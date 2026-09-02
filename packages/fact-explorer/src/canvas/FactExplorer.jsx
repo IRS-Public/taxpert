@@ -13,13 +13,19 @@ import {
 import '@xyflow/react/dist/style.css'
 import { interceptFactExplorerNav } from '../config/taxpertHost.js'
 import { loadGraph, loadShardIndex, loadSlice, loadScenarioIndex } from '../model/load.js'
-import { buildSliceOptions, defaultSliceKey, sliceGraph, FULL_KEY } from '../model/slice.js'
+import {
+  buildSliceOptions,
+  defaultSliceKey,
+  sliceGraph,
+  sliceKeyForNode,
+  FULL_KEY,
+} from '../model/slice.js'
 import { sliceOptionsFromIndex } from '../model/shard.js'
 import { drillGraph, egoLayout } from '../model/drill.js'
 import { coneGraph, coneLayout } from '../model/cone.js'
 import { filterGraph, DEFAULT_FILTERS } from '../model/filter.js'
 import { facetGraph, defaultFacets } from '../model/facets.js'
-import { matchIds } from '../model/search.js'
+import { matchIds, suggest } from '../model/search.js'
 import { loadEngine, buildScenarioGraph, makeEvaluators } from '../model/engine.js'
 import { computeVisibility, HIDDEN_STATUSES, FACT_STATUS } from '../model/visibility.js'
 import {
@@ -131,6 +137,13 @@ export default function FactExplorer({ app }) {
   const [query, setQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
   const [matchCursor, setMatchCursor] = useState(0)
+
+  // A node the reader has asked to be taken to, held until the canvas can actually show it: the
+  // slice it lives on may still be fetching, and its nodes are not centrable until React Flow has
+  // laid them out and measured them. Cleared by the effect that centres it — or by the one that
+  // gives up and says why, in `focusMiss`.
+  const [pendingFocus, setPendingFocus] = useState(null)
+  const [focusMiss, setFocusMiss] = useState(null)
 
   // Bumped on "Reset layout" to force a fresh layout pass.
   const [layoutVersion, setLayoutVersion] = useState(0)
@@ -357,6 +370,13 @@ export default function FactExplorer({ app }) {
   )
   const searchActive = !!debouncedQuery
 
+  // The typeahead rows, off the RAW query rather than the debounced one. The debounce exists
+  // because highlighting re-decorates every node on the canvas; building at most 50 rows does not,
+  // so a dropdown that lags the keystrokes by 200ms would be paying a cost it does not incur.
+  // Over whichever graph is loaded, like matchIds: `wantWhole` below has already asked for the
+  // whole one, and until it lands the rows are the ones in the current shard.
+  const suggestions = useMemo(() => (graph ? suggest(graph, query) : []), [graph, query])
+
   // Step two: fetch the source the current view actually needs.
   //
   // `wantWhole` is the whole rule in one expression, which is the point of writing it this way —
@@ -403,18 +423,50 @@ export default function FactExplorer({ app }) {
     }
   }
 
-  // A dependency name in the explain popup selects (and, if on-canvas, centres)
-  // the target fact node, the Fact Explorer analogue of the audit panel's fact-link.
+  /**
+   * Take the reader to a node: select it, put it in view, and centre it.
+   *
+   * The half that was missing is "put it in view". A node is drawn only if the active slice
+   * contains it, and search reads the WHOLE graph — so on a sliced app most of what search finds
+   * is somewhere else, and selecting it did nothing a reader could see. Naming the slice it lives
+   * on is the fix (`sliceKeyForNode`), and it is why this is the one path both the search box and
+   * the detail panel's dependency links go through.
+   *
+   * Three things then have to be true before it can be centred, and none of them is true yet at
+   * the end of this function: the slice has to be fetched, laid out, and measured. So this sets
+   * the destination and `pendingFocus` carries it — see the effect below the fit.
+   */
+  async function focusNode(id) {
+    // A shard holds its focus nodes plus their one-hop ring. Anything further out — a search hit
+    // on another slice, a dependency chain followed one hop past the ring — is only in the whole
+    // graph, which is also what `sliceKeyForNode` has to read: a shard cannot say which slice a
+    // node it does not contain belongs to.
+    const whole = wholeLoaded ? graph : await ensureWholeGraph()
+    const fact = whole.facts.find((f) => f.id === id)
+    const node = fact ?? whole.flowElements.find((e) => e.id === id)
+    if (!node) return
+
+    setFocusMiss(null)
+    setSelected({ ...node, __kind: fact ? 'fact' : 'flow' })
+
+    // Drill and cone replace the slice with a framing of their own, so a jump into either would
+    // land somewhere the destination is not. Leaving them is part of going somewhere else.
+    const framed = !!drillId || !!coneRootId
+    setDrillId(null)
+    setConeRootId(null)
+
+    // Already on the canvas: leave the slice alone. The node may be there as dimmed one-hop
+    // context rather than in the focus set, and re-slicing around it would throw away the view the
+    // reader is reading for no gain they asked for.
+    if (framed || !rf.getNode(id)) setSliceKey(sliceKeyForNode(whole, id))
+    setPendingFocus(id)
+  }
+
+  // A dependency name in the explain popup selects and centres the target fact node, the Fact
+  // Explorer analogue of the audit panel's fact-link. Facts are addressed by path here, and by id
+  // everywhere else; `fact:<path>` IS the id, which is what lets this be the same jump.
   async function navigateToFact(path) {
-    // A shard carries its focus nodes plus their one-hop ring, and a fact's dependencies ARE its
-    // one-hop ring — so the links the detail panel offers resolve out of the shard. What lands
-    // here is the hop after that: following a chain out of the slice, which is the moment the
-    // whole graph is genuinely the answer.
-    let fact = factByPath.get(path)
-    if (!fact) fact = (await ensureWholeGraph()).facts.find((f) => f.path === path)
-    if (!fact) return
-    setSelected({ ...fact, __kind: 'fact' })
-    centreOn(`fact:${path}`)
+    await focusNode(`fact:${path}`)
   }
 
   // "Explain this node": dispatch on the FGM node kind, build the structured
@@ -685,6 +737,38 @@ export default function FactExplorer({ app }) {
     // render that makes the check above start passing.
   }, [nodesInitialized, decoratedNodes, fitSignature, rf])
 
+  // The second half of focusNode: centre the node once the view that contains it is really on the
+  // canvas.
+  //
+  // It rides on the fit effect's own settle test rather than repeating it. `fittedSig.current ===
+  // fitSignature` says the store holds this view AND has measured it — the two conditions above,
+  // already paid for — so this waits on one comparison instead of a second copy of that logic.
+  // Declared after it for the same reason: within one commit, effects run in declaration order, so
+  // the frame is set first and the centring then moves off it. Both are 400ms animations, and the
+  // second replaces the first mid-flight rather than queueing behind it.
+  //
+  // A node that is not in the store once the view has settled is not coming: the slice is right
+  // (focusNode chose it) and the slice is drawn, so what removed it is one of the stages after the
+  // slice — a layer switched off, a facet deselected, knockouts-only, or a scenario in hide mode.
+  // That is worth saying rather than leaving as a jump that silently did nothing; the detail panel
+  // is open on the node either way, which is what makes the message a footnote rather than a dead
+  // end.
+  useEffect(() => {
+    if (!pendingFocus) return
+    if (fittedSig.current !== fitSignature) return
+    if (rf.getNode(pendingFocus)) centreOn(pendingFocus)
+    else {
+      setFocusMiss(
+        'Found it, but the current Layers, Type or scenario settings leave it off the canvas. ' +
+          'Its details are in the panel on the right.'
+      )
+    }
+    setPendingFocus(null)
+    // centreOn reads the live store at call time; including it would rebind this effect on every
+    // render for no change in behaviour.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingFocus, fitSignature, nodesInitialized, decoratedNodes, rf])
+
   if (error) {
     return (
       <div className="fact-explorer-error">
@@ -752,7 +836,13 @@ export default function FactExplorer({ app }) {
               </p>
               <SearchBox
                 query={query}
-                onQuery={setQuery}
+                onQuery={(q) => {
+                  setQuery(q)
+                  setFocusMiss(null)
+                }}
+                onPick={focusNode}
+                suggestions={suggestions}
+                miss={focusMiss}
                 inView={inViewMatches.length}
                 total={matchSet.size}
                 active={searchActive}
