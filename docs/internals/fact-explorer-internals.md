@@ -80,8 +80,11 @@ highlighting it is not navigation — and `tests/slice.test.js` asserts the roun
 of every generated graph on disk. Keep the two in step: a key that does not actually contain the
 node lands the reader on a slice where it still is not there.
 
-Search itself never narrows anything. `matchIds()` highlights, `suggest()` offers the same hits as
-typeahead rows, and both run over the whole graph so the counter can say in-view against total.
+Search itself never narrows anything. `matchIds()` highlights, `suggest()` offers the matching fact
+paths as typeahead rows, and both run over the whole graph so the counter can say in-view against
+total. `suggest()` is deliberately narrower than `matchIds()` — paths, matched on the path — so
+every row is an address the reader can jump to, re-type and paste; a question a screen asks is
+none of those, and stays in the highlight.
 
 Turning a layer off in `filter.js` leaves that layer's facet selection untouched, so switching it
 back on restores what was chosen.

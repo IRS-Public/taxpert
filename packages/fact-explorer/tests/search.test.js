@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { matchIds, searchableText, suggest, suggestionLabel } from '../src/model/search.js'
+import { matchIds, searchableText, suggest } from '../src/model/search.js'
 import { loadMock, loadRealOrNull } from './_fixtures.js'
 
 describe('search.matchIds', () => {
@@ -55,45 +55,78 @@ describe('search.suggest', () => {
     expect(suggest(mock, undefined)).toEqual([])
   })
 
-  // The contract the search box leans on: a suggestion is one of the counted hits, so the
-  // dropdown and the "N in view / M total" line can never be answering different questions.
+  // The rule the box is built on: rows are fact paths and nothing else, the same vocabulary the
+  // chat dock's fact picker offers. Question text stays in the highlight, not in the dropdown.
+  it('suggests fact paths only, never a flow element', () => {
+    const factIds = new Set(mock.facts.map((f) => f.id))
+    const rows = suggest(mock, '/')
+    expect(rows.length).toBeGreaterThan(0)
+    for (const row of rows) {
+      expect(row.path.startsWith('/')).toBe(true)
+      expect(factIds.has(row.id)).toBe(true)
+    }
+  })
+
+  it('leaves question text to the highlight: a screen word no path spells suggests nothing', () => {
+    // Spelled out rather than mined from the fixture, so it cannot quietly stop testing anything
+    // the day a fact path happens to contain the word the search picked out of a question.
+    const graph = {
+      flowPages: [],
+      edges: [],
+      flowElements: [
+        {
+          id: 'flow:q',
+          tag: 'fg-boolean',
+          pageId: 'page:a',
+          questionText: 'Do you have a qualifying child?',
+        },
+      ],
+      facts: [{ id: 'fact:/qualifiesForEitc', path: '/qualifiesForEitc', kind: 'derived' }],
+    }
+    expect(matchIds(graph, 'qualifying').size).toBe(1) // the canvas still highlights it
+    expect(suggest(graph, 'qualifying')).toEqual([]) // but there is no address to offer for it
+  })
+
+  // Narrower than matchIds by design (it reads names and descriptions too), but never wider: a
+  // suggestion is always one of the hits the counter is counting.
   it('only suggests nodes matchIds also matched', () => {
-    const q = 'tax'
+    const q = mock.facts[0].path.slice(1, 5).toLowerCase()
     const ids = matchIds(mock, q)
     const rows = suggest(mock, q)
     expect(rows.length).toBeGreaterThan(0)
     for (const row of rows) expect(ids.has(row.id)).toBe(true)
   })
 
-  it('resolves each row back to exactly one node, by id', () => {
-    const byId = new Map([
-      ...mock.facts.map((f) => [f.id, f]),
-      ...mock.flowElements.map((e) => [e.id, e]),
-    ])
-    for (const row of suggest(mock, 'a')) {
-      const node = byId.get(row.id)
-      expect(node).toBeTruthy()
-      expect(row.label).toBe(suggestionLabel(node))
+  it('every row visibly contains what was typed, as the datalist itself would filter', () => {
+    const q = 'a'
+    for (const row of suggest(mock, q)) expect(row.path.toLowerCase()).toContain(q)
+  })
+
+  it('resolves each row back to exactly one fact, by id', () => {
+    const byId = new Map(mock.facts.map((f) => [f.id, f]))
+    for (const row of suggest(mock, '/')) {
+      expect(byId.get(row.id)?.path).toBe(row.path)
     }
   })
 
-  it('never repeats a label, so a pick is unambiguous', () => {
-    const labels = suggest(mock, 'a').map((r) => r.label)
-    expect(new Set(labels).size).toBe(labels.length)
+  it('never repeats a path, so a pick is unambiguous', () => {
+    const paths = suggest(mock, '/').map((r) => r.path)
+    expect(new Set(paths).size).toBe(paths.length)
   })
 
-  it('ranks a label hit above a node matched only through the rest of its haystack', () => {
-    // A fact path starting with the query: the reader typed the front of a name, so it leads.
+  it('ranks a path prefix above a hit in the middle, then alphabetically', () => {
     const fact = mock.facts[0]
-    const q = fact.path.slice(0, 6).toLowerCase()
+    const q = fact.path.slice(0, 5).toLowerCase()
     const rows = suggest(mock, q)
-    expect(rows[0].label.toLowerCase().startsWith(q)).toBe(true)
+    expect(rows[0].path.toLowerCase().startsWith(q)).toBe(true)
+    const prefixes = rows.filter((r) => r.path.toLowerCase().startsWith(q)).map((r) => r.path)
+    expect(prefixes).toEqual([...prefixes].sort((a, b) => a.localeCompare(b)))
   })
 
   it('caps the list, so the whole graph is affordable per keystroke', () => {
     const real = loadRealOrNull()
     if (!real) return // S1 data not generated; the mock is far below any cap
-    expect(suggest(real, 'e', { limit: 10 }).length).toBeLessThanOrEqual(10)
-    expect(suggest(real, 'e').length).toBeLessThanOrEqual(50)
+    expect(suggest(real, '/', { limit: 10 }).length).toBeLessThanOrEqual(10)
+    expect(suggest(real, '/').length).toBeLessThanOrEqual(50)
   })
 })

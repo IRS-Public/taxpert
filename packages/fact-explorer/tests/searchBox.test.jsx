@@ -15,8 +15,8 @@ import { act } from 'react'
 import SearchBox from '../src/canvas/controls/SearchBox.jsx'
 
 const ROWS = [
-  { id: 'fact:/filingStatus', label: '/filingStatus', hint: 'Filing status' },
-  { id: 'flow:qualifying-child', label: 'Do you have a qualifying child?', hint: 'fg-boolean' },
+  { id: 'fact:/filingStatus', path: '/filingStatus' },
+  { id: 'fact:/taxableIncome', path: '/taxableIncome' },
 ]
 
 describe('SearchBox', () => {
@@ -66,23 +66,23 @@ describe('SearchBox', () => {
     host.remove()
   })
 
-  it('offers every suggestion through a datalist the input is bound to', () => {
+  it('offers the fact paths through a datalist the input is bound to', () => {
     render()
     const list = host.querySelector('datalist')
     expect(input().getAttribute('list')).toBe(list.id)
     expect([...list.querySelectorAll('option')].map((o) => o.value)).toEqual(
-      ROWS.map((r) => r.label)
+      ROWS.map((r) => r.path)
     )
   })
 
-  it('typing part of a label reports the query and jumps nowhere', () => {
+  it('typing part of a path reports the query and jumps nowhere', () => {
     render()
     change('/filing')
     expect(typed).toEqual(['/filing'])
     expect(picked).toEqual([])
   })
 
-  it('a value equal to a suggestion is a pick, and jumps to that node', () => {
+  it('a value equal to a whole path is a pick, and jumps to that fact', () => {
     render()
     change('/filingStatus')
     expect(picked).toEqual(['fact:/filingStatus'])
@@ -96,7 +96,7 @@ describe('SearchBox', () => {
       )
     })
     expect(picked).toEqual([ROWS[0].id])
-    expect(typed).toEqual([ROWS[0].label])
+    expect(typed).toEqual([ROWS[0].path])
   })
 
   it('shows why a jump is not on the canvas, when it is not', () => {

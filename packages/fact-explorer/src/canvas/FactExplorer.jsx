@@ -370,11 +370,13 @@ export default function FactExplorer({ app }) {
   )
   const searchActive = !!debouncedQuery
 
-  // The typeahead rows, off the RAW query rather than the debounced one. The debounce exists
-  // because highlighting re-decorates every node on the canvas; building at most 50 rows does not,
-  // so a dropdown that lags the keystrokes by 200ms would be paying a cost it does not incur.
-  // Over whichever graph is loaded, like matchIds: `wantWhole` below has already asked for the
-  // whole one, and until it lands the rows are the ones in the current shard.
+  // The typeahead rows: fact paths, the same list the chat dock's picker offers.
+  //
+  // Off the RAW query rather than the debounced one. The debounce exists because highlighting
+  // re-decorates every node on the canvas; building at most 50 rows does not, so a dropdown that
+  // lagged the keystrokes by 200ms would be paying a cost it does not incur. Over whichever graph
+  // is loaded, like matchIds: `wantWhole` below has already asked for the whole one, and until it
+  // lands the rows are the facts in the current shard.
   const suggestions = useMemo(() => (graph ? suggest(graph, query) : []), [graph, query])
 
   // Step two: fetch the source the current view actually needs.

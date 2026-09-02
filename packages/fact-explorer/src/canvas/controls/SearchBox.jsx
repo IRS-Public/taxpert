@@ -5,15 +5,19 @@
 // input. The panel's three sections are one shape, and this is the
 // first of them.
 //
-// The input is a typeahead, the same shape as the chat dock's fact picker (canvas/ChatPanel.jsx):
-// a `list=` datalist the browser renders and filters as you type. Two reasons it is a datalist
-// here rather than a listbox of our own. It is what the picker in this same app already is, so
-// the two search-ish inputs behave alike; and picking a row is a plain change event, which means
-// the keyboard, the touch keyboard's suggestion strip and the screen reader all get the browser's
-// implementation rather than ours.
+// The input is a typeahead, and it is the chat dock's fact picker (canvas/ChatPanel.jsx) in
+// another place: the same `list=` datalist of the same fact paths, filtered by the browser as you
+// type. Two inputs that both mean "name a fact" should offer the same list and take the same
+// keystrokes, and a datalist is also how the keyboard, the touch keyboard's suggestion strip and
+// the screen reader get the browser's implementation of that rather than ours.
 //
-// Choosing a row does more than fill the box: it JUMPS to that node — see onPick in
-// FactExplorer.jsx, which switches slice if the node is not on the current one. Highlighting a
+// Paths only — no question text, no headings. What goes in the box is an address, and a screen's
+// wording is not one: it is a sentence, it is not unique, and it cannot be re-typed from memory.
+// Searching still finds flow elements; they highlight on the canvas and the ‹ › buttons walk them,
+// which is what search over question content is for.
+//
+// Choosing a row does more than fill the box: it JUMPS to that fact — see onPick in
+// FactExplorer.jsx, which switches slice if the fact is not on the current one. Highlighting a
 // match the reader cannot navigate to is what the search box used to do, and on a graph cut into
 // slices that is most matches.
 import PropTypes from 'prop-types'
@@ -34,12 +38,12 @@ export default function SearchBox({
   onStep,
   miss,
 }) {
-  // A pick is an ordinary change event that happens to carry a suggestion's exact label, so this
-  // is where the two are told apart. Typing the whole of a label by hand counts as a pick, which
-  // is the same rule <datalist> itself works by and is what a reader who does that means anyway.
+  // A pick is an ordinary change event that happens to carry a suggestion's exact path, so this is
+  // where the two are told apart. Typing a whole path by hand counts as a pick, which is the same
+  // rule <datalist> itself works by and is what a reader who does that means anyway.
   const change = (value) => {
     onQuery(value)
-    const hit = suggestions.find((s) => s.label === value)
+    const hit = suggestions.find((s) => s.path === value)
     if (hit) onPick(hit.id)
   }
 
@@ -47,7 +51,7 @@ export default function SearchBox({
     <section className="fe-section">
       <h3 className="fe-section__title">Search</h3>
       <p className="fe-section__hint" id="fe-search-hint">
-        Find nodes by question content, fact path, or key. Choose one to jump to it.
+        Find nodes by question content, fact path, or key. Choose a fact path to jump to it.
       </p>
       <input
         className="usa-input fe-search__input"
@@ -63,16 +67,16 @@ export default function SearchBox({
           // keyboard without opening the list.
           if (e.key === 'Enter' && suggestions.length) {
             e.preventDefault()
-            onQuery(suggestions[0].label)
+            onQuery(suggestions[0].path)
             onPick(suggestions[0].id)
           }
         }}
       />
-      {/* `label` is the browser's secondary line where it renders one, and ignored where it does
-          not; `value` is what the input receives, and is what change() maps back to a node. */}
+      {/* Bare <option value>, as the chat dock's picker has: the path is the whole of what a row
+          says, and it is what change() maps back to a fact. */}
       <datalist id={LIST_ID}>
         {suggestions.map((s) => (
-          <option key={s.id} value={s.label} label={s.hint} />
+          <option key={s.id} value={s.path} />
         ))}
       </datalist>
       {miss && (
@@ -122,11 +126,11 @@ SearchBox.propTypes = {
   onQuery: PropTypes.func.isRequired,
   /** Jump to a node id: select it, bring it into view, centre it. */
   onPick: PropTypes.func.isRequired,
+  /** Fact paths, each with the node id it addresses. */
   suggestions: PropTypes.arrayOf(
     PropTypes.shape({
       id: PropTypes.string.isRequired,
-      label: PropTypes.string.isRequired,
-      hint: PropTypes.string,
+      path: PropTypes.string.isRequired,
     })
   ),
   inView: PropTypes.number,

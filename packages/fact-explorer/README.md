@@ -201,11 +201,15 @@ facts has no flow spine for the banded layout to hang off.
 Search ([`model/search.js`](src/model/search.js)) never narrows the graph. It returns a set of
 matching node ids, which the canvas turns into per-node highlight and dim flags.
 
-It also offers the matches as a typeahead: `suggest()` ranks and caps the same hits, the search box
-renders them as a `<datalist>`, and choosing one **jumps** to that node — selects it, switches to
-the slice it lives on (`sliceKeyForNode()`), and centres it once that slice is drawn. Highlighting
-alone is not navigation on a sliced app, where most of what search finds is on some other slice.
-The detail panel's dependency links take the same path.
+It also offers a typeahead: `suggest()` returns the matching **fact paths**, ranked and capped, the
+search box renders them as a `<datalist>` — the same list the chat dock's fact picker offers — and
+choosing one **jumps** to that fact: selects it, switches to the slice it lives on
+(`sliceKeyForNode()`), and centres it once that slice is drawn. Highlighting alone is not navigation
+on a sliced app, where most of what search finds is on some other slice. The detail panel's
+dependency links take the same path.
+
+Paths only, because what goes in the box is an address. Question text is still searched and still
+highlights; it is not offered as a row.
 
 Visual vocabulary (colors, shapes, edge styles) lives once in
 [`canvas/style.js`](src/canvas/style.js), which both `FgmNode.jsx` and `Legend.jsx` read so the
