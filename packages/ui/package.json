@@ -74,7 +74,7 @@
     "format": "eslint --fix"
   },
   "devDependencies": {
-    "eslint": "^9.39.5",
+    "eslint": "^10.9.1",
     "eslint-plugin-react": "^7.35.0",
     "eslint-plugin-security": "^4.0.1",
     "globals": "^17.11.0",
