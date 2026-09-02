@@ -732,7 +732,7 @@ function writeScenarioIndex() {
  */
 function readModuleOrder() {
   const indexPath = join(cfg.flowDir, 'index.xml')
-  let mods = []
+  let mods
   try {
     const tree = parser.parse(readFileSync(indexPath, 'utf8'))
     const root = tree.find((n) => !isText(n) && TAG(n) === 'FlowConfig')
@@ -740,7 +740,7 @@ function readModuleOrder() {
       .filter((c) => !isText(c) && TAG(c) === 'module')
       .map((c) => fileBase(ATTR(c).src))
   } catch (err) {
-    throw new Error(`${cfg.id}: cannot read ${indexPath} — ${err.message}`)
+    throw new Error(`${cfg.id}: cannot read ${indexPath} — ${err.message}`, { cause: err })
   }
   if (!mods.length) throw new Error(`${cfg.id}: ${indexPath} declares no <module src="…"/>`)
   return mods

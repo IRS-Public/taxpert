@@ -685,7 +685,6 @@ export default function FactExplorer({ app }) {
     rf.fitView({ duration: 400 })
     // nodesInitialized is not read here; it is in the deps because its flip back to true is the
     // render that makes the check above start passing.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodesInitialized, decoratedNodes, fitSignature, rf])
 
   if (error) {

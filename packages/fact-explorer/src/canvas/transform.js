@@ -2,7 +2,7 @@
 //
 // Flow elements and facts become color-coded nodes; container elements
 // (fg-collection / fg-detail) become 'fgmFrame' group backdrops. Positions come
-// from layout.js (document-order flow columns + a dagre fact DAG). Search match
+// from layout.js (a deterministic banded placement). Search match
 // state (M6 / 6a) is folded onto node.data here from a precomputed id set, so it
 // rides alongside the M2 __context dimming flag.
 import { categoryOf, EDGE_STYLE, NODE_SHAPE } from './style.js'
