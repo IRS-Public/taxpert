@@ -28,6 +28,8 @@ const LAYOUT_OPTIONS = [
 export default function DisplayOptions({
   revealSkipped,
   onRevealSkipped,
+  miniMap,
+  onMiniMap,
   sideBySide,
   onSideBySide,
   orientation,
@@ -48,8 +50,18 @@ export default function DisplayOptions({
         checked: sideBySide,
         onChange: onSideBySide,
       },
+      // FX-5. The minimap draws a second copy of every node and redraws it on every pan, so on a
+      // large slice it costs more than the canvas does. It defaults off above LARGE_SLICE_NODES
+      // rather than disappearing at a size nobody was told about: this is where the user turns it
+      // back on, and where they turn it off on a small slice that does not need it.
+      {
+        id: 'fe-display-minimap',
+        label: 'Show minimap',
+        checked: miniMap,
+        onChange: onMiniMap,
+      },
     ],
-    [revealSkipped, onRevealSkipped, sideBySide, onSideBySide]
+    [revealSkipped, onRevealSkipped, sideBySide, onSideBySide, miniMap, onMiniMap]
   )
 
   const layoutOptions = useMemo(
@@ -74,6 +86,8 @@ export default function DisplayOptions({
 DisplayOptions.propTypes = {
   revealSkipped: PropTypes.bool,
   onRevealSkipped: PropTypes.func.isRequired,
+  miniMap: PropTypes.bool,
+  onMiniMap: PropTypes.func.isRequired,
   sideBySide: PropTypes.bool,
   onSideBySide: PropTypes.func.isRequired,
   orientation: PropTypes.string.isRequired,

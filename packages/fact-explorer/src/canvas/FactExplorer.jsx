@@ -12,8 +12,9 @@ import {
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { interceptFactExplorerNav } from '../config/taxpertHost.js'
-import { loadGraph, loadScenarioIndex } from '../model/load.js'
-import { buildSliceOptions, defaultSliceKey, sliceGraph } from '../model/slice.js'
+import { loadGraph, loadShardIndex, loadSlice, loadScenarioIndex } from '../model/load.js'
+import { buildSliceOptions, defaultSliceKey, sliceGraph, FULL_KEY } from '../model/slice.js'
+import { sliceOptionsFromIndex } from '../model/shard.js'
 import { drillGraph, egoLayout } from '../model/drill.js'
 import { coneGraph, coneLayout } from '../model/cone.js'
 import { filterGraph, DEFAULT_FILTERS } from '../model/filter.js'
@@ -49,8 +50,32 @@ import ScenarioModal from 'taxpert/react/scenario-modal'
 
 const nodeTypes = { fgm: FgmNode, fgmFrame: FrameNode }
 
+// Above this many nodes, a slice is "large": per-node decoration that is affordable on a normal
+// slice stops paying for itself, and two things switch off — the minimap (FX-5) and edge animation
+// (see decoratedEdges below).
+//
+// One constant rather than two, because both were measured into the same bracket. On direct-file
+// at 1600x1000 in Chromium, median frame time while panning the canvas:
+//
+//   flowGates.xml   1,671 nodes / 2,744 edges     8 ms — both features on, and no cost
+//   Full graph      4,596 nodes / 8,622 edges   822 ms — a frozen canvas
+//
+// The cliff is somewhere between the two, so this sits just above the size that measured clean
+// rather than in the middle of the gap nothing was measured in. Node count is a proxy for what
+// actually drives both costs, which is canvas *extent*: fitView on a bigger graph zooms further
+// out, and both the minimap's per-node rects and the edge layer's path lengths scale with it.
+const LARGE_SLICE_NODES = 2000
+
 function nodeColor(n) {
   return CATEGORY_STYLE[n.data?.category]?.border ?? NODE_FALLBACK.border
+}
+
+// Cheap "is this the same set of nodes" test, for comparing what React Flow is holding against
+// what this component last handed it. Identity is no use (see the fit effect), and a full id
+// comparison is not worth it on 4,596 nodes when the layout is document-ordered: count plus the
+// two ends changes for any real change of view.
+function liveNodesSig(ns) {
+  return `${ns.length}|${ns[0]?.id ?? ''}|${ns[ns.length - 1]?.id ?? ''}`
 }
 
 /**
@@ -61,8 +86,26 @@ function nodeColor(n) {
  *   the search index are all per-app, so a remount is the honest way to say so.
  */
 export default function FactExplorer({ app }) {
+  // The graph the canvas is currently reading. FX-3 made this two things wearing one name: the
+  // shard for the active slice, or the whole graph once something has asked for it. They are
+  // interchangeable by construction — see src/model/shard.js — so nothing below this line has to
+  // know which it got.
   const [graph, setGraph] = useState(null)
   const [error, setError] = useState(null)
+
+  // The shard index: the picker's options and the default selection, without a graph. Three
+  // states, and the distinction matters — `undefined` is "still in flight", `null` is "this app
+  // has no shards", and only the second is a decision the loader below can act on. Collapsed to
+  // one falsy value, the first render would fetch the whole graph before finding out it need not.
+  //
+  // Null is an ordinary answer: the mock fixture has no shards, nor does an app serving its own
+  // generated graph. Everything below then derives the options from the whole graph, as it always
+  // did.
+  const [shardIndex, setShardIndex] = useState(undefined)
+
+  // Latched once the whole graph is in hand. One-way: having paid for it, there is no reason to go
+  // back to fetching shards, and switching slices becomes instant again.
+  const [wholeLoaded, setWholeLoaded] = useState(false)
   const [selected, setSelected] = useState(null)
   // Right-edge width the embedded app panel occupies, 0 when closed. DetailPanel docks to its
   // left so the two never overlap.
@@ -100,6 +143,11 @@ export default function FactExplorer({ app }) {
   // checkbox docks the panel, and the panel's Close button has to flip that checkbox back off.
   const [sideBySide, setSideBySide] = useState(false)
 
+  // `null` means "whatever this slice's size makes sensible" — the same shape as facetOverride
+  // above, and for the same reason: the answer depends on a graph that arrives later. Ticking or
+  // clearing the Display modal's checkbox pins it, so the threshold is a default, not a cliff.
+  const [miniMapOverride, setMiniMapOverride] = useState(null)
+
   // Control-panel collapse state.
   const [headerOpen, setHeaderOpen] = useState(true)
 
@@ -123,10 +171,34 @@ export default function FactExplorer({ app }) {
 
   const scenarioMode = !scenario ? 'off' : revealSkipped ? 'dim' : 'hide'
 
+  // FX-3, step one: the index, which is ~4 KB and is all the picker needs. A null result means
+  // this app ships no shards, and the effect below then loads the whole graph as before.
   useEffect(() => {
-    loadGraph(app)
-      .then(setGraph)
-      .catch((e) => setError(e.message))
+    let live = true
+    loadShardIndex(app).then((found) => {
+      if (!live) return
+      setShardIndex(found?.index ?? null)
+      if (!found) setWholeLoaded(true) // no shards: the whole graph is the only source there is
+    })
+    return () => {
+      live = false
+    }
+  }, [app])
+
+  /**
+   * The whole graph, fetched if this session has not needed it yet, and latched as the active
+   * source once it arrives (see `wholeLoaded`).
+   *
+   * The single seam through which the expensive fetch happens. Everything that reads ACROSS the
+   * graph rather than within one slice goes through here — search totals, the scenario overlay,
+   * the chat context, and a dependency link that points outside the slice. `wantWhole` below is
+   * the declarative half of the same rule, for the cases that need it before they can render.
+   */
+  const ensureWholeGraph = useCallback(async () => {
+    const whole = await loadGraph(app)
+    setGraph(whole)
+    setWholeLoaded(true)
+    return whole
   }, [app])
 
   // Soft-fails. With no index generated, or no scenarios at all, the picker stays empty.
@@ -155,9 +227,13 @@ export default function FactExplorer({ app }) {
   // FGM. Shared by the picker and the inbound bridge handler. With `publishOut` set, the graph is
   // broadcast so the embedded iframe rehydrates.
   async function applyScenarioJson(json, label, { publishOut } = {}) {
-    const engine = await loadEngine(app)
+    // The overlay is computed over the WHOLE FGM, not the active slice: a scenario's answer to a
+    // question three slices away is what decides whether the one on screen is reached at all.
+    // Since FX-3 that is a fetch rather than something already in hand, so it is awaited here
+    // rather than read off `graph` — which at this moment is very likely one shard.
+    const [engine, whole] = await Promise.all([loadEngine(app), ensureWholeGraph()])
     const sg = buildScenarioGraph(engine, json)
-    const { status, values } = computeVisibility(graph, makeEvaluators(sg))
+    const { status, values } = computeVisibility(whole, makeEvaluators(sg))
     setScenario({ filename: label })
     setScenarioStatus(status)
     setScenarioValues(values)
@@ -228,26 +304,23 @@ export default function FactExplorer({ app }) {
 
   const rf = useReactFlow()
 
-  // Auto-focus on first load. The `fitView` prop only fits when the ReactFlow
-  // instance initializes, but our nodes are populated one render later (via the
-  // setNodes effect), so that initial fit finds an empty canvas and the view is
-  // left parked at the origin/bottom. Once the nodes have actually been measured
-  // (useNodesInitialized), do a one-shot fitView. Subsequent slice/cone/drill
-  // changes remount ReactFlow via its `key`, where the `fitView` prop takes over.
-  const nodesInitialized = useNodesInitialized()
-  const didFitRef = useRef(false)
-  useEffect(() => {
-    if (nodesInitialized && !didFitRef.current) {
-      didFitRef.current = true
-      rf.fitView({ duration: 400 })
-    }
-  }, [nodesInitialized, rf])
-
-  const sliceOptions = useMemo(() => (graph ? buildSliceOptions(graph) : []), [graph])
+  // From the index when there is one, so the picker is populated before any graph has been
+  // fetched; from the graph otherwise. Same shape either way — the index stores what
+  // buildSliceOptions() returned when it was written.
+  const sliceOptions = useMemo(
+    () => (shardIndex ? sliceOptionsFromIndex(shardIndex) : graph ? buildSliceOptions(graph) : []),
+    [shardIndex, graph]
+  )
 
   // The identity facets for this graph, and the effective selection over them. defaultFacets() is
   // total, so this is safe to read before the graph has loaded.
-  const facetDefaults = useMemo(() => defaultFacets(graph), [graph])
+  // Whole-graph facets, carried in the index. Derived from the active graph they would narrow to
+  // whatever the current shard happens to contain, so a flow tag would lose its checkbox on one
+  // slice and regain it on the next — and a facet with no checkbox cannot be brought back.
+  const facetDefaults = useMemo(
+    () => shardIndex?.facets ?? defaultFacets(graph),
+    [shardIndex, graph]
+  )
   const facets = facetOverride ?? facetDefaults
 
   // Feed the real <taxpert-scenario-modal> its scenario vocabulary: the library <option>s (built
@@ -284,6 +357,41 @@ export default function FactExplorer({ app }) {
   )
   const searchActive = !!debouncedQuery
 
+  // FX-3, step two: fetch the source the current view actually needs.
+  //
+  // `wantWhole` is the whole rule in one expression, which is the point of writing it this way —
+  // adding a feature that reads across the graph means adding a term here, and forgetting to is a
+  // visible bug (a partial answer) rather than a silent one.
+  //
+  //   Full graph   the selection IS the whole graph
+  //   cone/drill   both deliberately reach outside the active slice; that is what they are for
+  //   search       the hit count is reported as in-view vs. total, and "total" means total
+  //
+  // Search does not block on it: matchIds runs against whichever graph is loaded, so hits inside
+  // the slice highlight immediately and the total corrects itself when the fetch lands.
+  const wantWhole =
+    wholeLoaded || sliceKey === FULL_KEY || !!coneRootId || !!drillId || searchActive
+
+  useEffect(() => {
+    if (shardIndex === undefined) return undefined // the index is still in flight
+    if (shardIndex && !sliceKey) return undefined // ...and so, therefore, is the default selection
+    let live = true
+    const source = wantWhole || !sliceKey ? ensureWholeGraph() : loadSlice(app, sliceKey)
+    source
+      // A null slice is an app with no shards, or a shard the index names and the disk does not:
+      // load.js has already said so on the console, and the whole graph is always a correct answer.
+      .then((g) => (g === null ? ensureWholeGraph() : g))
+      .then((g) => {
+        if (live) setGraph(g)
+      })
+      .catch((e) => {
+        if (live) setError(e.message)
+      })
+    return () => {
+      live = false
+    }
+  }, [app, shardIndex, sliceKey, wantWhole, ensureWholeGraph])
+
   const [nodes, setNodes, onNodesChange] = useNodesState([])
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
 
@@ -297,8 +405,13 @@ export default function FactExplorer({ app }) {
 
   // A dependency name in the explain popup selects (and, if on-canvas, centres)
   // the target fact node, the Fact Explorer analogue of the audit panel's fact-link.
-  function navigateToFact(path) {
-    const fact = factByPath.get(path)
+  async function navigateToFact(path) {
+    // A shard carries its focus nodes plus their one-hop ring, and a fact's dependencies ARE its
+    // one-hop ring — so the links the detail panel offers resolve out of the shard. What lands
+    // here is the hop after that: following a chain out of the slice, which is the moment the
+    // whole graph is genuinely the answer.
+    let fact = factByPath.get(path)
+    if (!fact) fact = (await ensureWholeGraph()).facts.find((f) => f.path === path)
     if (!fact) return
     setSelected({ ...fact, __kind: 'fact' })
     centreOn(`fact:${path}`)
@@ -308,7 +421,7 @@ export default function FactExplorer({ app }) {
   // context (+ the fact paths whose live dependency trees ride along), and hand
   // it to the chat dock. Facts reuse the dependency-tree path the chat already
   // walks; flow elements add their binding/gate/alert metadata + 1-hop neighbours.
-  function explainNode(node) {
+  async function explainNode(node) {
     if (!node || !graph || !chatRef.current) return
     if (node.__kind === 'fact') {
       chatRef.current.explain({
@@ -318,8 +431,13 @@ export default function FactExplorer({ app }) {
       })
       return
     }
-    // flow element
-    const context = buildFlowContext(node, graph, { scenarioValues, scenarioStatus })
+    // flow element. Over the whole graph: buildFlowContext walks the element's binding, its gate
+    // and its 1-hop neighbours, and an explanation assembled from one shard would be a confident
+    // answer with pieces missing.
+    const context = buildFlowContext(node, await ensureWholeGraph(), {
+      scenarioValues,
+      scenarioStatus,
+    })
     const label = node.questionText || node.headingText || node.alert?.alertKey || node.tag
     chatRef.current.explain({
       prompt: `Explain this flow element (${node.tag} — "${label}"): what it does, the fact it binds or gates on, and how its 1-hop neighbours determine whether it shows or knocks the taxpayer out.`,
@@ -330,9 +448,14 @@ export default function FactExplorer({ app }) {
 
   // Scenario-level summary: does the taxpayer reach the end of the flow, and if
   // not, exactly where/why are they disqualified? Reads the scenario overlay.
-  function summarizeScenario() {
+  async function summarizeScenario() {
     if (!graph || !chatRef.current || !scenario) return
-    const context = buildScenarioSummary(graph, scenarioStatus, scenarioValues, scenario.filename)
+    const context = buildScenarioSummary(
+      await ensureWholeGraph(),
+      scenarioStatus,
+      scenarioValues,
+      scenario.filename
+    )
     const trackedPaths = context.activeKnockouts.map((k) => k.boundFactPath).filter(Boolean)
     chatRef.current.explain({
       prompt: `Summarize the outcome of scenario "${scenario.filename}". Does the taxpayer reach the end of the ${app.label} flow? If not, name exactly where (which knockout) and why they are disqualified, citing the decisive fact and its value.`,
@@ -343,8 +466,10 @@ export default function FactExplorer({ app }) {
 
   // Default to the first flow page once the graph loads, never the full graph.
   useEffect(() => {
-    if (graph && sliceKey === null) setSliceKey(defaultSliceKey(graph))
-  }, [graph, sliceKey])
+    if (sliceKey !== null) return
+    if (shardIndex) setSliceKey(shardIndex.defaultKey)
+    else if (graph) setSliceKey(defaultSliceKey(graph))
+  }, [shardIndex, graph, sliceKey])
 
   // Drill-down and dependency-cone both short-circuit the slice chain, drawing
   // from the WHOLE graph so context outside the active slice is pulled in. Cone
@@ -357,8 +482,11 @@ export default function FactExplorer({ app }) {
   const scenarioActive = scenarioMode !== 'off' && scenarioStatus.size > 0
   const sliced = useMemo(() => {
     if (!graph) return null
-    if (coneRootId) return coneGraph(graph, coneRootId)
-    if (drillId) return drillGraph(graph, drillId)
+    // Both draw from the WHOLE graph by design, so they render nothing until it is here rather
+    // than a plausible-looking cone cut from one shard. `wantWhole` above has already started the
+    // fetch; this is the frame or two before it lands.
+    if (coneRootId) return wholeLoaded ? coneGraph(graph, coneRootId) : null
+    if (drillId) return wholeLoaded ? drillGraph(graph, drillId) : null
     const source =
       scenarioMode === 'hide' && scenarioStatus.size > 0
         ? scenarioFilter(graph, scenarioStatus)
@@ -366,6 +494,7 @@ export default function FactExplorer({ app }) {
     return facetGraph(filterGraph(sliceGraph(source, sliceKey, { neighbors }), filters), facets)
   }, [
     graph,
+    wholeLoaded,
     coneRootId,
     drillId,
     sliceKey,
@@ -438,6 +567,38 @@ export default function FactExplorer({ app }) {
     ]
   )
 
+  // The edge counterpart of decoratedNodes, and for now it does one thing: drop the marching-ants
+  // animation on a large slice.
+  //
+  // This is the finding Stage 2 turned up that the audit did not have. FX-1 says rendering every
+  // node is "the single reason a big slice feels slow"; it is a real cost — the full graph went
+  // from 92,921 DOM elements under the viewport to 9,881 — but it is not what freezes the canvas.
+  // Panning the full graph measured 788 ms per frame before this stage and 818 ms after FX-1, FX-2
+  // and FX-5 had all landed. A CPU profile of that pan is 99.9% `(program)`: no JavaScript at all,
+  // pure rasterisation. Hiding one layer at a time finds it — with `.react-flow__edge-path`
+  // animation suppressed the same pan runs at 8 ms, identical to hiding the edges outright, while
+  // hiding the nodes or the background changes nothing.
+  //
+  // The culprit is 102 edges. `knocks-out` is the only animated kind in EDGE_STYLE, and an animated
+  // stroke-dashoffset on a path spanning the full graph's extent forces the browser to re-raster
+  // the whole SVG layer every frame. The cost is in the paths' *length*, not their number, which is
+  // why no amount of node culling touches it and why gating on an edge count would be the wrong
+  // gate — 102 of 8,622 edges is not a lot of edges.
+  //
+  // It lives here rather than in transform.js on purpose. transform.js is a pure FGM → React Flow
+  // mapping and should not know what a viewport costs; this file already owns the other size-
+  // dependent display decision (miniMapOn, just below). Stage 2's guardrails also put transform.js
+  // out of bounds, and there is no reason to reach for it.
+  //
+  // Knockout edges stay red and dashed either way, so nothing that identifies them is lost.
+  const decoratedEdges = useMemo(
+    () =>
+      base.edges.length && base.nodes.length > LARGE_SLICE_NODES
+        ? base.edges.map((e) => (e.animated ? { ...e, animated: false } : e))
+        : base.edges,
+    [base.edges, base.nodes.length]
+  )
+
   // In-view (on-canvas) matches, for the counter and prev/next stepping.
   const inViewMatches = useMemo(
     () => base.nodes.filter((n) => matchSet.has(n.id)).map((n) => n.id),
@@ -469,8 +630,63 @@ export default function FactExplorer({ app }) {
 
   useEffect(() => {
     setNodes(decoratedNodes)
-    setEdges(base.edges)
-  }, [decoratedNodes, base.edges, setNodes, setEdges])
+    setEdges(decoratedEdges)
+  }, [decoratedNodes, decoratedEdges, setNodes, setEdges])
+
+  const facetSig = [
+    facets.knockoutsOnly,
+    facets.flowTags.join(','),
+    facets.factKinds.join(','),
+    facets.edgeKinds.join(','),
+  ].join('|')
+
+  // What counts as a different *view* of the graph, and so as something to re-frame.
+  //
+  // FX-2: this string used to be the <ReactFlow> `key`. Every term in it is an ordinary user
+  // control — the slice picker, a layer checkbox, the orientation toggle — and keying the element
+  // on them tore the whole instance down and rebuilt it on every one, discarding React Flow's
+  // measurement caches and re-mounting thousands of nodes rather than diffing them. The remount
+  // bought exactly one thing: the `fitView` prop firing again on the new instance. An effect on
+  // the same signature buys that without the teardown.
+  const fitSignature = `cone:${coneRootId ?? ''}|drill:${drillId ?? ''}|${sliceKey}|${neighbors}|${filters.flow}${filters.facts}${filters.edges}|${facetSig}|${orientation}|${layoutVersion}|scn:${scenarioMode}:${scenario?.filename ?? ''}`
+
+  // Re-frame on a new view — but only once that view is the one React Flow actually holds, and has
+  // measured it. Both halves are load-bearing, and both fail silently when you get them wrong.
+  //
+  // A signature change does not mean the new nodes have landed. setNodes runs in the effect above,
+  // so during that commit React Flow still holds the *previous* view, and `nodesInitialized` is
+  // still the previous view's answer, read during render. Fitting there frames the old geometry
+  // and — if that is then recorded as "fitted" — never corrects itself. Under
+  // onlyRenderVisibleElements the result is not a slightly-off viewport, it is a blank canvas: the
+  // view stays parked where the last slice was and every node of the new slice is culled as
+  // off-screen.
+  //
+  // So the condition is read from the live store at effect time (rf.getNodes()), not from a render
+  // closure. It cannot be `nodes === decoratedNodes` either, tempting as that looks: React Flow
+  // feeds dimension changes back through onNodesChange, and useNodesState's applyNodeChanges
+  // replaces the array — so that identity holds only for the instant between setNodes and the
+  // first measurement, which is both too narrow to rely on and, when it recurs on an unrelated
+  // re-decoration, enough to fire a stale fit. That is what snapped the viewport back to the fit
+  // position on every search keystroke.
+  //
+  // Fitting once per distinct signature is the contract the old `key` had: a new slice, filter,
+  // facet, orientation or scenario re-frames; a search keystroke or a scenario chip re-decorates
+  // the same view and must leave the viewport where the user put it.
+  const nodesInitialized = useNodesInitialized()
+  const fittedSig = useRef(null)
+  useEffect(() => {
+    if (fittedSig.current === fitSignature) return
+    // Is the store holding this view yet, and has it measured it? An unmeasured node has no
+    // width, and fitView would compute its bounds from a zero-sized box.
+    const live = rf.getNodes()
+    if (liveNodesSig(live) !== liveNodesSig(decoratedNodes)) return
+    if (live.some((n) => !n.measured?.width)) return
+    fittedSig.current = fitSignature
+    rf.fitView({ duration: 400 })
+    // nodesInitialized is not read here; it is in the deps because its flip back to true is the
+    // render that makes the check above start passing.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nodesInitialized, decoratedNodes, fitSignature, rf])
 
   if (error) {
     return (
@@ -485,12 +701,7 @@ export default function FactExplorer({ app }) {
     ? `${sliced.flowElements.length} flow nodes; ${sliced.facts.length} facts; ${sliced.edges.length} edges`
     : 'loading…'
 
-  const facetSig = [
-    facets.knockoutsOnly,
-    facets.flowTags.join(','),
-    facets.factKinds.join(','),
-    facets.edgeKinds.join(','),
-  ].join('|')
+  const miniMapOn = miniMapOverride ?? nodes.length <= LARGE_SLICE_NODES
 
   return (
     <div className="fact-explorer">
@@ -585,8 +796,13 @@ export default function FactExplorer({ app }) {
 
         <Legend />
 
+        {/* No `key`: see fitSignature above (FX-2). onlyRenderVisibleElements (FX-1) mounts only
+            the nodes the viewport can see — FgmNode is 173 lines of JSX, and a large slice was
+            thousands of live subtrees for a viewport showing a few dozen. React Flow force-renders
+            each node once so it can be measured, and culls partially-visible nodes in, so nothing
+            pops at the viewport edge and the banded layout still measures its frames. */}
         <ReactFlow
-          key={`cone:${coneRootId ?? ''}|drill:${drillId ?? ''}|${sliceKey}|${neighbors}|${filters.flow}${filters.facts}${filters.edges}|${facetSig}|${orientation}|${layoutVersion}|scn:${scenarioMode}:${scenario?.filename ?? ''}`}
+          onlyRenderVisibleElements
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
@@ -603,7 +819,7 @@ export default function FactExplorer({ app }) {
           minZoom={0.1}
         >
           <Background gap={16} />
-          <MiniMap nodeColor={nodeColor} pannable zoomable />
+          {miniMapOn && <MiniMap nodeColor={nodeColor} pannable zoomable />}
           <Controls />
         </ReactFlow>
 
@@ -662,6 +878,8 @@ export default function FactExplorer({ app }) {
       <DisplayOptions
         revealSkipped={revealSkipped}
         onRevealSkipped={setRevealSkipped}
+        miniMap={miniMapOn}
+        onMiniMap={setMiniMapOverride}
         sideBySide={sideBySide}
         onSideBySide={setSideBySide}
         orientation={orientation}

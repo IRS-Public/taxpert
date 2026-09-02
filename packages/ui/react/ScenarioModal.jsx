@@ -13,7 +13,7 @@
 // for the element to parse straight back.
 
 import { useEffect, useRef } from 'react'
-import '../src/audit-panel/js/scenario-modal.js' // side effect: customElements.define(...)
+import 'taxpert/scenario-modal' // side effect: customElements.define(...); package specifier, see GlobalNav.jsx
 import '../src/audit-panel/styles/scenario-modal.css'
 
 export default function ScenarioModal ({

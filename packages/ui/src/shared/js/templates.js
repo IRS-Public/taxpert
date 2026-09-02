@@ -11,6 +11,37 @@ const loads = new Map() // absolute URL string → Promise<void>
 
 const isTemplate = (node) => node?.tagName === 'TEMPLATE' && node.content != null
 
+/** Parse a bundle's template file and register every `<template id="…">` in it. */
+function register (html) {
+  // Parsed into the live document so cloned fragments carry the right ownerDocument. A
+  // <template>'s content is inert, and the input is this package's own shipped asset.
+  const holder = document.createElement('template')
+  // eslint-disable-next-line no-restricted-syntax
+  holder.innerHTML = html
+  for (const template of holder.content.querySelectorAll('template[id]')) {
+    registry.set(template.id, template)
+  }
+}
+
+/**
+ * Register a bundle's templates from markup already in hand, as though loadTemplates() had just
+ * fetched `url` — the ids go in the registry and that URL is marked resolved, so an element that
+ * awaits loadTemplates(url) on connect gets the memo instead of a request.
+ *
+ * TX-3's other half. The bundled build (scripts/build.mjs) inlines all fourteen template files and
+ * calls this for each one, which is what turns "one JS request instead of fifty-two" into "…and no
+ * template requests either". A host that would rather fetch them simply never calls this; a host
+ * that overrides one with `templates-base` still fetches its own, because templateUrl() hands
+ * loadTemplates a different key.
+ *
+ * @param {string|URL} url the URL this markup stands in for
+ * @param {string} html    the template file's contents
+ */
+export function registerTemplates (url, html) {
+  register(html)
+  loads.set(String(url), Promise.resolve())
+}
+
 /**
  * Fetch and register every `<template id="…">` in a bundle's template file. Memoized per URL, so
  * modules can start it at import time and elements can await it again on connect.
@@ -27,16 +58,7 @@ export function loadTemplates (url) {
       if (!response.ok) throw new Error(`HTTP ${response.status}`)
       return response.text()
     })
-    .then((html) => {
-      // Parsed into the live document so cloned fragments carry the right ownerDocument. A
-      // <template>'s content is inert, and the input is this package's own shipped asset.
-      const holder = document.createElement('template')
-      // eslint-disable-next-line no-restricted-syntax
-      holder.innerHTML = html
-      for (const template of holder.content.querySelectorAll('template[id]')) {
-        registry.set(template.id, template)
-      }
-    })
+    .then(register)
     .catch((error) => {
       // Drop the memo so a later attempt retries rather than replaying a cached failure.
       loads.delete(key)

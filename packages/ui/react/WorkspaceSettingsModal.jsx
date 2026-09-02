@@ -5,7 +5,7 @@
 // mounting it once (anywhere in the tree; it renders a body-level <dialog>) is the entire
 // integration. A host doesn't hold a ref or handle events.
 
-import '../src/audit-panel/js/workspace-settings-modal.js' // side effect: customElements.define(...)
+import 'taxpert/workspace-settings-modal' // side effect: customElements.define(...); package specifier, see GlobalNav.jsx
 import '../src/audit-panel/styles/workspace-settings-modal.css'
 
 export default function WorkspaceSettingsModal () {

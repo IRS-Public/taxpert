@@ -7,7 +7,7 @@
 // Where it goes does matter, though. The dock is a flex child of the host's layout, not an overlay,
 // so it belongs as a sibling of the element holding the app's content, inside a flex row.
 
-import '../src/tool-panels/js/taxpert-tool-dock.js' // side effect: customElements.define(...)
+import 'taxpert/tool-panels' // side effect: customElements.define(...); package specifier, see GlobalNav.jsx
 import '../src/tool-panels/styles/tool-panels.css'
 
 export default function ToolDock () {

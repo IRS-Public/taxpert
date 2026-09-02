@@ -22,6 +22,13 @@ const EMPTY_GRAPH_META = (graph) => ({
   version: graph.version,
   generatedAt: graph.generatedAt,
   taxYear: graph.taxYear,
+  // Carried, not dropped. Each of these three stages advertises "a valid sub-FGM", and without the
+  // app's declared flow tags that is only true of an app that declares none: validate() rejects a
+  // tag it was not told about, so a slice of tax-withholding-estimator failed its own contract.
+  // Nothing re-validated a slice in place, so it went unnoticed until FX-3 made a slice a file
+  // that load.js fetches and validates like any other graph. filterGraph and facetGraph, which run
+  // after these, have always carried it.
+  flowTags: graph.flowTags,
 })
 
 const push = (map, k, v) => {

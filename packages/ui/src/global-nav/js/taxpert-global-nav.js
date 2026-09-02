@@ -44,6 +44,9 @@ class TaxpertGlobalNav extends HTMLElement {
     this._groupOpen = new Map()
     this._connected = false
     this._rendered = false
+    // Set only by _renderDegraded(). The fallback bar has no tool strip and no taxonomy, because
+    // both are cloned from the templates that were missing in the first place.
+    this._degraded = false
     /** Resolves once the bar's DOM has been cloned in. */
     this.ready = Promise.resolve()
     this._onDocClick = (event) => {
@@ -70,9 +73,16 @@ class TaxpertGlobalNav extends HTMLElement {
     if (this._connected) return
     this._connected = true
     for (const name of ['menu', 'active', 'workspaceOn']) this._upgradeProperty(name)
-    this.ready = loadNavTemplates(this).then(() => {
-      if (this.isConnected && !this._rendered) this.render()
-    })
+    this.ready = loadNavTemplates(this).then(
+      () => this._renderOnce(),
+      (error) => {
+        // Not fatal by itself. A host that server-renders the templates never needed this file, and
+        // getTemplate() will find them on the page — so name the failure and try to render anyway,
+        // rather than making a fetch nobody depended on the reason there is no header.
+        console.error(error)
+        this._renderOnce()
+      }
+    )
   }
 
   // A host may assign a property before this module has run, script order being the host's
@@ -227,6 +237,97 @@ class TaxpertGlobalNav extends HTMLElement {
 
   // --- rendering (once) ---
 
+  // The only place render() is entered from. getTemplate() throws on a template that is not there,
+  // and until now that throw travelled up an unawaited promise and left the page with no header and
+  // a console that never said why. Now it is a logged error and a bar that still works.
+  _renderOnce () {
+    if (!this.isConnected || this._rendered) return
+    try {
+      this.render()
+    } catch (error) {
+      console.error('taxpert-global-nav: could not build the bar from its templates', error)
+      this._renderDegraded()
+    }
+  }
+
+  // The fallback bar: the waffle and the workspace switch, the two controls that need no
+  // configuration to mean something. Built with DOM calls rather than cloned, because the whole
+  // reason we are here is that there is nothing to clone.
+  _renderDegraded () {
+    this.classList.add('tgn-host')
+    this._degraded = true
+
+    const el = (tag, className, attrs = {}) => {
+      const node = document.createElement(tag)
+      if (className) node.className = className
+      for (const [name, value] of Object.entries(attrs)) node.setAttribute(name, value)
+      return node
+    }
+
+    const bar = el('nav', 'tgn-bar', { 'aria-label': 'Taxpert workspace' })
+
+    const button = el('button', 'tgn-waffle', {
+      type: 'button',
+      'aria-haspopup': 'true',
+      'aria-expanded': 'false',
+      'aria-label': 'Open Taxpert workspace menu',
+    })
+    const grid = el('span', 'tgn-waffle__grid', { 'aria-hidden': 'true' })
+    for (let i = 0; i < 9; i++) grid.appendChild(el('span', 'tgn-waffle__dot'))
+    button.appendChild(grid)
+    button.addEventListener('click', (event) => {
+      event.stopPropagation()
+      this._toggle()
+    })
+    bar.appendChild(button)
+
+    // All three breadcrumb parts, not just the root: _syncBreadcrumb() reads every one of them, and
+    // a degraded bar that throws on the next workspace toggle is not a degraded bar.
+    const crumb = el('span', 'tgn-breadcrumb')
+    const root = el('span', 'tgn-breadcrumb__root')
+    root.textContent = 'Taxpert'
+    const separator = el('span', 'tgn-breadcrumb__sep', { 'aria-hidden': 'true' })
+    separator.hidden = true
+    const context = el('span', 'tgn-breadcrumb__ctx')
+    context.hidden = true
+    crumb.append(root, separator, context)
+    bar.appendChild(crumb)
+
+    const menu = el('div', 'tgn-menu', { role: 'menu' })
+    menu.addEventListener('click', (event) => event.stopPropagation())
+
+    const label = el('span', 'tgn-workspace__label')
+    label.textContent = this.getAttribute('workspace-label') || 'TAXPERT WORKSPACE'
+    const toggle = el('button', 'tgn-toggle', {
+      type: 'button',
+      role: 'switch',
+      'aria-checked': 'false',
+      'aria-label': label.textContent,
+    })
+    if (this.workspaceLocked) {
+      toggle.disabled = true
+      toggle.title = 'Always on here'
+    }
+    toggle.appendChild(el('span', 'tgn-toggle__knob'))
+    toggle.addEventListener('click', (event) => {
+      event.stopPropagation()
+      this._toggleWorkspace()
+    })
+    const controls = el('div', 'tgn-workspace__controls')
+    controls.appendChild(toggle)
+    const row = el('div', 'tgn-workspace')
+    row.append(label, controls)
+    menu.appendChild(row)
+    bar.appendChild(menu)
+
+    this.replaceChildren(bar)
+    this._button = button
+    this._menuPanel = menu
+    this._rendered = true
+    this._syncOpen()
+    this._syncWorkspace()
+  }
+
   render () {
     this.classList.add('tgn-host')
 
@@ -258,6 +359,9 @@ class TaxpertGlobalNav extends HTMLElement {
 
   // Everything the config decides, so a late configure() lands through the first render's path.
   _renderFromConfig () {
+    // The degraded bar has neither of the two things this builds, and both are cloned from the
+    // templates whose absence put us there. One guard here rather than one in each of the two.
+    if (this._degraded) return
     this.dataset.app = this.app
     this._renderTools()
     this._renderTaxonomy()

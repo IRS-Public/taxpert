@@ -16,7 +16,13 @@
 //     stay attributes, which is why they were never affected.
 
 import { useEffect, useRef } from 'react'
-import '../src/global-nav/js/taxpert-global-nav.js' // side effect: customElements.define(...)
+// Through the package's own entry point rather than `../src/…`, and every wrapper beside this one
+// does the same. A relative path here is a second copy of everything under it as soon as a bundler
+// pre-bundles the package's public specifiers but not this file — which is exactly what Vite's
+// optimizeDeps does, since it will not take JSX from a linked dependency. shared/js/config.js holds
+// the whole workspace configuration in module scope, so the host configures one copy while the
+// element reads the other: nothing throws, and the nav comes up with no menu and no tools.
+import 'taxpert' // side effect: customElements.define(...)
 import '../src/global-nav/styles/global-nav.css'
 
 export default function GlobalNav ({

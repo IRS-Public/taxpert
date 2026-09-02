@@ -12,7 +12,7 @@
 // keeps the controls in step.
 
 import { useEffect, useRef } from 'react'
-import '../src/audit-panel/js/display-modal.js' // side effect: customElements.define(...)
+import 'taxpert/display-modal' // side effect: customElements.define(...); package specifier, see GlobalNav.jsx
 import '../src/audit-panel/styles/display-modal.css'
 
 export default function DisplayModal ({ visibilityOptions, layoutOptions, footerAction }) {

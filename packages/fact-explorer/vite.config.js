@@ -1,5 +1,6 @@
-import { existsSync, readFileSync, readdirSync, realpathSync } from 'node:fs'
-import { dirname, join, parse } from 'node:path'
+import { existsSync, readFileSync, readdirSync, realpathSync, statSync } from 'node:fs'
+import { gzipSync } from 'node:zlib'
+import { dirname, join, parse, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
@@ -80,12 +81,106 @@ const withOriginHost = (origin) => {
   return url.origin
 }
 
+// FX-6 was `optimizeDeps: { include: <every JS entry in taxpert's exports map> }`, to collapse the
+// ~50 dev-server requests a linked (`file:`) dependency costs — Vite treats such a package as source
+// and does not pre-bundle it. It is gone, and this note is here so it is not re-added as written:
+// taxpert cannot be handed to the dep optimizer at all, for two independent reasons.
+//
+// 1. Its elements locate their markup with `new URL('../templates/…', import.meta.url)`, relying on
+//    Vite's static rewrite of that form — which happens only for a file Vite processes as *source*.
+//    esbuild, which is what the dep optimizer runs, does not do it: the URL came out as
+//    `.vite/deps/undefined`, every template fetch 404'd, and <taxpert-global-nav> fell back to its
+//    degraded bar (waffle and workspace switch, no taxonomy, no tools). See the note in
+//    packages/ui/src/audit-panel/js/templates.js, which spells this dependency out.
+//
+// 2. Optimizing only part of the package splits the module graph in two. The optimizer will not take
+//    JSX from a linked package, so the six React wrappers stay source; anything they reach through
+//    relative paths stays source with them, while the app's own bare `taxpert/…` imports resolve to
+//    pre-bundled chunks. shared/js/config.js then exists twice, and since it holds the whole
+//    workspace configuration in module scope, registerFactExplorerHost() configured one copy while
+//    the mounted elements read the other. Nothing throws and nothing is logged — the nav simply comes
+//    up with no menu and no tool buttons. The wrappers now import through the package's own
+//    specifiers (packages/ui/react/GlobalNav.jsx), which closes that door, but it stays closed only
+//    while the two halves resolve the same way.
+//
+// The waterfall is still worth removing. The shape that can work is TX-3's: a pre-built bundle that
+// inlines its templates and calls registerTemplates(), so nothing depends on import.meta.url and
+// there is one copy of everything. `taxpert/bundle` is that file, built for the four Form Builder
+// applications; it names its shared-seam modules as `../../shared/js/*.js`, which resolves in the
+// tree `make copy-shared-ui` lays out and not here, so consuming it needs that seam resolved for
+// this tree first.
+
+// FX-7. Serve public/data/ ourselves, compressed.
+//
+// The Fact Explorer anyone actually opens is this dev server, not the nginx in its image (the
+// compose override builds `target: build` and runs `npm run dev`), so Stage 1's nginx work never
+// reached it and the generated graphs arrived uncompressed. Vite's dev server does not compress,
+// and has no configuration that makes it: this is the middleware the finding asks for.
+//
+// Caching is deliberately left as revalidation rather than a max-age. These files are regenerated
+// by `npm run make-fgm` in the middle of a working session — that is the whole point of the dev
+// stack — and a real max-age would serve yesterday's graph until someone thought to hard-refresh,
+// which is a worse bug than the one being fixed. A strong-enough ETag makes a repeat load a 304
+// with no body, which is what "free" was actually asking for.
+//
+// Compression is memoized on the file's identity, so an 8.4 MB graph is gzipped once per
+// generation rather than once per request.
+function compressedData() {
+  const publicDir = join(HERE, 'public')
+  const dataDir = join(publicDir, 'data')
+  const cache = new Map()
+
+  return {
+    name: 'fact-explorer:compressed-data',
+    configureServer(server) {
+      // Installed in configureServer's body, so it runs BEFORE Vite's own static handler for
+      // public/ — which would otherwise answer first, uncompressed.
+      server.middlewares.use((req, res, next) => {
+        if (req.method !== 'GET' && req.method !== 'HEAD') return next()
+        const path = decodeURIComponent((req.url ?? '').split('?')[0])
+        if (!path.startsWith('/data/') || !path.endsWith('.json')) return next()
+
+        const file = join(publicDir, path)
+        if (!file.startsWith(dataDir + sep)) return next() // no traversal out of public/data
+        let stat
+        try {
+          stat = statSync(file)
+        } catch {
+          return next() // not there: let Vite produce the 404, so there is one 404 path
+        }
+        if (!stat.isFile()) return next()
+
+        const etag = `W/"${stat.size}-${Math.round(stat.mtimeMs)}"`
+        res.setHeader('Content-Type', 'application/json; charset=utf-8')
+        res.setHeader('Cache-Control', 'no-cache')
+        res.setHeader('Vary', 'Accept-Encoding')
+        res.setHeader('ETag', etag)
+        if (req.headers['if-none-match'] === etag) {
+          res.statusCode = 304
+          return res.end()
+        }
+
+        const gzip = /\bgzip\b/.test(String(req.headers['accept-encoding'] ?? ''))
+        let body = cache.get(etag + (gzip ? ':gz' : ''))
+        if (!body) {
+          const raw = readFileSync(file)
+          body = gzip ? gzipSync(raw, { level: 6 }) : raw
+          cache.set(etag + (gzip ? ':gz' : ''), body)
+        }
+        if (gzip) res.setHeader('Content-Encoding', 'gzip')
+        res.setHeader('Content-Length', String(body.length))
+        res.end(req.method === 'HEAD' ? undefined : body)
+      })
+    },
+  }
+}
+
 // Standalone SPA. Runs fully decoupled from the credit-assistant dev server.
 // host: true binds all interfaces (needed when run inside Docker). Polling is enabled
 // only when VITE_USE_POLLING is set (Docker bind mounts on macOS don't emit FS events);
 // native `npm run dev` is unaffected.
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), compressedData()],
   resolve: {
     // One React, whatever npm's tree says. @xyflow/react declares react as a peer of `>=17`, and in
     // this workspace npm satisfied that by installing its own react@18 at the root while this

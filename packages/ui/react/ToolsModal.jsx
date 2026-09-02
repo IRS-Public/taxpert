@@ -7,7 +7,7 @@
 // A host that mounts <ToolDock /> does not need this — the dock mounts the modal itself if the page
 // hasn't got one. Mount it directly only when the Tools button should work somewhere the dock isn't.
 
-import '../src/tool-panels/js/taxpert-tools-modal.js' // side effect: customElements.define(...)
+import 'taxpert/tools-modal' // side effect: customElements.define(...); package specifier, see GlobalNav.jsx
 import '../src/tool-panels/styles/tool-panels.css'
 
 export default function ToolsModal () {

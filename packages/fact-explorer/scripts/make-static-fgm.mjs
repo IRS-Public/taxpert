@@ -26,6 +26,7 @@ import { readFileSync, writeFileSync, readdirSync, mkdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join, resolve, basename as fileBase } from 'node:path'
 import { scenarioVocabulary } from '../src/model/scenarios/index.js'
+import { buildShards, SHARD_DIR, SHARD_INDEX } from '../src/model/shard.js'
 import { appsDirs, discoverDescriptors, buildRegistryFile } from './build-registry.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -618,7 +619,11 @@ function generateApp(descriptor) {
 
   const OUT = join(cfg.outDir, 'form-builder-graph.json')
   mkdirSync(dirname(OUT), { recursive: true })
-  writeFileSync(OUT, JSON.stringify(graph, null, 2) + '\n')
+  // FX-3/FX-7: written minified. The pretty-print was 15% of the bytes on the wire in dev, where
+  // nothing compressed them; it is ~2% once vite.config.js's /data middleware gzips them, so this
+  // is a disk and parse saving rather than a transfer one — and with the shards below multiplying
+  // this directory by roughly three, disk is the one that had started to matter.
+  writeFileSync(OUT, JSON.stringify(graph) + '\n')
 
   const byKind = (k) => out.edges.filter((e) => e.kind === k).length
   console.log(`Wrote ${OUT}`)
@@ -645,7 +650,46 @@ function generateApp(descriptor) {
   // vocabulary the app declared. The picker (N4) reads this index; the scenario JSON bodies are
   // fetched live via the Vite proxy at runtime.
   writeScenarioIndex()
+
+  // FX-3 — one file per slice-picker option, plus the index that names them. The opening view then
+  // costs an index and one shard instead of the whole graph.
+  writeShards(graph)
   return graph
+}
+
+/**
+ * Cut the graph into the slices the picker offers and write each one beside it (FX-3).
+ *
+ * The keys, the labels and the cut itself all come from src/model/shard.js, which is the same
+ * slice.js the SPA narrows with — deliberately, because a shard that is subtly not the slice is a
+ * graph that quietly tells you the wrong thing about a fact's dependencies. tests/shard.test.js
+ * asserts the two are deep-equal for every option of every fixture.
+ *
+ * Not gitignored by accident: public/data/<app>/shards/ is in .gitignore, unlike the two committed
+ * fixture graphs. Shards are a pure function of the graph beside them, the test rebuilds them in
+ * memory, and committing a few megabytes of derived JSON to make that unnecessary is a bad trade.
+ */
+function writeShards(graph) {
+  const { index, shards } = buildShards(graph)
+  const dir = join(cfg.outDir, SHARD_DIR)
+  mkdirSync(dir, { recursive: true })
+
+  let bytes = 0
+  for (const [key, sub] of shards) {
+    const file = index.shards.find((s) => s.key === key).file
+    const body = JSON.stringify(sub) + '\n'
+    bytes += Buffer.byteLength(body)
+    writeFileSync(join(cfg.outDir, file), body)
+  }
+  writeFileSync(join(dir, SHARD_INDEX), JSON.stringify(index, null, 2) + '\n')
+
+  const median = [...shards.values()]
+    .map((s) => s.flowElements.length + s.facts.length)
+    .sort((a, b) => a - b)[Math.floor(shards.size / 2)]
+  console.log(`Wrote ${join(dir, SHARD_INDEX)}`)
+  console.log(
+    `  shards       ${shards.size}  (${(bytes / 1048576).toFixed(2)} MB total, median ${median} nodes)`
+  )
 }
 
 /** Enumerate scenarios/*.json and write the decoded index for the picker (N1.2). */
