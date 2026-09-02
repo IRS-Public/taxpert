@@ -64,7 +64,14 @@ const REEXPORTS = [
  * ../../../docs/internals/bundled-build.md for why audit-panel.css cannot join taxpert.css.
  */
 const CSS_BUNDLES = {
-  'taxpert.css': ['global-nav/styles/global-nav.css', 'tool-panels/styles/tool-panels.css'],
+  'taxpert.css': [
+    'global-nav/styles/global-nav.css',
+    'tool-panels/styles/tool-panels.css',
+    // The gear's dialog. Always on because the gear is: it sits in the nav's workspace row, which
+    // a host gets without mounting an audit panel, and audit-panel.css would have handed it over
+    // disabled. Self-scoped to its own element and .twsm- classes, so it restructures nothing.
+    'audit-panel/styles/workspace-settings-modal.css',
+  ],
   'audit-panel.css': ['audit-panel/styles/audit-panel.css'],
   'all-screens-toolbar.css': ['audit-panel/styles/all-screens-toolbar.css'],
 }

@@ -3,8 +3,9 @@
 // outcomes, applications and endpoints.
 //
 // The element self-wires on the nav's `nav-tool-select` event, opening on
-// detail.id === 'workspace-settings'. <taxpert-audit-panel> creates it, so a host only mounts the
-// panel.
+// detail.id === 'workspace-settings'. <taxpert-audit-panel> creates it, so a host that mounts the
+// panel gets this for free; a host that mounts only the nav gets it from the fallback at the foot
+// of this file, because the gear belongs to the nav rather than to the panel.
 //
 // "Applications" is not a setting in the same sense: it switches which application the workspace is
 // laid over. It lives here because the gear is the one control on every page of every host. See
@@ -368,6 +369,33 @@ class TaxpertWorkspaceSettingsModal extends HTMLElement {
 }
 
 customElements.define('taxpert-workspace-settings-modal', TaxpertWorkspaceSettingsModal)
+
+/**
+ * Mount this dialog on demand for a host that has the gear but no audit panel.
+ *
+ * The gear lives in the nav's workspace row, which is on every page of every host; the element that
+ * answers it was only ever created by <taxpert-audit-panel>. Author Mode is the page where those
+ * two facts collide — form-builder's author-mode.html renders the nav alone, deliberately ("a
+ * chrome-free editing shell"), so the gear dispatched into a document with nothing listening and
+ * the click did nothing at all.
+ *
+ * At module scope rather than in the nav, which "owns no tool UI of its own" and should keep
+ * emitting nav-tool-select without knowing who answers. The panel still mounts this eagerly on
+ * connect, and its _mountModal() reuses whatever is already on the page, so on a host with a panel
+ * this listener finds the element and leaves it to its own handler.
+ *
+ * The instance created here misses the event that created it — its connectedCallback registers
+ * after this dispatch — so it is opened directly. open() before the templates land is expected and
+ * handled: it records the ask and honours it on render.
+ */
+document.addEventListener('nav-tool-select', (event) => {
+  if (event.detail?.id !== 'workspace-settings') return
+  if (document.querySelector('taxpert-workspace-settings-modal')) return
+  const modal = document.body.appendChild(
+    document.createElement('taxpert-workspace-settings-modal')
+  )
+  modal.open()
+})
 
 export { TaxpertWorkspaceSettingsModal }
 

@@ -2,9 +2,14 @@
    in fragments/head.html and split here into feature files, mirroring main.css's @import model.
    A disabled parent <link> keeps its @imports disabled too, so the runtime disabled=false toggle
    in taxpert-audit-panel.js still gates the whole tree (ADR-004 isolation). Cascade order matches
-   the original single file: shell → fact inspector → dashboards → chat, then the three modals the
-   panel owns but renders outside itself (scenario-modal.js, display-modal.js,
-   workspace-settings-modal.js). */
+   the original single file: shell → fact inspector → dashboards → chat, then the modals the panel
+   owns but renders outside itself (scenario-modal.js, display-modal.js).
+
+   workspace-settings-modal.css is NOT here, though its element is one of those modals. Its dialog
+   opens from the nav's gear, which exists on hosts that mount no panel — Author Mode is the one in
+   this ecosystem — and behind this toggled <link> it would have arrived disabled and painted
+   nothing. It rides in the always-on taxpert.css instead (scripts/build.mjs), which is what the
+   other twenty scoped sheets do; see docs/internals/bundled-build.md. */
 @import "../../shared/styles/feature-flags.css";
 @import "panel-shell.css";
 @import "fact-inspector.css";
@@ -12,7 +17,6 @@
 @import "chat.css";
 @import "scenario-modal.css";
 @import "display-modal.css";
-@import "workspace-settings-modal.css";
 
 /* Token-fallback layer (mirrors global-nav.css's --tgn-* pattern): every --tap-* token
    chains through the host's real USWDS token with a hard fallback, so the panel renders

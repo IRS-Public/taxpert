@@ -460,3 +460,54 @@ test('every section is shut again on each open', async () => {
 
   assert.deepEqual(sections().map((s) => s.open), sections().map(() => false))
 })
+
+// ── Mounting itself where there is no audit panel ─────────────────────────────
+//
+// The gear is in the nav's workspace row, so it is on every page of every host, including ones
+// that mount no <taxpert-audit-panel> — form-builder's Author Mode renders the nav alone. The panel
+// used to be the only thing that created this element, so on that page the gear dispatched into a
+// document with nothing listening and the click did nothing.
+
+// The gear's event, as taxpert-global-nav dispatches it.
+const gearClick = () =>
+  document.dispatchEvent(
+    new CustomEvent('nav-tool-select', {
+      bubbles: true,
+      composed: true,
+      cancelable: true,
+      detail: { id: 'workspace-settings' },
+    })
+  )
+
+test('the gear mounts and opens the dialog on a page with no audit panel', async () => {
+  assert.equal(document.querySelector('taxpert-workspace-settings-modal'), null, 'starts bare')
+
+  gearClick()
+
+  const modal = document.querySelector('taxpert-workspace-settings-modal')
+  assert.ok(modal, 'the gear created the element that answers it')
+
+  // open() before the templates land records the ask; render honours it.
+  await modal.ready
+  assert.equal(modal.querySelector('.twsm-dialog').open, true)
+})
+
+// The fallback must not be a second mounter racing the panel's. A host that already placed the
+// element — which is what taxpert-audit-panel's _mountModal() does on connect — keeps the one it
+// has, and that instance's own listener is what opens it.
+test('an element already on the page is reused, never duplicated', async () => {
+  const existing = await mount()
+
+  gearClick()
+
+  assert.equal(document.querySelectorAll('taxpert-workspace-settings-modal').length, 1)
+  assert.equal(existing.querySelector('.twsm-dialog').open, true)
+})
+
+// Every other id on that event belongs to another surface: 'scenario', 'display', 'tools'.
+test('a tool button that is not the gear mounts nothing', () => {
+  document.dispatchEvent(
+    new CustomEvent('nav-tool-select', { detail: { id: 'display' } })
+  )
+  assert.equal(document.querySelector('taxpert-workspace-settings-modal'), null)
+})

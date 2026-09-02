@@ -37,6 +37,15 @@ sits behind a `<link>` the workspace toggle flips. Merging it into the always-on
 those rules with the workspace off. `all-screens-toolbar.css` stays separate because the all-screens
 page is chrome all the way down and exists without a workspace.
 
+`workspace-settings-modal.css` is in `taxpert.css` rather than with the panel whose directory it
+lives in. Its dialog opens from the nav's gear, which a host gets by mounting the nav alone, so
+behind the toggled `<link>` it arrived disabled on every page with no audit panel and the dialog
+painted nothing. It qualifies for the always-on sheet on the same terms as the other twenty: every
+selector is scoped to its own element and its `.twsm-` classes, and its `--tap-*` token references
+are middle tiers inside `var()` chains that fall through to hard-coded defaults — the panel defines
+`--tap-*` on `:where(taxpert-audit-panel)`, which this element is a sibling of and never inherited
+from anyway.
+
 The other twenty stylesheets are scoped to the bundles' own custom elements and their `.ttd-`,
 `.ttp-` and `.ttm-` classes, which is why they can be one always-applied file. Flattening each chain
 turns 20 requests into 3.

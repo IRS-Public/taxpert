@@ -84,6 +84,11 @@ The nav owns no tool UI of its own. Whoever provides the surface listens for `na
 `<taxpert-tools-modal>` for `tools`, and `<taxpert-workspace-settings-modal>` for
 `workspace-settings`.
 
+Three of those four arrive with the audit panel, which creates them. The gear is the exception
+worth knowing about: it is in the workspace row rather than the tool strip, so it is present on
+hosts that mount no panel, and `workspace-settings-modal.js` mounts itself on demand there. See
+[audit-panel.md](audit-panel.md#the-three-dialogs-self-wire).
+
 ## The taxonomy
 
 The taxonomy is the host's, at `config.nav.menu`, not this package's. It was once a `DEFAULT_MENU`

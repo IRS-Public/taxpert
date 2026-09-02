@@ -48,6 +48,18 @@ and opens on its own `detail.id`. A host only has to have the elements on the pa
 
 `<taxpert-audit-panel>` creates and owns all three, so mounting the panel is enough.
 
+Except on a host that mounts no panel. The gear sits in the nav's workspace row, so it is on every
+page of every host, including form-builder's Author Mode — a chrome-free editing shell that renders
+the nav alone. There the gear dispatched into a document with nothing listening. So
+`workspace-settings-modal.js` carries a module-scope fallback: on a `nav-tool-select` for
+`workspace-settings` with no such element on the page, it creates one and opens it. The panel's
+`_mountModal()` reuses an element that is already there, so where a panel exists nothing changes.
+
+Its stylesheet has to follow it out. `workspace-settings-modal.css` is the one of the three that
+does not ride in the toggled `audit-panel.css` chain — see
+[bundled-build.md](bundled-build.md) — because behind that `<link disabled>` the dialog would open
+unstyled on exactly the pages this fallback exists for.
+
 All three share the `<dialog>` chrome in `shared/templates/shared.html`, through
 `shared/js/modal-shell.js`. Building one means cloning the shell and the modal's own body.
 
