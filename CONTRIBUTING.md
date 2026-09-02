@@ -11,7 +11,7 @@
 
 ## Members of the public
 
-The primary purpose of this open-source repository is to provide taxpayers with greater transparency into the logic and assumptions of the applications the IRS builds. Taxpert is the workspace that makes a running application legible — what it asked, what it derived, and why it reached the outcome it did. The repository is read-only for members of the public, however we welcome any feedback through opening Issues and draft Pull Requests (PRs). The maintainers will monitor activity and respond to community input as appropriate. Internal review cycles may fluctuate and may influence the timeline for addressing certain issues or PRs.
+The primary purpose of this open-source repository is to provide taxpayers with greater transparency into the logic and assumptions of the applications the IRS builds. Taxpert is the workspace that makes a running application legible, showing what it asked, what it derived, and why it reached the outcome it did. The repository is read-only for members of the public, however we welcome any feedback through opening Issues and draft Pull Requests (PRs). The maintainers will monitor activity and respond to community input as appropriate. Internal review cycles may fluctuate and may influence the timeline for addressing certain issues or PRs.
 
 ### How to Engage
 A PR should only be opened after an issue has been opened and a PR has been solicited.

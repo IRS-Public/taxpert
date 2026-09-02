@@ -25,14 +25,14 @@ function register (html) {
 
 /**
  * Register a bundle's templates from markup already in hand, as though loadTemplates() had just
- * fetched `url` — the ids go in the registry and that URL is marked resolved, so an element that
- * awaits loadTemplates(url) on connect gets the memo instead of a request.
+ * fetched `url`. The ids go in the registry and that URL is marked resolved, so an element that
+ * awaits loadTemplates(url) on connect gets the memo rather than a request.
  *
- * TX-3's other half. The bundled build (scripts/build.mjs) inlines all fourteen template files and
- * calls this for each one, which is what turns "one JS request instead of fifty-two" into "…and no
- * template requests either". A host that would rather fetch them simply never calls this; a host
- * that overrides one with `templates-base` still fetches its own, because templateUrl() hands
- * loadTemplates a different key.
+ * The bundled build (scripts/build.mjs) inlines all fourteen template files and calls this for each
+ * one, so a bundled host fetches no templates at all. A host that would rather fetch them never
+ * calls this, and a host that overrides one with `templates-base` still fetches its own, because
+ * templateUrl() hands loadTemplates a different key.
+ * See ../../../../../docs/internals/bundled-build.md.
  *
  * @param {string|URL} url the URL this markup stands in for
  * @param {string} html    the template file's contents

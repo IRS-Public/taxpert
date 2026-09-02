@@ -51,8 +51,8 @@ import ScenarioModal from 'taxpert/react/scenario-modal'
 const nodeTypes = { fgm: FgmNode, fgmFrame: FrameNode }
 
 // Above this many nodes, a slice is "large": per-node decoration that is affordable on a normal
-// slice stops paying for itself, and two things switch off — the minimap (FX-5) and edge animation
-// (see decoratedEdges below).
+// slice stops paying for itself, and two things switch off: the minimap and edge animation (see
+// decoratedEdges below).
 //
 // One constant rather than two, because both were measured into the same bracket. On direct-file
 // at 1600x1000 in Chromium, median frame time while panning the canvas:
@@ -86,7 +86,7 @@ function liveNodesSig(ns) {
  *   the search index are all per-app, so a remount is the honest way to say so.
  */
 export default function FactExplorer({ app }) {
-  // The graph the canvas is currently reading. FX-3 made this two things wearing one name: the
+  // The graph the canvas is currently reading. Sharding made this two things wearing one name: the
   // shard for the active slice, or the whole graph once something has asked for it. They are
   // interchangeable by construction — see src/model/shard.js — so nothing below this line has to
   // know which it got.
@@ -171,7 +171,7 @@ export default function FactExplorer({ app }) {
 
   const scenarioMode = !scenario ? 'off' : revealSkipped ? 'dim' : 'hide'
 
-  // FX-3, step one: the index, which is ~4 KB and is all the picker needs. A null result means
+  // Step one: the shard index, which is ~4 KB and is all the picker needs. A null result means
   // this app ships no shards, and the effect below then loads the whole graph as before.
   useEffect(() => {
     let live = true
@@ -229,7 +229,7 @@ export default function FactExplorer({ app }) {
   async function applyScenarioJson(json, label, { publishOut } = {}) {
     // The overlay is computed over the WHOLE FGM, not the active slice: a scenario's answer to a
     // question three slices away is what decides whether the one on screen is reached at all.
-    // Since FX-3 that is a fetch rather than something already in hand, so it is awaited here
+    // With shards that is a fetch rather than something already in hand, so it is awaited here
     // rather than read off `graph` — which at this moment is very likely one shard.
     const [engine, whole] = await Promise.all([loadEngine(app), ensureWholeGraph()])
     const sg = buildScenarioGraph(engine, json)
@@ -357,7 +357,7 @@ export default function FactExplorer({ app }) {
   )
   const searchActive = !!debouncedQuery
 
-  // FX-3, step two: fetch the source the current view actually needs.
+  // Step two: fetch the source the current view actually needs.
   //
   // `wantWhole` is the whole rule in one expression, which is the point of writing it this way —
   // adding a feature that reads across the graph means adding a term here, and forgetting to is a
@@ -570,25 +570,23 @@ export default function FactExplorer({ app }) {
   // The edge counterpart of decoratedNodes, and for now it does one thing: drop the marching-ants
   // animation on a large slice.
   //
-  // This is the finding Stage 2 turned up that the audit did not have. FX-1 says rendering every
-  // node is "the single reason a big slice feels slow"; it is a real cost — the full graph went
-  // from 92,921 DOM elements under the viewport to 9,881 — but it is not what freezes the canvas.
-  // Panning the full graph measured 788 ms per frame before this stage and 818 ms after FX-1, FX-2
-  // and FX-5 had all landed. A CPU profile of that pan is 99.9% `(program)`: no JavaScript at all,
-  // pure rasterisation. Hiding one layer at a time finds it — with `.react-flow__edge-path`
-  // animation suppressed the same pan runs at 8 ms, identical to hiding the edges outright, while
-  // hiding the nodes or the background changes nothing.
+  // Node culling is a real cost saving (the full graph went from 92,921 DOM elements under the
+  // viewport to 9,881) but it is not what freezes the canvas. Panning the full graph measured
+  // 788 ms per frame before the culling work and 818 ms after all of it had landed. A CPU profile
+  // of that pan is 99.9% `(program)`, pure rasterisation with no JavaScript at all. Hiding one
+  // layer at a time finds it: with `.react-flow__edge-path` animation suppressed the same pan runs
+  // at 8 ms, identical to hiding the edges outright, while hiding the nodes or the background
+  // changes nothing.
   //
   // The culprit is 102 edges. `knocks-out` is the only animated kind in EDGE_STYLE, and an animated
   // stroke-dashoffset on a path spanning the full graph's extent forces the browser to re-raster
-  // the whole SVG layer every frame. The cost is in the paths' *length*, not their number, which is
-  // why no amount of node culling touches it and why gating on an edge count would be the wrong
-  // gate — 102 of 8,622 edges is not a lot of edges.
+  // the whole SVG layer every frame. The cost is in the paths' length rather than their number,
+  // which is why no amount of node culling touches it and why gating on an edge count would be the
+  // wrong gate.
   //
-  // It lives here rather than in transform.js on purpose. transform.js is a pure FGM → React Flow
-  // mapping and should not know what a viewport costs; this file already owns the other size-
-  // dependent display decision (miniMapOn, just below). Stage 2's guardrails also put transform.js
-  // out of bounds, and there is no reason to reach for it.
+  // It lives here rather than in transform.js on purpose. transform.js is a pure FGM to React Flow
+  // mapping and should not know what a viewport costs. This file already owns the other
+  // size-dependent display decision (miniMapOn, just below).
   //
   // Knockout edges stay red and dashed either way, so nothing that identifies them is lost.
   const decoratedEdges = useMemo(
@@ -642,7 +640,7 @@ export default function FactExplorer({ app }) {
 
   // What counts as a different *view* of the graph, and so as something to re-frame.
   //
-  // FX-2: this string used to be the <ReactFlow> `key`. Every term in it is an ordinary user
+  // This string used to be the <ReactFlow> `key`. Every term in it is an ordinary user
   // control — the slice picker, a layer checkbox, the orientation toggle — and keying the element
   // on them tore the whole instance down and rebuilt it on every one, discarding React Flow's
   // measurement caches and re-mounting thousands of nodes rather than diffing them. The remount
@@ -795,7 +793,7 @@ export default function FactExplorer({ app }) {
 
         <Legend />
 
-        {/* No `key`: see fitSignature above (FX-2). onlyRenderVisibleElements (FX-1) mounts only
+        {/* No `key`: see fitSignature above. onlyRenderVisibleElements mounts only
             the nodes the viewport can see — FgmNode is 173 lines of JSX, and a large slice was
             thousands of live subtrees for a viewport showing a few dozen. React Flow force-renders
             each node once so it can be measured, and culls partially-visible nodes in, so nothing

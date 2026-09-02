@@ -1,11 +1,8 @@
-// TX-3 — the bundled build, for hosts that have no bundler.
+// The bundled build, for hosts that have no bundler.
 //
-// `src/` stays the source of truth and is still shipped: fact-explorer imports subpaths out of the
-// `exports` map and lets Vite tree-shake them, and every one of those files is still valid raw ESM
-// on its own. This adds an artifact beside it, for the four Form Builder applications, which have
-// no bundler at all and so paid for the package's structure one request at a time — 52 JS modules
-// across five levels of import waterfall, 20 stylesheets down an @import chain, and 9 template
-// files fetched at runtime. 81 requests on a Direct File workspace page, out of 147.
+// `src/` stays the source of truth and is still shipped as raw ESM. This adds an artifact beside it
+// for the four Form Builder applications, which have no bundler at all and so pay for the package's
+// structure one request at a time.
 //
 //   npm run build   ->  dist/js/taxpert.js               (every template inlined into it)
 //                       dist/styles/taxpert.css          (always on)
@@ -14,31 +11,8 @@
 //                       dist/img/favicon.png
 //                       dist/seam.json                   (see SHARED_SEAM)
 //
-// Three things about the output shape, each of which is load-bearing:
-//
-// DIRECTORY SHAPE. `dist/` is laid out as js/ + styles/ + img/ — the same shape as global-nav/ and
-// audit-panel/ and every other bundle dir in src/, and therefore in the vendored mirror. That is
-// not tidiness: the modules resolve their own assets with `new URL('../img/favicon.png',
-// import.meta.url)`, and putting the bundle at dist/js/ is what keeps that resolving to a real file
-// after bundling. A flat dist/taxpert.js would point it at a 404.
-//
-// TWO STYLESHEETS, NOT ONE. audit-panel.css is deliberately separate, because the applications load
-// it through a `<link id="audit-panel-styles" disabled>` that the workspace toggle flips: its rules
-// restructure the product page, and merging it into the always-on sheet would apply them with the
-// workspace off. The other twenty stylesheets are scoped to the bundles' own custom elements and
-// .ttd-/.ttp-/.ttm- classes, which is why they can be one file that always applies.
-//
-// TEMPLATES ARE INLINED, AND NOT COPIED. The bundle registers all fourteen at startup
-// (registerTemplates, in src/shared/js/templates.js) under exactly the URL each element computes
-// for itself, so nothing is ever fetched from dist/templates/ and there is no dist/templates/ to
-// fetch from. They were copied there at first, belt-and-braces — and it cost every consuming
-// application a doubled html-validate report, because the vendored mirror then held two copies of
-// the same fourteen files and the linter has no idea they are the same file. Nothing else fetches
-// them either: a host that overrides one with `templates-base` points somewhere else by
-// definition, and a host that imports a subpath out of `exports` gets src/'s own templates dir.
-//
-// EXTERNALS. Two modules are deliberately left OUT of the bundle — see SHARED_SEAM below. This is
-// the one subtle thing in this file and the comment there says why.
+// The directory shape, the three-way stylesheet split and the inlined templates are each
+// load-bearing. See ../../../docs/internals/bundled-build.md before changing any of them.
 
 import { rolldown } from 'rolldown'
 import { readFile, writeFile, mkdir, rm, cp, readdir } from 'node:fs/promises'
@@ -51,21 +25,14 @@ const SRC = join(PKG, 'src')
 const DIST = join(PKG, 'dist')
 
 /**
- * The modules an application imports DIRECTLY, by path, from the vendored mirror — and which
- * therefore must not also exist inside the bundle.
- *
- * `config.js` holds the workspace's configuration in module scope and every app's page fragment
- * does `import { configure, configureFromUrl } from '…/vendor/taxpert/shared/js/config.js'`;
- * `graph-adapter.js` is imported the same way by each app's own `js/taxpert/<app>-graph.js`. Bundle
- * either one and the page ends up with two module instances: the app configures one and the
- * elements read the other, and the workspace comes up with no configuration at all. Nothing throws.
- *
- * Left external, both stay single instances, at the cost of four unbundled files (these two plus
- * config.js's own flow-dom.js and config-schema.js) out of fifty-two. The bundle re-exports them,
- * so a host that would rather import everything from one place can.
+ * The modules an application imports directly, by path, from the vendored mirror, and which
+ * therefore must not also exist inside the bundle. Bundling one gives the page two module
+ * instances of it, so the application configures one while the elements read the other, with
+ * nothing thrown and nothing logged.
  *
  * If an application starts importing some other subpath directly, it belongs on this list. The
- * symptom of forgetting is not a crash — it is a feature that silently does nothing.
+ * symptom of forgetting is a feature that silently does nothing. Written to dist/seam.json so the
+ * applications can check it from their side. See ../../../docs/internals/bundled-build.md.
  */
 const SHARED_SEAM = [
   'shared/js/config.js', // fragments/taxpert-config.html, in all four applications
@@ -91,18 +58,10 @@ const REEXPORTS = [
 ]
 
 /**
- * One output per `<link>` (or per `@import` root) an application actually loads, flattened. Not one
- * file, and the split is the applications' own, not an aesthetic choice:
- *
- *   taxpert.css             @imported by each app's main.css, always on
- *   audit-panel.css         behind `<link id="audit-panel-styles" disabled>`, flipped by the
- *                           workspace toggle — its rules restructure the product page, so merging
- *                           it into the always-on sheet would apply them with the workspace off
- *   all-screens-toolbar.css linked independently by the all-screens page, which is chrome all the
- *                           way down and exists without a workspace
- *
- * So this collapses 20 requests to 3 by flattening each chain, and changes nothing about which
- * sheet is loaded when.
+ * One output per `<link>` (or per `@import` root) an application actually loads, flattened. The
+ * three-way split follows how the applications load them, so it changes nothing about which sheet
+ * applies when. Flattening each chain collapses 20 requests to 3. See
+ * ../../../docs/internals/bundled-build.md for why audit-panel.css cannot join taxpert.css.
  */
 const CSS_BUNDLES = {
   'taxpert.css': ['global-nav/styles/global-nav.css', 'tool-panels/styles/tool-panels.css'],

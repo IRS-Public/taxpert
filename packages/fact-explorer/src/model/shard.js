@@ -1,33 +1,21 @@
 // The graph, cut up on disk into exactly the pieces the slice picker already offers.
 //
-// FX-3: the loader used to fetch the whole 8.76 MB graph before the first slice could be drawn,
-// even though slice.js opens by saying the graph "is too dense to read as one blob, so the UI never
-// renders it whole by default". This module is the other half of that sentence — the generator
-// writes one file per option in the picker, and load.js fetches the one that was picked.
+// The generator writes one file per option in the picker, and load.js fetches the one that was
+// picked, so the opening view no longer costs the whole graph.
 //
-// The invariant that makes it safe to swap a shard in for the whole graph, and the thing
-// tests/shard.test.js asserts on every option of every fixture:
+// The invariant that makes a shard safe to substitute for the whole graph, asserted by
+// tests/shard.test.js on every option of every fixture and for both values of `opts.neighbors`:
 //
 //     sliceGraph(shardFor(key), key, opts)  ===  sliceGraph(wholeGraph, key, opts)
 //
-// deep-equal, for both values of `opts.neighbors`. It holds because a shard IS
-// `sliceGraph(whole, key, {neighbors: true})` — focus plus its one-hop ring, `__context` already
-// tagged — and re-slicing that on the same key recomputes the same focus set from the same
-// flowPages and finds the same ring inside it. Nothing downstream needs to know which it got.
-//
-// Two consequences of that identity worth stating, because they are load-bearing rather than
-// incidental:
-//
-//   - Every shard carries the graph's FULL flowPages list, not just the pages it covers. It is
-//     ~12 KB gzipped and it is what keeps the identity byte-exact: sliceGraph copies flowPages
-//     through untouched, and layout.js orders the flow spine by that list. Narrowing it would put
-//     a shard's pages in a different order from the whole graph's on a fact-file slice, which is a
-//     visible difference in return for a rounding error.
-//   - `neighbors: false` still works offline. The ring is in the file and re-slicing drops it, so
-//     the toggle stays instant instead of becoming a second fetch.
+// It holds because a shard IS `sliceGraph(whole, key, {neighbors: true})`, so re-slicing it on the
+// same key recomputes the same focus set and finds the same ring inside it.
 //
 // React-free and fetch-free, so the generator (scripts/make-static-fgm.mjs) and the vitest suite
-// both run it under plain Node. load.js fetches; this module only cuts.
+// both run it under plain Node. load.js fetches, and this module only cuts.
+//
+// See ../../../../docs/internals/fact-explorer-internals.md for why every shard carries the full
+// flowPages list and why `neighbors: false` still works offline.
 
 import { buildSliceOptions, defaultSliceKey, sliceGraph, FULL_KEY } from './slice.js'
 import { defaultFacets } from './facets.js'

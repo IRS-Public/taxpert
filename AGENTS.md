@@ -32,7 +32,7 @@ which the scaffold ships an empty default. An application generated with
 
 | Path | What it is |
 |---|---|
-| `packages/ui/` | The `taxpert` npm package: global nav, audit panel, tool panels, the all-screens toolbar, and the Scenario, Display and Workspace settings modals. Raw ES modules and CSS with no build step. |
+| `packages/ui/` | The `taxpert` npm package: global nav, audit panel, tool panels, the all-screens toolbar, and the Scenario, Display and Workspace settings modals. `src/` is raw ES modules and CSS and is the source of truth. `npm run build` adds a bundled `dist/` for hosts with no bundler, described in [docs/internals/bundled-build.md](docs/internals/bundled-build.md). |
 | `packages/fact-explorer/` | React and Vite single-page application that draws an application's flow and facts as an interactive graph. |
 | `services/assistant/` | FastAPI service (Python 3.12, managed with `uv`) behind the audit panel's chat and the scenario generator. |
 | `apps/` | Mount point for the application checkouts the tools read. `TAXPERT_APPS_DIR` moves it for the stack, `FORM_BUILDER_APPS_DIR` for Fact Explorer's scripts run natively. |

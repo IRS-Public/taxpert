@@ -168,8 +168,8 @@ Next steps are to usability test and evaluate the effectiveness of this toolset 
 **Goal.** The goal of this research was to learn from the people closest to the work of delivering accurate, usable, IRS fact-graph-based products and to use the pain points, ideas, and insights uncovered to bring greater resolution to product vision, feature definition and prioritization. We used it to make decisions about the contents and form of this release.
 
 Going into this research, we hypothesized that
-- the task of validating the TWE involved the same information needs we had observed in foundational research on this problem during IRS Direct File seasons 1 and 2;
-- both technical and nontechnical contributors benefit from observability of system rules but may need different presentations of information; and
+- the task of validating the TWE involved the same information needs we had observed in foundational research on this problem during IRS Direct File seasons 1 and 2,
+- both technical and nontechnical contributors benefit from observability of system rules but may need different presentations of information, and
 - human-readable and traceable system rules explicitly tied to the end-user experience being validated represent a key gap in our testing toolsets for these kinds of products
 
 The research supported these hypotheses, refined our understanding of the problem space, and informed feature prioritization for this release.
@@ -191,12 +191,12 @@ Participants consistently described this pattern across interviews. The examples
 It was hard and error-prone to discuss and reason together about what the system was doing and why because each discipline had a different piece of the overall puzzle but nothing they could collectively reference and understand.
 
 Participants described difficulty establishing a common language across disciplines.
-> “How do you bring the engineering and design languages closer together so were [sic] not introducing more bugs from that translation…. How do we have a discussion in the context of an artifact and have that discussion between Engineering and Design?” — Participant 3 (Engineer)
+> “How do you bring the engineering and design languages closer together so were [sic] not introducing more bugs from that translation…. How do we have a discussion in the context of an artifact and have that discussion between Engineering and Design?” (Participant 3, Engineer)
 
-> “The power of it is we're all able to see the thing. Now we need to see more of it and see it in more ways that are useful to more people.” — Participant 3 (Engineer)
+> “The power of it is we're all able to see the thing. Now we need to see more of it and see it in more ways that are useful to more people.” (Participant 3, Engineer)
 
 Participants also described a gap in current test processes for readily understanding why facts or rules were implemented a certain way in the built product (a result of scope decisions, usability test findings, tax law citations, IRS procedures, etc.) 
-> “XML is not a great place to put like 3 paragraphs of discussion about how a decision was made.” — Participant 6 (Tax domain expert)
+> “XML is not a great place to put like 3 paragraphs of discussion about how a decision was made.” (Participant 6, Tax domain expert)
 
 ### Finding 3
 **Different roles needed different kinds of visibility into the same system.** 
@@ -206,19 +206,19 @@ Participants described the ways in which it was difficult to understand and reas
 Testers described needing better visibility into both the rules driving the product and the intermediate system state needed to validate it.
 - Non-SME testers struggled to validate the built experience because it requires them to recognize and understand domain rules that aren’t directly referenced. 
 - Testers could not always identify an underlying fact by name in the UI, which made it impossible to ask about with precision. Even with a complete list of fact names, it was difficult to determine where a given fact was used in the experience. Additionally, it was hard to tell whether facts listed were placeholders, duplicates, had same-sounding names, or weren’t used at all. 
-  > “Sometimes it was hard to know where a particular fact would be applied in TWE and where it wouldn’t.” — Participant 5 (Tax domain expert)
+  > “Sometimes it was hard to know where a particular fact would be applied in TWE and where it wouldn’t.” (Participant 5, Tax domain expert)
 - Testers needed visibility into intermediate values, parameters, and hidden system states. 
 - Testers needed to save, load, modify, and replay scenarios instead of repeatedly traversing the product from the beginning. 
 - Testers found it easier to validate calculations than to validate system behavior (branching logic, dependencies, question visibility). 
-  > “Facts are a little easier [than Flow]; what you arrive at is a number, not a webpage.” — Participant 4 (Engineer)
+  > “Facts are a little easier [than Flow]; what you arrive at is a number, not a webpage.” (Participant 4, Engineer)
 
 #### Engineers
 Engineers focused on understanding relationships across the system and anticipating the downstream effects of changes.
-> “[System rule] visualization is desperately valuable and necessary for engineering, and the fact that it brings understanding beyond engineering is a bonus ha-ha” — Participant 4 (Engineer)
+> “[System rule] visualization is desperately valuable and necessary for engineering, and the fact that it brings understanding beyond engineering is a bonus ha-ha” (Participant 4, Engineer)
 - Engineers were cognizant there were “corners for things to hide in” usually related to branching logic and edge cases, but enumerating all possible fact graph combinations is prohibitive. Making the flow linear reduces but does not eliminate hidden failure modes. 
-  > “That’s where bugs live, where you can’t see if things interact in a way we didn’t anticipate or test.” — Participant 4 (Engineer)
+  > “That’s where bugs live, where you can’t see if things interact in a way we didn’t anticipate or test.” (Participant 4, Engineer)
 - Engineers described struggling to reason about interdependent system layers, fact and flow, and how difficult it was to anticipate downstream consequences of changes. Branching logic, “the flow” was particularly difficult.
-- New engineers on the team, faced with a huge codebase and incomplete mental model, “were afraid to touch [the fact graph] and flow” — Participant 2 (Engineer). Knowledge was concentrated among people who designed the system (technical and nontechnical), making onboarding and continuity dependent on those individuals.
+- New engineers on the team, faced with a huge codebase and incomplete mental model, “were afraid to touch [the fact graph] and flow” (Participant 2, Engineer). Knowledge was concentrated among people who designed the system (technical and nontechnical), making onboarding and continuity dependent on those individuals.
 
 #### SMEs
 SMEs described needing implementation details presented in forms that aligned with how they understood tax rules.
@@ -230,7 +230,7 @@ SMEs described needing implementation details presented in forms that aligned wi
 - The lack of visibility into facts, flow and system behavior creates testing and modification bottlenecks.  
 - Engineering participants saw a high level of value in surfacing facts, origin, and relationships in context of a screen/page. 
 - The time cost of validation became a major factor for the SMEs testing completeness.
-  > When asked how they determined they were done testing the product, one SME tester said “The clock.” — Participant 6 (Tax domain expert)
+  > When asked how they determined they were done testing the product, one SME tester said “The clock.” (Participant 6, Tax domain expert)
 
 ### Finding 5
 **Teams recreated knowledge outside the product because the information they needed wasn’t accessible in context.**
@@ -239,9 +239,9 @@ Participants described building their own processes (side-saddle with developers
 Testers used translators, spreadsheets, and self-generated artifacts to help them test. Because those artifacts were separate from the product, they also needed to be recreated or updated as the underlying product changed. 
 
 As a result, institutional knowledge accumulated in these external artifacts rather than alongside the system itself. 
-> “Just banging the head against the wall until we found out. At a certain point you just had brute force.” — Participant 5 (Tax domain expert)
+> “Just banging the head against the wall until we found out. At a certain point you just had brute force.” (Participant 5, Tax domain expert)
 
-> “Trying to follow—grepping the XML file to figure out what is the actual path of where something is being used.” — Participant 6 (Tax domain expert)
+> “Trying to follow—grepping the XML file to figure out what is the actual path of where something is being used.” (Participant 6, Tax domain expert)
 
 ## Product implications
 This research suggests a reusable toolset integrated with IRS fact-graph-based products to support collaboration and efficient, accurate validation. This release responds to many of these findings and future phases will address more. Rather than addressing isolated pain points, the findings point to four complementary capabilities.

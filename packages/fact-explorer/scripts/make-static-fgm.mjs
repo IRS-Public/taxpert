@@ -619,10 +619,9 @@ function generateApp(descriptor) {
 
   const OUT = join(cfg.outDir, 'form-builder-graph.json')
   mkdirSync(dirname(OUT), { recursive: true })
-  // FX-3/FX-7: written minified. The pretty-print was 15% of the bytes on the wire in dev, where
-  // nothing compressed them; it is ~2% once vite.config.js's /data middleware gzips them, so this
-  // is a disk and parse saving rather than a transfer one — and with the shards below multiplying
-  // this directory by roughly three, disk is the one that had started to matter.
+  // Written minified. The pretty-print was 15% of the bytes on the wire in dev where nothing
+  // compressed them, and is ~2% once vite.config.js's /data middleware gzips them, so this is now
+  // a disk and parse saving rather than a transfer one.
   writeFileSync(OUT, JSON.stringify(graph) + '\n')
 
   const byKind = (k) => out.edges.filter((e) => e.kind === k).length
@@ -645,29 +644,28 @@ function generateApp(descriptor) {
   ])
     console.log(`    ${k.padEnd(11)} ${byKind(k)}`)
 
-  // Scenario index — enumerate the app's scenario corpus from disk (filesystem only, so this works
-  // whether or not the app was built with --scenarioMode) and decode each filename through the
-  // vocabulary the app declared. The picker (N4) reads this index; the scenario JSON bodies are
+  // The scenario index enumerates the app's scenario corpus from disk (filesystem only, so this
+  // works whether or not the app was built with --scenarioMode) and decodes each filename through
+  // the vocabulary the app declared. The picker reads this index, and the scenario JSON bodies are
   // fetched live via the Vite proxy at runtime.
   writeScenarioIndex()
 
-  // FX-3 — one file per slice-picker option, plus the index that names them. The opening view then
-  // costs an index and one shard instead of the whole graph.
+  // One file per slice-picker option, plus the index that names them, so the opening view costs an
+  // index and one shard rather than the whole graph.
   writeShards(graph)
   return graph
 }
 
 /**
- * Cut the graph into the slices the picker offers and write each one beside it (FX-3).
+ * Cut the graph into the slices the picker offers and write each one beside it.
  *
- * The keys, the labels and the cut itself all come from src/model/shard.js, which is the same
- * slice.js the SPA narrows with — deliberately, because a shard that is subtly not the slice is a
- * graph that quietly tells you the wrong thing about a fact's dependencies. tests/shard.test.js
- * asserts the two are deep-equal for every option of every fixture.
+ * The keys, the labels and the cut itself all come from src/model/shard.js, which narrows with the
+ * same slice.js the SPA does. A shard that is subtly not the slice is a graph that quietly tells
+ * you the wrong thing about a fact's dependencies, so tests/shard.test.js asserts the two are
+ * deep-equal for every option of every fixture.
  *
- * Not gitignored by accident: public/data/<app>/shards/ is in .gitignore, unlike the two committed
- * fixture graphs. Shards are a pure function of the graph beside them, the test rebuilds them in
- * memory, and committing a few megabytes of derived JSON to make that unnecessary is a bad trade.
+ * public/data/<app>/shards/ is gitignored deliberately, unlike the two committed fixture graphs.
+ * See ../../../docs/internals/fact-explorer-internals.md.
  */
 function writeShards(graph) {
   const { index, shards } = buildShards(graph)

@@ -138,7 +138,7 @@ elsewhere, so all of them sit behind a profile and a bare `docker compose up` st
 `--profile explorer` for Fact Explorer, `--profile ai` for the assistant and ChromaDB. Two variables
 connect the stack to your app: `TAXPERT_APPS_DIR` (the host directory holding the app repos,
 mounted read-only at `/apps`) and `TAXPERT_APP_HOST` (how a container reaches the running app). The
-app's own image, if it has one, is that repository's business; the examples each ship a Dockerfile
+app's own image, if it has one, is that repository's business. The examples each ship a Dockerfile
 that generates the site with `sbt run` and serves `out/` from `nginx:1.27-alpine`.
 
 `packages/ui/compose/taxpert.yml` is the same set of services, shipped inside the npm package for
@@ -271,7 +271,7 @@ should serve the static build.
                                                                      +-----------------+
 ```
 
-The applications and Fact Explorer are static and need no state; only the two on the left are built
+The applications and Fact Explorer are static and need no state. Only the two on the left are built
 outside this repository. Everything stateful sits behind the api.
 
 ---

@@ -7,8 +7,8 @@
 # .dockerignore applies only to the application's own context. Without this file, a developer's
 # `node_modules/` rides along into every image build that names this directory.
 #
-# Those builds copy `src`, plus (since TX-3) `scripts/` and the manifests they need to build the
-# bundle in a Node stage of their own — but the whole directory is still transferred first.
+# Those builds copy `src`, plus `scripts/` and the manifests they need to build the bundle in a
+# Node stage of their own, but the whole directory is still transferred first.
 #
 # `dist/` is excluded deliberately. It is the bundle, and an image must build its own from the src/
 # it is vendoring rather than pick up whatever a developer happened to have on disk: a stale dist/

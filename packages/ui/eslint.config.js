@@ -6,8 +6,7 @@ import react from 'eslint-plugin-react'
 
 export default defineConfig([
   {
-    // TX-3: dist/ is the bundled build (`npm run build`), generated from the src/ that IS linted.
-    // Linting a bundler's output is linting the bundler.
+    // dist/ is the bundled build (`npm run build`), generated from the src/ that is linted.
     ignores: ['dist/'],
   },
   ...neostandard(),

@@ -29,10 +29,10 @@ to one, or depend on one. It states maturity levels and known gaps.
 | Workspace settings modal                      | GA | Full-featured workspace management (tool selection, feature flags, data import/export).                 |
 | Author Mode                                   | Beta | Functional but the full lifecycle has not been extensively tested                                       |
 | Form Builder Graph generator                  | Beta | Operational for basic graphing, but missing several visual relationship edges.                          |
-| AI API backend service                        | Alpha | Experimental service with minimal evaluation harness; behavior varies based on the underlying AI model. |
-| AI fact explanation                           | Alpha | Experimental service with minimal evaluation harness; behavior varies based on the underlying AI model. |
-| AI scenario generation                        | Alpha | Experimental service with minimal evaluation harness; behavior varies based on the underlying AI model. |
-| RAG retrieval and ChromaDB indexing           | Alpha | Experimental service with minimal evaluation harness; behavior varies based on the underlying AI model. |
+| AI API backend service                        | Alpha | Experimental service with a minimal evaluation harness. Behavior varies with the underlying AI model. |
+| AI fact explanation                           | Alpha | Experimental service with a minimal evaluation harness. Behavior varies with the underlying AI model. |
+| AI scenario generation                        | Alpha | Experimental service with a minimal evaluation harness. Behavior varies with the underlying AI model. |
+| RAG retrieval and ChromaDB indexing           | Alpha | Experimental service with a minimal evaluation harness. Behavior varies with the underlying AI model. |
 ---
 
 ## Known Gaps

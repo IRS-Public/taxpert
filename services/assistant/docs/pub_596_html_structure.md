@@ -1,15 +1,15 @@
-# HTML Structure Evaluation — `data/html/pub_596.html`
+# HTML structure evaluation: `data/html/pub_596.html`
 
 How IRS Publication 596 (*Earned Income Credit*) is marked up, and how the RAG
 indexer (`src/rag/indexer.py`) exploits that structure to produce
 section-aligned embeddings. Written to justify the parsing choices and to guide
 anyone adding a new IRS HTML source.
 
-> **Bottom line:** the page is a server-rendered Drupal ("barrio" theme)
-> document with a clean, machine-readable outline encoded in heading **role
-> classes** — not in the `h1`–`h6` tag numbers. Parsing that outline (rather
-> than raw tags or raw text) is what lets us turn a 1.2 MB page into ~77
-> topical chunks instead of hundreds of fragments.
+> **In short:** the page is a server-rendered Drupal ("barrio" theme) document
+> with a clean, machine-readable outline encoded in heading **role classes**
+> rather than in the `h1`-`h6` tag numbers. Parsing that outline, rather than raw
+> tags or raw text, is what turns a 1.2 MB page into roughly 77 topical chunks
+> instead of hundreds of fragments.
 
 ---
 
@@ -35,7 +35,7 @@ template contributes most of the *element* count but almost none of the useful
 ## 2. The content container
 
 The publication body is a Drupal field. Three `div.field--name-body` elements
-exist; **two are 80-char stubs** (summary/teaser copies) and **one holds the
+exist. **Two are 80-char stubs** (summary/teaser copies) and **one holds the
 full 210 KB** of prose:
 
 ```
@@ -50,17 +50,17 @@ The real article also appears as:
 ```
 
 **Indexer choice** (`_select_content_root`): pick the **largest**
-`div.field--name-body`; fall back to `<article>` → `<main>` → `<body>` for
+`div.field--name-body`, falling back to `<article>` → `<main>` → `<body>` for
 non-IRS HTML. Selecting the largest body div is what removes the surrounding
-nav, breadcrumbs, language switcher, and footer in one step — they live outside
+nav, breadcrumbs, language switcher, and footer in one step. They live outside
 this div, so no element-by-element blocklist is needed.
 
 ---
 
-## 3. Heading taxonomy — the load-bearing structure
+## 3. Heading taxonomy, the load-bearing structure
 
-Every heading carries a semantic `role-*` class. The `h`-number is **not** a
-reliable depth signal; the class is. Counts across the document:
+Every heading carries a semantic `role-*` class. The class is the reliable depth
+signal, and the `h`-number is not. Counts across the document:
 
 | Tag + class | Count | Logical role | Example |
 |---|---|---|---|
@@ -75,11 +75,11 @@ reliable depth signal; the class is. Counts across the document:
 
 ### The critical detail
 
-The document's **most useful retrieval units — the 15 numbered Rules — are
-`h4`s** (`role-hd1`), and their sub-topics (*Earned Income*, *Disability
-Benefits*, …) are **also `h4`s** (`role-hd2`). A parser that ranks depth by tag
-number sees them as siblings; a parser that reads the role class sees the
-correct nesting:
+The document's most useful retrieval units, the 15 numbered Rules, are **`h4`s**
+(`role-hd1`), and their sub-topics (*Earned Income*, *Disability Benefits*, and
+so on) are **also `h4`s** (`role-hd2`). A parser that ranks depth by tag number
+sees them as siblings. A parser that reads the role class sees the correct
+nesting:
 
 ```
 2. Rules if You Have a Qualifying Child        (h2.role-chap   → depth 1)
@@ -120,8 +120,8 @@ headings scoping it:
 Two payoffs:
 
 1. **Disambiguation.** Pub 596 has *two* subsections literally titled "Earned
-   Income" — one under **Rule 7**, one under **Rule 15**. Bare leaf titles
-   collide in vector space; breadcrumbs keep them apart:
+   Income", one under **Rule 7** and one under **Rule 15**. Bare leaf titles
+   collide in vector space, and breadcrumbs keep them apart:
    ```
    1. Rules for Everyone        > Rule 7—You Must Have Earned Income  > Earned Income
    4. Figuring and Claiming…    > Rule 15—Earned Income Limits        > Earned Income
@@ -135,7 +135,7 @@ Two payoffs:
 
 ## 5. Noise sources and how they're handled
 
-### 5.1 The EIC lookup table — 13,740 cells
+### 5.1 The EIC lookup table, 13,740 cells
 
 The 8 tables break down by `<td>` count as:
 
@@ -144,9 +144,9 @@ The 8 tables break down by `<td>` count as:
 ```
 
 The 13,740-cell monster is the **EIC amount lookup table** (income band →
-credit, every $50 step). Flattened to text it is thousands of bare numbers —
-pure noise that, in earlier runs, dominated the chunk count and produced
-meaningless embeddings.
+credit, every $50 step). Flattened to text it is thousands of bare numbers, pure
+noise that in earlier runs dominated the chunk count and produced meaningless
+embeddings.
 
 **Indexer choice** (`_MAX_TABLE_CELLS = 30`): `decompose()` any table with more
 than 30 `<td>`s before extraction. The small tables (≤94 cells) carry real
@@ -158,14 +158,14 @@ Before the first content heading, the body repeats the section list **twice**
 as link text (~2,100 words of nav). It adds no retrievable prose.
 
 **Indexer choice:** once any heading has been seen, content is only emitted
-under a heading; pre-first-heading text is dropped. (The heading-less fallback
+under a heading, and pre-first-heading text is dropped. (The heading-less fallback
 that keeps the whole body still applies to non-IRS pages with no headings.)
 
 ### 5.3 Site chrome
 
 Eight `<nav>`s, four language switchers, seven `visually-hidden` a11y headings,
 and six accordion footer menus. **All of it lives outside the body `div`** and
-is excluded for free by §2's container selection — no explicit blocklist
+is excluded for free by §2's container selection, with no explicit blocklist
 required.
 
 ### 5.4 `script` / `style` / `noscript`
@@ -188,12 +188,12 @@ After the word-window chunker (`_CHUNK_WORDS = 600`, `_OVERLAP_WORDS = 50`) and
 the `_MIN_CHUNK_WORDS = 20` filter:
 
 - **~77 chunks**, median ~280 words, max ~620 words
-- **56 distinct breadcrumb titles** — i.e. nearly one chunk per logical section,
+- **56 distinct breadcrumb titles**, so nearly one chunk per logical section,
   with only the longest sections (Rule 9, the detailed examples) spilling into a
   second chunk.
 
-The naive tag-based split, by contrast, produced a dozen sections over 600 words
-that the chunker then sliced **across rule boundaries** — the original cause of
+The naive tag-based split produced a dozen sections over 600 words that the
+chunker then sliced **across rule boundaries**, which was the original cause of
 "embeddings that don't correspond to sections."
 
 ---
@@ -207,13 +207,13 @@ build breadcrumb section titles, but the signal quality differs sharply:
 |---|---|---|
 | Heading detection | **structural** (`role-*` classes) | **heuristic** (ALL-CAPS / Title Case) |
 | Depth signal | exact | inferred from case only |
-| Breadcrumb quality | clean (`1. Rules for Everyone > Rule 7 > Earned Income`) | noisy — false positives like `TIP`, `EIC?`, wrapped-title fragments |
+| Breadcrumb quality | clean (`1. Rules for Everyone > Rule 7 > Earned Income`) | noisy, with false positives like `TIP`, `EIC?`, and wrapped-title fragments |
 | Table noise | dropped by cell count | numbers leak into text |
 | Pagination artifacts | none | headers/footers, hyphenation |
 
 **Recommendation:** when a publication is available as IRS HTML, **prefer the
-HTML source**. The role-class outline is the authoritative structure; PDF text
-extraction can only approximate it. The PDF path remains useful for
+HTML source**. The role-class outline is the authoritative structure, and PDF
+text extraction can only approximate it. The PDF path remains useful for
 publications that have no HTML rendering.
 
 ---
@@ -232,5 +232,5 @@ uv run python -c "from src.rag.indexer import extract_html_chunks; \
 ```
 
 Check that breadcrumb titles look like the document's real outline. If a new
-template introduces different role classes, extend `_ROLE_DEPTH`; if it nests
+template introduces different role classes, extend `_ROLE_DEPTH`. If it nests
 the body differently, adjust `_select_content_root`.

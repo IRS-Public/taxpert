@@ -18,7 +18,9 @@ carries no menu, no determinations, no feature flags, no fact paths and no route
 `tests/fixtures/host/` mounts the whole workspace on a fictional non-tax "Pet Planner" to show that
 a second host can adopt it.
 
-It ships as raw ESM and CSS with no build step, so it can be consumed with or without a bundler.
+`src/` is raw ESM and CSS and is the source of truth, so the package can be consumed with or
+without a bundler. `npm run build` additionally produces `dist/`, a bundled artifact for hosts that
+have no bundler. See [the internals doc](../../docs/internals/bundled-build.md).
 
 | | |
 |---|---|
@@ -26,8 +28,8 @@ It ships as raw ESM and CSS with no build step, so it can be consumed with or wi
 | Version | 0.1.0 |
 | License | `UNLICENSED` in `package.json` |
 | Repository | [github.com/IRS-Public/taxpert](https://github.com/IRS-Public/taxpert) |
-| Distribution | `"private": true` — never published to a registry. Consumed as a `file:` dependency on a checkout, or through this repository's npm workspace. |
-| Files it ships | `src/`, `react/`, `compose/` |
+| Distribution | `"private": true`, so it is never published to a registry. Consumed as a `file:` dependency on a checkout, or through this repository's npm workspace. |
+| Files it ships | `src/`, `react/`, `compose/`, `dist/` |
 
 ## Where it fits
 
@@ -36,7 +38,7 @@ It ships as raw ESM and CSS with no build step, so it can be consumed with or wi
 | [`../fact-explorer`](../fact-explorer) | Takes this package as a workspace dependency and imports it by name. Vite bundles it. |
 | [`../../services/assistant`](../../services/assistant) | The chat and scenario-generation backend the audit panel posts to, at `endpoints.apiBase`. |
 | [Form Builder](https://github.com/IRS-Public/form-builder) | The scaffold that builds the applications this wraps. It ships the theme and the flow runtime. |
-| [The example applications](https://github.com/IRS-Public/form-builder-examples) | Two Form Builder applications that consume this package with no bundler. They live in their own repository. |
+| [The example applications](https://github.com/IRS-Public/form-builder-examples) | Four Form Builder applications that consume this package with no bundler. They live in their own repository. |
 
 See the repository root [`../../README.md`](../../README.md) for how the three packages fit
 together.
@@ -78,7 +80,7 @@ and CSS. Within a bundle, files are split into `js/`, `templates/` and `styles/`
 | `src/tool-panels/` | `<taxpert-tool-dock>` (`taxpert-tool-dock.js`), `<taxpert-tool-panel>`, `<taxpert-tools-modal>`, `<taxpert-add-fact-modal>`, the layout store, and the four tool bodies: `<taxpert-inspect>`, `<taxpert-outcome-tracker>`, `<taxpert-watchlist>`, `<taxpert-overrides>`. |
 | `src/shared/` | Cross-bundle helpers: `config.js`, `config-schema.js`, `apps.js`, `outcome-kinds.js`, `graph-adapter.js`, `flow-dom.js`, `storage-keys.js`, `templates.js`, `dom.js`, `modal-shell.js`, `collection-utils.js`, `embedded.js`, `favicon.js`, plus `img/favicon.png`, `styles/feature-flags.css` and `styles/embedded.css`. |
 | `react/` | Thin React adapters over the custom elements: `GlobalNav`, `ToolDock`, `ToolsModal`, `ScenarioModal`, `DisplayModal`, `WorkspaceSettingsModal`. React interop lives only here. |
-| `compose/` | `taxpert.yml`, a Docker Compose overlay that builds and starts Fact Explorer and the assistant, for an application whose own repository does not define them. It builds from a taxpert checkout named by `TAXPERT_REPO` — there are no published images. |
+| `compose/` | `taxpert.yml`, a Docker Compose overlay that builds and starts Fact Explorer and the assistant, for an application whose own repository does not define them. It builds from a taxpert checkout named by `TAXPERT_REPO`, since there are no published images. |
 | `tests/` | One `node --test` spec per module, plus `fixtures/host/` and `helpers/template-fetch.mjs`, which answers template fetches off disk under jsdom. |
 
 Never import across bundles by deep path. Every public entry point appears in the `exports` map in
@@ -213,21 +215,23 @@ import WorkspaceSettingsModal from 'taxpert/react/workspace-settings-modal'
 <WorkspaceSettingsModal />   {/* mount once; it self-wires to the nav's settings gear */}
 ```
 
-**Without a bundler.** A Form Builder application has none. It takes this as a dev dependency — a
-`file:` path to a checkout, since nothing here is published to a registry — and copies
-`node_modules/taxpert/src` into its own static assets with its `make copy-shared-ui` target,
-then loads the elements with plain `<script type="module">` tags and imports the CSS from its
-`main.css`. Menu leaves render as real `<a href>` links, so the nav works before JS runs. The two
-applications that do this live in the
+**Without a bundler.** A Form Builder application has none. It takes this as a dev dependency, a
+`file:` path to a checkout, and its `make copy-shared-ui` target builds the bundle and copies both
+`node_modules/taxpert/src` and `node_modules/taxpert/dist` into its own static assets. It then loads
+the elements with one plain `<script type="module">` tag and imports the CSS from its `main.css`.
+Menu leaves render as real `<a href>` links, so the nav works before JS runs. The four applications
+that do this live in the
 [examples repository](https://github.com/IRS-Public/form-builder-examples).
 
 That vendored mirror (`…/website-static/vendor/taxpert/`) is generated and gitignored. A fresh clone
 of an application has none until a build runs, and every build target depends on `copy-shared-ui`.
 Never hand-edit it and never commit it. The application's `make check-shared-ui`, part of its
-`make ci`, diffs the whole tree against `node_modules/taxpert/src` and fails when it has drifted.
+`make ci`, diffs both trees against `node_modules/taxpert` and fails when either has drifted. Two
+further validators in `make ci` cover the bundle seam and the inlined nav templates, described in
+[the internals doc](../../docs/internals/bundled-build.md).
 
 After changing anything here, run `npm test`, then `make copy-shared-ui` in each application you
-maintain. Two example applications exist so that a change cannot quietly bake in an assumption about
+maintain. Four example applications exist so that a change cannot quietly bake in an assumption about
 one of them. Fact Explorer needs nothing, since it resolves this package through the workspace and
 Vite rebuilds it.
 

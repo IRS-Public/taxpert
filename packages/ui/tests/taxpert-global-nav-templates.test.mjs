@@ -1,14 +1,15 @@
 // Where <taxpert-global-nav> gets its markup, and what happens when it cannot get it.
 //
-// Two paths, and they are the two halves of the nav-bar race this bundle used to lose:
+// Two paths:
 //
-//   TX-1  the host server-renders the five <template> elements, so the bar renders on connect with
-//         no fetch and no window in which the header is empty
-//   TX-2  nothing supplies them and the fetch fails, so the bar degrades loudly instead of the page
-//         quietly losing its header
+//   hosted    the host server-renders the five <template> elements, so the bar renders on connect
+//             with no fetch and no window in which the header is empty
+//   degraded  nothing supplies them and the fetch fails, so the bar degrades loudly rather than the
+//             page quietly losing its header
 //
-// Separate from taxpert-global-nav.test.mjs, which is about what a *rendered* bar does. This one is
+// Separate from taxpert-global-nav.test.mjs, which is about what a rendered bar does. This one is
 // about getting to one at all, so it owns the document state the element reads at import time.
+// See ../../../docs/internals/bundled-build.md.
 import { test, before, beforeEach } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
@@ -82,7 +83,7 @@ test('the id list is exactly the ids the bundle ships', () => {
   assert.deepEqual([...NAV_TEMPLATE_IDS].sort(), shipped.sort())
 })
 
-test('TX-1: with the templates on the page the bar renders and nothing is fetched', async () => {
+test('hosted: with the templates on the page the bar renders and nothing is fetched', async () => {
   const nav = await mount()
 
   assert.deepEqual(fetches, [])
@@ -93,7 +94,7 @@ test('TX-1: with the templates on the page the bar renders and nothing is fetche
   assert.deepEqual(errors, [])
 })
 
-test('TX-2: with no templates and a failing fetch the bar degrades and says so', async () => {
+test('degraded: with no templates and a failing fetch the bar degrades and says so', async () => {
   // Unhost them and drop the registry: this is a page that supplies nothing and a network that
   // gives nothing back.
   for (const id of NAV_TEMPLATE_IDS) document.getElementById(id)?.remove()

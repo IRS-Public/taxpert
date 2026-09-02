@@ -45,7 +45,7 @@ reading the codebase for the first time, and for a reviewer deciding where a cha
 ```
 
 The declarations behind those arrows. Paths under `packages/` and `services/` are in this
-repository; the application ones are in
+repository. The application ones are in
 [the example applications' repository](https://github.com/IRS-Public/form-builder-examples), and hold for any Form
 Builder app:
 

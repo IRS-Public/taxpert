@@ -10,10 +10,10 @@ import { validate } from '../src/model/fgm.js'
 import { defaultFacets } from '../src/model/facets.js'
 import { loadMock, loadAllReal } from './_fixtures.js'
 
-// CP-5.2, the gate on FX-3. A shard that is subtly not the same slice is a graph that quietly
-// tells you the wrong thing about a fact's dependencies, which is the one thing this tool exists
-// to get right — so the equality is asserted over EVERY option of EVERY fixture on disk, both
-// values of the neighbours toggle, rather than the three sample slices the plan asks for.
+// A shard that is subtly not the same slice is a graph that quietly tells you the wrong thing
+// about a fact's dependencies, which is the one thing this tool exists to get right. So the
+// equality is asserted over every option of every fixture on disk, for both values of the
+// neighbours toggle. See docs/internals/fact-explorer-internals.md.
 describe('shard', () => {
   const fixtures = [['mock', loadMock()], ...loadAllReal()]
 

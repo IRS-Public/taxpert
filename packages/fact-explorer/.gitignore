@@ -18,10 +18,10 @@ public/data/apps.json
 !public/data/credit-assistant/
 !public/data/twe/
 
-# ...but not their shards (FX-3). A shard is a pure function of the graph beside it — the generator
-# cuts it with the same slice.js the SPA narrows with — and tests/shard.test.js rebuilds them in
-# memory from the two fixtures above rather than reading them off disk. Committing a few megabytes
-# of derived JSON to make that unnecessary is a bad trade.
+# ...but not their shards. A shard is a pure function of the graph beside it, cut by the generator
+# with the same slice.js the SPA narrows with, and tests/shard.test.js rebuilds them in memory from
+# the two fixtures above rather than reading them off disk. See
+# docs/internals/fact-explorer-internals.md.
 public/data/*/shards/
 
 # Vendored USWDS fonts/images (rebuild with `npm run copy-uswds-assets`; see src/styles/uswds.scss)

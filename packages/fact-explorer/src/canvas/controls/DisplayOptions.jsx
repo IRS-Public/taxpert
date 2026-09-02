@@ -50,10 +50,9 @@ export default function DisplayOptions({
         checked: sideBySide,
         onChange: onSideBySide,
       },
-      // FX-5. The minimap draws a second copy of every node and redraws it on every pan, so on a
-      // large slice it costs more than the canvas does. It defaults off above LARGE_SLICE_NODES
-      // rather than disappearing at a size nobody was told about: this is where the user turns it
-      // back on, and where they turn it off on a small slice that does not need it.
+      // The minimap draws a second copy of every node and redraws it on every pan, so on a large
+      // slice it costs more than the canvas does. It defaults off above LARGE_SLICE_NODES, and
+      // this is where it is turned back on.
       {
         id: 'fe-display-minimap',
         label: 'Show minimap',

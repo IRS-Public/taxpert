@@ -2,19 +2,18 @@
 // component reads through these, so changing data source is never a component change. Mode comes
 // from VITE_FGM_SOURCE (see .env.example).
 //
-// Three graph entry points since FX-3, and which one a caller wants is a question about scope:
+// Three graph entry points, and which one a caller wants is a question about scope:
 //
 //   loadShardIndex(app)   the picker's options and the default selection, ~4 KB, no graph at all
-//   loadSlice(app, key)   the sub-FGM for one selection — tens of KB, and all the canvas needs
-//   loadGraph(app)        the whole thing, for the features that genuinely read across it:
-//                         search totals, the scenario overlay, cone, drill, Full graph
+//   loadSlice(app, key)   the sub-FGM for one selection, tens of KB, and all the canvas needs
+//   loadGraph(app)        the whole thing, for the features that read across it: search totals,
+//                         the scenario overlay, cone, drill, Full graph
 //
-// Each of the first two returns null when this app has no shards — the mock fixture, or an app
-// serving its own graph — and the caller falls back to loadGraph, which is what every caller did
-// before the shards existed.
+// Each of the first two returns null when this app has no shards, which is the case for the mock
+// fixture and for an app serving its own graph. The caller then falls back to loadGraph.
 //
-// This module fetches; apps.js and fgm.js validate.
-// Source precedence and the overlay merge: ../../../../docs/internals/fact-explorer-internals.md
+// This module fetches, and apps.js and fgm.js validate. Shards, source precedence and the overlay
+// merge: ../../../../docs/internals/fact-explorer-internals.md
 import { validate } from './fgm.js'
 import { validateRegistry } from './apps.js'
 import { SHARD_DIR, SHARD_INDEX, shardEntry } from './shard.js'
@@ -76,8 +75,8 @@ async function fetchAppGraph(app) {
  * Load + validate one app's whole Form Builder Graph.
  * Modes (VITE_FGM_SOURCE): "mock" (default) | "real" | "overlay".
  *
- * Memoized per app, because FX-3 turned this from the one thing every session fetched at startup
- * into the thing fetched when a feature needs the whole graph — search across everything, the
+ * Memoized per app. With shards this is no longer the one thing every session fetches at startup,
+ * it is what a feature asks for when it needs the whole graph: search across everything, the
  * scenario overlay, cone, drill, Full graph. Those arrive in any order and more than once.
  *
  * @param {import('./apps.js').FactExplorerApp} [app] omitted only in "mock" mode
@@ -103,9 +102,9 @@ const wholeCache = new Map()
 async function fetchWholeGraph(app) {
   const mode = import.meta.env.VITE_FGM_SOURCE ?? 'mock'
 
-  // FX-4: the fixture is fetched by the branches that read it, not ahead of them. Hoisted, it put
-  // a serial round trip in front of the real graph's several megabytes on every load in every
-  // mode — including "real", which never looks at it.
+  // The fixture is fetched by the branches that read it rather than ahead of them. Hoisted, it put
+  // a serial round trip in front of the real graph's several megabytes on every load in every mode,
+  // including "real", which never looks at it.
   if (mode === 'mock' || !app) return validate(await fetchJson(MOCK))
 
   const real = await fetchAppGraph(app)
@@ -139,9 +138,9 @@ const dirOf = (url) => url.slice(0, url.lastIndexOf('/'))
 const indexCache = new Map()
 
 /**
- * Load one app's shard index (FX-3), or null when it has none.
+ * Load one app's shard index, or null when it has none.
  *
- * Null is the ordinary answer, not a failure. Only the local generator writes shards; an app
+ * Null is an ordinary answer rather than a failure. Only the local generator writes shards; an app
  * serving its own `form-builder-graph.json` (the Scala --formBuilderGraph path) does not, and nor
  * does the mock fixture. Every caller falls back to the whole graph, which is what the loader did
  * for all of them before this existed.
@@ -167,8 +166,9 @@ export function loadShardIndex(app) {
 /**
  * Load the sub-FGM for one slice key: an index entry's file, validated like any other graph.
  *
- * Returns null when this app has no shards, or none for this key — the caller then loads the whole
- * graph and slices it itself, which is the pre-FX-3 behaviour and stays correct. The "full" key
+ * Returns null when this app has no shards, or none for this key. The caller then loads the whole
+ * graph and slices it itself, which is what every caller did before shards and stays correct. The
+ * "full" key
  * resolves to the whole graph's own file rather than a shard, so selecting Full graph is an
  * ordinary selection here rather than a special case.
  *
